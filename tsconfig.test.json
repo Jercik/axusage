@@ -10,10 +10,6 @@
     /* Test environment types */
     "types": ["vitest/globals", "node"]
   },
-  "include": [
-    "**/*.{test,spec}.?(c|m)[jt]s?(x)",
-    "src/**/*.ts",
-    "types/**/*.d.ts"
-  ],
+  "include": ["**/*.test.*", "**/*.spec.*", "types/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

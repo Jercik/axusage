@@ -19,7 +19,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "node bin/agent-usage",
+    "start": "pnpm run rebuild && node bin/agent-usage",
     "build": "tsc -p tsconfig.app.json",
     "clean": "rm -rf dist *.tsbuildinfo",
     "rebuild": "pnpm run clean && pnpm run build",
