@@ -62,14 +62,20 @@ jobs:
                - Check API documentation accuracy
 
             Provide detailed feedback using inline comments for specific issues.
-            Use top-level comments for general observations or praise.
+
+            For top-level comments with general observations, use this collapsible format:
+
+            <details>
+            <summary>PR Review Details</summary>
+
+            [Your detailed review content here]
+
+            </details>
+
+            [Short summary of the review here, no more than 2-3 sentences]
+
+            This keeps the PR conversation clean while allowing readers to expand the full review details when needed.
 
           # Tools for comprehensive PR review
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
-
-# When track_progress is enabled:
-# - Creates a tracking comment with progress checkboxes
-# - Includes all PR context (comments, attachments, images)
-# - Updates progress as the review proceeds
-# - Marks as completed when done
