@@ -1,0 +1,6 @@
+pnpm exec lint-staged
+
+# Run code quality check as part of pre-commit
+pnpm -s run typecheck
+pnpm -s run lint
+pnpm -s run test

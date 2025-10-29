@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    /* Not transpiling with TypeScript */
+    "noEmit": true,
+
+    /* Not running in the DOM */
+    "lib": ["es2022"],
+
+    /* Test environment types */
+    "types": ["vitest/globals", "node"]
+  },
+  "include": [
+    "**/*.{test,spec}.?(c|m)[jt]s?(x)",
+    "src/**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
