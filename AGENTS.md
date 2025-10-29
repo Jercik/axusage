@@ -46,6 +46,7 @@ email.bulkSend(
 
 The functional core functions can now be easily tested with sample data and reused for different purposes without modification.
 
+
 ---
 
 # Rule: Use git-info for Repository Queries
@@ -99,38 +100,40 @@ git-info worktrees --json
 
 | Question                            | Command                                                                          |
 | ----------------------------------- | -------------------------------------------------------------------------------- |
-| **Repository & Branch State**       |
+| **Repository & Branch State**       |                                                                                  |
 | What branch am I on?                | `git-info status --json \| jq -r '.branch.current'`                              |
 | Is working tree clean?              | `git-info status --json \| jq '.workingTree.isClean'`                            |
 | What's the default branch?          | `git-info default-branch`                                                        |
 | Am I on the default branch?         | `git-info status --json \| jq '.branch.isDefault'`                               |
-| **Branch Tracking**                 |
+| **Branch Tracking**                 |                                                                                  |
 | Does branch exist locally/remotely? | `git-info branch mybranch --json \| jq '.exists'`                                |
 | How many commits ahead/behind?      | `git-info branch --json \| jq '.tracking \| {ahead, behind}'`                    |
 | Can I fast-forward merge?           | `git-info diff-range main --json \| jq '.fastForwardable'`                       |
-| **Pull Requests**                   |
+| **Pull Requests**                   |                                                                                  |
 | Does PR exist for this branch?      | `git-info pr --json \| jq '.exists'`                                             |
 | Is PR approved?                     | `git-info pr --json \| jq '.reviews.approved > 0'`                               |
 | Are CI checks passing?              | `git-info pr --json \| jq '.checks.failing == 0'`                                |
-| **Commits & Changes**               |
+| **Commits & Changes**               |                                                                                  |
 | How many commits since main?        | `git-info diff-range --json \| jq '.commits.count'`                              |
 | What files changed?                 | `git-info diff-range --json \| jq '.files'`                                      |
 | Are commits conventional?           | `git-info diff-range --json \| jq '[.commits.messages[].isConventional] \| all'` |
-| **Worktrees**                       |
+| **Worktrees**                       |                                                                                  |
 | List all worktrees                  | `git-info worktrees --json`                                                      |
 | Find worktree by issue ID           | `git-info worktrees --issue-id NODE-123 --json`                                  |
 | Which worktrees have changes?       | `git-info worktrees --uncommitted-only --json`                                   |
-| **Pre-flight Checks**               |
+| **Pre-flight Checks**               |                                                                                  |
 | Is GitHub CLI authenticated?        | `git-info validate --json \| jq '.ghAuthenticated'`                              |
 | Can I create a PR?                  | `git-info validate --json \| jq '.errors \| length == 0'`                        |
 
 Use git-info for **reading** repository state. Use regular git commands for **modifying** it.
+
 
 ---
 
 # Rule: Ground Facts with Perplexity
 
 Verify facts with Perplexity before changing code or making claims. Use `mcp__perplexity__lookup` for quick, high‑confidence checks of specifics (API signatures, CLI flags and defaults, config keys, version compatibility). Use `mcp__perplexity__answer` when you’re uncertain, need comparisons or trade‑offs, or when a lookup result contradicts your expectation—ask focused follow‑ups and prefer official docs. If verification stays ambiguous, narrow the claim, mark assumptions explicitly, or ask for clarification; do not proceed on guesswork, especially for task‑critical or security‑sensitive decisions. Perplexity is fast and cheap—err on the side of overuse; a quick lookup costs far less than rework. When you rely on Perplexity, add a short source‑backed note to your status update.
+
 
 ---
 
@@ -144,6 +147,7 @@ git mv file.js src/utils/file.js            # Move to directory
 git mv readme.md README.md                  # Case-only change
 for f in *.test.js; do git mv "$f" tests/; done  # Multiple files (use shell loop)
 ```
+
 
 ---
 
@@ -266,6 +270,7 @@ execFile("grep", [userInput, "data.txt"], (error, stdout) => {
 
 Consider security implications, especially with user-provided inputs to avoid shell injection.
 
+
 ---
 
 # Rule: Dynamic Imports
@@ -282,6 +287,7 @@ export async function loadAnalytics() {
 }
 ```
 
+
 ---
 
 # Rule: Import Metadata from package.json
@@ -297,6 +303,7 @@ const program = new Command()
   .version(packageJson.version);
 ```
 
+
 ---
 
 # Rule: Package.json Imports
@@ -311,6 +318,7 @@ Use `package.json` "imports" field with `#` prefixes to create stable internal m
   }
 }
 ```
+
 
 ---
 
@@ -349,6 +357,7 @@ List comment IDs for a PR:
 pr-comments 123
 pr-comments 123 --json  # For parsing
 ```
+
 
 ---
 
@@ -392,6 +401,7 @@ const youSayGoodbyeISayHello = <TInput extends "hello" | "goodbye">(
 
 Outside of generic functions, use `any` extremely sparingly.
 
+
 ---
 
 # Rule: Default Exports
@@ -432,6 +442,7 @@ export default function MyPage() {
   return <div>Hello</div>;
 }
 ```
+
 
 ---
 
@@ -505,6 +516,7 @@ function Button(props: ButtonProps) {
 }
 ```
 
+
 ---
 
 # Rule: Enums Alternatives
@@ -552,6 +564,7 @@ enum Direction {
 Object.keys(Direction).length; // 8
 ```
 
+
 ---
 
 # Rule: Error Result Types
@@ -592,6 +605,7 @@ if (result.ok) {
 }
 ```
 
+
 ---
 
 # Rule: Import Type
@@ -619,6 +633,7 @@ import { type User } from "./user";
 // After transpilation
 import "./user";
 ```
+
 
 ---
 
@@ -658,6 +673,7 @@ interface C extends A, B {
 }
 ```
 
+
 ---
 
 # Rule: JSDoc Comments
@@ -680,6 +696,7 @@ const subtract = (a: number, b: number) => a - b;
 const add = (a: number, b: number) => a + b;
 ```
 
+
 ---
 
 # Rule: No Barrel Files
@@ -696,6 +713,7 @@ export { TabList } from "./tab-list";
 // Prefer direct import
 import { TabList } from "#components/tab/tab-list";
 ```
+
 
 ---
 
@@ -720,6 +738,7 @@ const arr: string[] = [];
 // Without it, value will be `string`
 const value = arr[0];
 ```
+
 
 ---
 
@@ -751,13 +770,43 @@ const func = (options: AuthOptions) => {
 };
 ```
 
-In React props, use defaults: `size?: 'md' | 'lg' = 'md'`.
+## Exception: React Props with Defaults
+
+Optional properties ARE acceptable in React props when combined with default parameters in the function signature:
+
+```ts
+// Type with optional property
+type ButtonProps = {
+  variant?: 'solid' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+};
+
+// Function parameter provides the default
+function Button({ variant = 'solid', size = 'md' }: ButtonProps) {
+  // variant and size are guaranteed to have values here
+  return <button className={`${variant} ${size}`} />;
+}
+```
+
+This pattern is safe because:
+
+- The default parameter ensures the value is never undefined inside the component
+- Omitting the prop at the call site is intentional and clear: `<Button />`
+- The default value is documented in one place (the function signature)
+
+Avoid this pattern for:
+
+- Non-React function parameters where callers might forget required config
+- Props without sensible defaults that should force explicit decisions
+- Situations where forgetting to pass the prop would cause bugs
+
 
 ---
 
 # Rule: Package Manager Detection
 
 Prefer the package.json "packageManager" field to determine the intended package manager (and version); if missing, fall back to lockfiles (pnpm-lock.yaml, package-lock.json, yarn.lock, bun.lockb), otherwise default to npm. On conflicts, trust "packageManager" and warn; in monorepos, read the nearest package.json for the targeted workspace.
+
 
 ---
 
@@ -770,6 +819,7 @@ pnpm exec tsc --noEmit    # ✅ Uses local package
 npx tsc --noEmit          # ✅ Uses local package
 pnpx tsc --noEmit         # ❌ Downloads from registry, ignores local
 ```
+
 
 ---
 
@@ -805,6 +855,7 @@ const user: User = {
 user.id = "2"; // Error
 ```
 
+
 ---
 
 # Rule: Return Types
@@ -830,6 +881,7 @@ const MyComponent = () => {
 ```
 
 For React hooks returning objects, annotate: `(): { state: string; }`.
+
 
 ---
 
@@ -899,6 +951,7 @@ TypeScript prioritizes files using this hierarchy:
 **Key principle**: If a file matches both `include` and `exclude`, it is **excluded**. Use `exclude` to filter out unwanted files from broad `include` patterns.
 
 **Exception**: Files referenced via `import` statements or triple-slash directives (`/// <reference path="..." />`) can be included even if they match `exclude` patterns
+
 
 ---
 
