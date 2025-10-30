@@ -3,8 +3,8 @@
 import { config } from "dotenv";
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
-import { usageCommand } from "./commands/usage.js";
-import { getAvailableServices } from "./services/registry.js";
+import { usageCommand } from "./commands/usage-command.js";
+import { getAvailableServices } from "./services/service-adapter-registry.js";
 
 // Load environment variables from .env file
 config();

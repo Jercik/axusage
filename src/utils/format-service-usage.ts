@@ -1,5 +1,7 @@
 import chalk from "chalk";
 import type { ServiceUsageData, UsageWindow } from "../types/domain.js";
+import { calculateUsageRate } from "./calculate-usage-rate.js";
+import { classifyUsageRate } from "./classify-usage-rate.js";
 
 /**
  * Formats a utilization value as a percentage string
@@ -16,29 +18,6 @@ function formatResetTime(date: Date): string {
 }
 
 /**
- * Calculates usage rate based on time elapsed vs usage consumed
- */
-function calculateUsageRate(
-  utilization: number,
-  resetsAt: Date,
-  periodDurationMs: number,
-): number {
-  const now = Date.now();
-  const resetTime = resetsAt.getTime();
-  const periodStart = resetTime - periodDurationMs;
-
-  const elapsedTime = now - periodStart;
-  const elapsedPercentage = (elapsedTime / periodDurationMs) * 100;
-
-  // Avoid division by zero
-  if (elapsedPercentage <= 0) return 0;
-
-  // Usage rate: how much we're using compared to expected
-  // Rate = actual_usage / expected_usage
-  return utilization / elapsedPercentage;
-}
-
-/**
  * Gets color for utilization based on usage rate
  * Green: on track or under (rate ≤ 1.0)
  * Yellow: slightly over budget (1.0 < rate ≤ 1.5)
@@ -50,9 +29,9 @@ function getUtilizationColor(
   periodDurationMs: number,
 ): (text: string) => string {
   const rate = calculateUsageRate(utilization, resetsAt, periodDurationMs);
-
-  if (rate > 1.5) return chalk.red;
-  if (rate > 1.0) return chalk.yellow;
+  const bucket = classifyUsageRate(rate);
+  if (bucket === "red") return chalk.red;
+  if (bucket === "yellow") return chalk.yellow;
   return chalk.green;
 }
 

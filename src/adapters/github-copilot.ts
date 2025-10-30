@@ -5,100 +5,12 @@ import type {
   Result,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
-import type { GitHubCopilotUsageResponse } from "../types/githubCopilot.js";
-import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "../types/githubCopilot.js";
+import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "../types/github-copilot.js";
+import { toServiceUsageData } from "./parse-github-copilot-usage.js";
 
 const API_URL = "https://github.com/github-copilot/chat/entitlement";
 
-/**
- * Calculates the reset date as a Date object
- * GitHub returns date in "YYYY-MM-DD" format
- */
-function parseResetDate(resetDateString: string): Date {
-  const parts = resetDateString.split("-");
-
-  if (parts.length !== 3) {
-    throw new Error(`Invalid reset date format: ${resetDateString}`);
-  }
-
-  const [yearString, monthString, dayString] = parts;
-
-  if (!yearString || !monthString || !dayString) {
-    throw new Error(`Invalid reset date components: ${resetDateString}`);
-  }
-
-  const year = Number(yearString);
-  const month = Number(monthString);
-  const day = Number(dayString);
-
-  if (
-    Number.isNaN(year) ||
-    Number.isNaN(month) ||
-    Number.isNaN(day) ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31
-  ) {
-    throw new Error(`Invalid reset date components: ${resetDateString}`);
-  }
-
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-}
-
-/**
- * Calculates the period duration for monthly billing
- * GitHub's monthly quotas reset on a specific date each month.
- * For a reset date like "2025-11-01", the billing period runs from
- * the same date in the previous month (e.g., "2025-10-01") to the reset date.
- * This represents a rolling monthly window, not a calendar month.
- */
-function calculatePeriodDuration(resetDate: Date): number {
-  const periodEnd = resetDate.getTime();
-  const periodStart = new Date(
-    Date.UTC(
-      resetDate.getUTCFullYear(),
-      resetDate.getUTCMonth() - 1,
-      resetDate.getUTCDate(),
-      0,
-      0,
-      0,
-    ),
-  ).getTime();
-
-  return Math.max(periodEnd - periodStart, 0);
-}
-
-/**
- * Converts GitHub Copilot response to common domain model
- */
-function toServiceUsageData(
-  response: GitHubCopilotUsageResponse,
-): ServiceUsageData {
-  const resetDate = parseResetDate(response.quotas.resetDate);
-  const periodDurationMs = calculatePeriodDuration(resetDate);
-
-  // Calculate utilization percentage (how much has been used)
-  const used =
-    response.quotas.limits.premiumInteractions -
-    response.quotas.remaining.premiumInteractions;
-  const utilization = (used / response.quotas.limits.premiumInteractions) * 100;
-
-  return {
-    service: "GitHub Copilot",
-    planType: response.plan,
-    windows: [
-      {
-        name: "Monthly Premium Interactions",
-        utilization: Math.round(utilization * 100) / 100, // Round to 2 decimal places
-        resetsAt: resetDate,
-        periodDurationMs,
-      },
-    ],
-    // Note: metadata is optional and has a specific structure in the domain type
-    // We could extend the domain type if we need to store more Copilot-specific data
-  };
-}
+/** Functional core is extracted to ./parse-github-copilot-usage.ts */
 
 /**
  * GitHub Copilot service adapter
