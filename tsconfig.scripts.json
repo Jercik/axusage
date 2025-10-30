@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    /* Scripts are executed with tsx, no output needed */
+    "noEmit": true,
+
+    /* Running in Node.js */
+    "lib": ["es2022"]
+  },
+  "include": ["scripts/**/*.ts"],
+  "exclude": ["node_modules"]
+}
