@@ -5,8 +5,13 @@ export function parseThreshold(args: string[]): number {
   const arg = args.find((a) => a.startsWith("--threshold="));
   if (!arg) return 50;
   const value = arg.split("=")[1];
-  if (!value)
+  // Be explicit about undefined/empty string to avoid relying on generic falsy checks
+  if (value === undefined) {
     throw new Error("--threshold requires a value (e.g., --threshold=50)");
+  }
+  if (value.trim() === "") {
+    throw new Error("--threshold requires a value (e.g., --threshold=50)");
+  }
   const threshold = Number(value);
   if (Number.isNaN(threshold) || threshold <= 0) {
     throw new Error("--threshold must be a positive number");
