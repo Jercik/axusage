@@ -43,6 +43,10 @@ export function parseResetDate(resetDateString: string): Date {
  * date and clamping the day to the last valid day of that previous
  * month. This handles edge cases like Jan 31 → Feb 28/29 where the
  * target month has fewer days than the reset date's day component.
+ *
+ * Example:
+ *   For resetDate = 2025-03-31, calculates duration from 2025-02-28 (clamped)
+ *   to 2025-03-31.
  */
 export function calculatePeriodDuration(resetDate: Date): number {
   const periodEnd = resetDate.getTime();
