@@ -193,12 +193,13 @@ className={twMerge('flex gap-3', className)}
 Reply to an existing top-level comment (cannot reply to replies):
 
 ```bash
-pr-review-reply 456789 'Good catch, I'll fix this'
+pr-review-reply 456789 'Good catch, I'\''ll fix this'  # Escape apostrophe in single quotes
+pr-review-reply 456789 'Good catch, I will fix this'   # Or avoid contractions
 pr-review-reply 456789 -f reply.txt
 pr-review-reply 456789 'Thanks!' --pr 123  # Specify PR number to speed up search
 ```
 
-**Important**: Always use **single quotes** around Markdown content to preserve backticks and code fences. Double quotes trigger command substitution and will break backticked text. For multiline replies with code blocks:
+**Important**: Always use **single quotes** around Markdown content to preserve backticks and code fences. Double quotes trigger shell command substitution (`$(...)` and backticks), which will break backticked text and can execute unintended commands. For multiline replies with code blocks:
 
 ````bash
 pr-review-reply 123 'Fixed in commit abc123.
