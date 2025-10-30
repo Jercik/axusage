@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+Date: Wed, 29 Oct 2025 09:13:23 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Content-Encoding: gzip
+request-id: req_011CUbEV5k88FXPRQReFvEVe
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+anthropic-organization-id: 47cb48ae-2e99-4dce-9ae1-5cf5a757dceb
+x-envoy-upstream-service-time: 88
+via: 1.1 google
+cf-cache-status: DYNAMIC
+X-Robots-Tag: none
+Server: cloudflare
+CF-RAY: 99618e7e9c095d5a-WAW
+
+{
+  "five_hour": {
+    "utilization": 1,
+    "resets_at": "2025-10-29T13:00:00.123749+00:00"
+  },
+  "seven_day": {
+    "utilization": 16,
+    "resets_at": "2025-10-30T08:00:00.123769+00:00"
+  },
+  "seven_day_oauth_apps": null,
+  "seven_day_opus": {
+    "utilization": 28,
+    "resets_at": "2025-11-01T16:00:00.123777+00:00"
+  }
+}
