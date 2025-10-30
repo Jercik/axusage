@@ -15,22 +15,54 @@ const API_URL = "https://github.com/github-copilot/chat/entitlement";
  * GitHub returns date in "YYYY-MM-DD" format
  */
 function parseResetDate(resetDateString: string): Date {
-  // Parse as UTC midnight on the reset date
-  const parts = resetDateString.split("-").map(Number);
-  const year = parts[0] ?? 2025;
-  const month = parts[1] ?? 1;
-  const day = parts[2] ?? 1;
+  const parts = resetDateString.split("-");
+
+  if (parts.length !== 3) {
+    throw new Error(`Invalid reset date format: ${resetDateString}`);
+  }
+
+  const [yearString, monthString, dayString] = parts;
+
+  if (!yearString || !monthString || !dayString) {
+    throw new Error(`Invalid reset date components: ${resetDateString}`);
+  }
+
+  const year = Number(yearString);
+  const month = Number(monthString);
+  const day = Number(dayString);
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    throw new Error(`Invalid reset date components: ${resetDateString}`);
+  }
+
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
 }
 
 /**
- * Calculates the period duration (assumes monthly billing cycle)
+ * Calculates the period duration using the provided reset date
  */
-function calculatePeriodDuration(): number {
-  const now = new Date();
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return firstOfNextMonth.getTime() - firstOfMonth.getTime();
+function calculatePeriodDuration(resetDate: Date): number {
+  const periodEnd = resetDate.getTime();
+  const periodStart = new Date(
+    Date.UTC(
+      resetDate.getUTCFullYear(),
+      resetDate.getUTCMonth() - 1,
+      resetDate.getUTCDate(),
+      0,
+      0,
+      0,
+    ),
+  ).getTime();
+
+  return Math.max(periodEnd - periodStart, 0);
 }
 
 /**
@@ -40,7 +72,7 @@ function toServiceUsageData(
   response: GitHubCopilotUsageResponse,
 ): ServiceUsageData {
   const resetDate = parseResetDate(response.quotas.resetDate);
-  const periodDurationMs = calculatePeriodDuration();
+  const periodDurationMs = calculatePeriodDuration(resetDate);
 
   // Calculate utilization percentage (how much has been used)
   const used =
@@ -88,7 +120,8 @@ export const githubCopilotAdapter: ServiceAdapter = {
           "content-type": "application/json",
           "x-requested-with": "XMLHttpRequest",
           "github-verified-fetch": "true",
-          "user-agent": "Mozilla/5.0 (compatible; AgentUsageCLI/1.0)",
+          "user-agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
           cookie: `user_session=${sessionToken}`,
         },
       });
@@ -134,10 +167,23 @@ export const githubCopilotAdapter: ServiceAdapter = {
         };
       }
 
-      return {
-        ok: true,
-        value: toServiceUsageData(parseResult.data),
-      };
+      try {
+        return {
+          ok: true,
+          value: toServiceUsageData(parseResult.data),
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          error: new ApiError(
+            error instanceof Error
+              ? error.message
+              : "Unable to parse GitHub Copilot reset date",
+            response.status,
+            parseResult.data.quotas.resetDate,
+          ),
+        };
+      }
     } catch (error) {
       return {
         ok: false,

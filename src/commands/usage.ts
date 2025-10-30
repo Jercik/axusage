@@ -7,6 +7,27 @@ import {
 import type { ServiceUsageData, Result } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 
+const ALL_SERVICES = ["claude", "chatgpt", "github-copilot"] as const;
+type KnownService = (typeof ALL_SERVICES)[number];
+
+const ENV_VAR_CANDIDATES = {
+  claude: ["CLAUDE_ACCESS_TOKEN"],
+  chatgpt: ["CHATGPT_ACCESS_TOKEN"],
+  "github-copilot": ["GITHUB_COPILOT_SESSION_TOKEN"],
+} as const satisfies Record<string, readonly string[]>;
+
+function isKnownService(service: string): service is KnownService {
+  return (ALL_SERVICES as readonly string[]).includes(service);
+}
+
+function getEnvVarCandidates(service: string): readonly string[] {
+  const normalized = service.toLowerCase();
+  if (isKnownService(normalized)) {
+    return ENV_VAR_CANDIDATES[normalized];
+  }
+  return [`${service.toUpperCase()}_ACCESS_TOKEN`];
+}
+
 type UsageCommandOptions = {
   readonly service?: string;
   readonly token?: string;
@@ -25,16 +46,7 @@ function getAccessToken(
     return options.token;
   }
 
-  // Environment variable candidates by service
-  const envVarCandidates: Record<string, readonly string[]> = {
-    claude: ["CLAUDE_ACCESS_TOKEN"],
-    chatgpt: ["CHATGPT_ACCESS_TOKEN"],
-    "github-copilot": ["GITHUB_COPILOT_SESSION_TOKEN"],
-  } as const;
-
-  const candidates =
-    envVarCandidates[service.toLowerCase()] ??
-    ([`${service.toUpperCase()}_ACCESS_TOKEN`] as const);
+  const candidates = getEnvVarCandidates(service);
 
   for (const name of candidates) {
     const value = process.env[name];
@@ -62,14 +74,7 @@ async function fetchServiceUsage(
   const accessToken = getAccessToken(serviceName, options);
 
   if (!accessToken) {
-    const envVarCandidates: Record<string, readonly string[]> = {
-      claude: ["CLAUDE_ACCESS_TOKEN"],
-      chatgpt: ["CHATGPT_ACCESS_TOKEN"],
-      "github-copilot": ["GITHUB_COPILOT_SESSION_TOKEN"],
-    } as const;
-    const candidates =
-      envVarCandidates[serviceName.toLowerCase()] ??
-      ([`${serviceName.toUpperCase()}_ACCESS_TOKEN`] as const);
+    const candidates = getEnvVarCandidates(serviceName);
     const display = candidates.join(" or ");
     return {
       ok: false,
@@ -88,15 +93,13 @@ async function fetchServiceUsage(
 export async function usageCommand(
   options: UsageCommandOptions,
 ): Promise<void> {
-  // Default to all three services when no specific service is provided
-  const servicesToQuery = options.service
-    ? [options.service]
-    : ["claude", "chatgpt", "github-copilot"];
+  const normalizedService = options.service?.toLowerCase();
 
-  // Special handling for "all" keyword
-  if (options.service === "all") {
-    servicesToQuery.length = 0;
-    servicesToQuery.push("claude", "chatgpt", "github-copilot");
+  let servicesToQuery: string[];
+  if (!options.service || normalizedService === "all") {
+    servicesToQuery = [...ALL_SERVICES];
+  } else {
+    servicesToQuery = [options.service];
   }
 
   // Fetch usage data from all services in parallel
@@ -142,21 +145,32 @@ export async function usageCommand(
   }
 
   // Display results
+  const hasPartialFailures = errors.length > 0;
+
   if (options.json) {
-    // For JSON output, return an array if multiple services, single object if one
-    if (successes.length === 1) {
-      const firstSuccess = successes[0];
-      if (firstSuccess) {
-        console.log(formatServiceUsageDataAsJson(firstSuccess, options.window));
-      }
+    const serialize = (data: ServiceUsageData) =>
+      JSON.parse(formatServiceUsageDataAsJson(data, options.window));
+
+    const [singleSuccess] = successes;
+
+    if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
+      console.log(formatServiceUsageDataAsJson(singleSuccess, options.window));
     } else {
-      const jsonResults = successes.map((data) => {
-        const parsed = JSON.parse(
-          formatServiceUsageDataAsJson(data, options.window),
-        );
-        return parsed;
-      });
-      console.log(JSON.stringify(jsonResults, null, 2));
+      const payload =
+        successes.length === 1 && singleSuccess
+          ? serialize(singleSuccess)
+          : successes.map(serialize);
+      const output = hasPartialFailures
+        ? {
+            results: payload,
+            errors: errors.map(({ service, error }) => ({
+              service,
+              message: error.message,
+              status: error.status ?? null,
+            })),
+          }
+        : payload;
+      console.log(JSON.stringify(output, null, 2));
     }
   } else {
     // For human-readable output, display each service's results
@@ -167,5 +181,9 @@ export async function usageCommand(
       }
       console.log(formatServiceUsageData(data));
     }
+  }
+
+  if (hasPartialFailures) {
+    process.exitCode = 2;
   }
 }

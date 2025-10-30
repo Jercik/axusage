@@ -24,9 +24,9 @@ node bin/agent-usage
 
 1. Open [ChatGPT](https://chatgpt.com) → DevTools (F12) → Network tab
 2. Find any `backend-api/*` request → Request Headers
-3. Copy the complete `Authorization` header value (starts with `eyJ`, ~1000 chars)
-   - Right-click → "Copy value" to avoid truncation
-4. Add to `.env` as `CHATGPT_ACCESS_TOKEN` (without "Bearer " prefix)
+3. Copy the JWT token portion from the `Authorization` header (the string after `Bearer `, starts with `eyJ`, ~1000 chars)
+   - Right-click → "Copy value" to avoid truncation, then remove the leading `Bearer ` prefix
+4. Add to `.env` as `CHATGPT_ACCESS_TOKEN`
 
 ### GitHub Copilot
 
@@ -52,6 +52,8 @@ node bin/agent-usage --service claude --json
 # Override token
 node bin/agent-usage --service claude --token "your_token"
 ```
+
+> ℹ️ `pnpm run start` triggers a clean rebuild before executing the CLI. The shorter `pnpm run usage` script skips the rebuild step and is intended only when `dist/` is already up to date.
 
 ## Output
 

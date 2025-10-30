@@ -23,7 +23,7 @@ const ChatGPTRateLimit = z.object({
 export const ChatGPTUsageResponse = z.object({
   plan_type: z.string(),
   rate_limit: ChatGPTRateLimit,
-  credits: z.any().nullable(),
+  credits: z.unknown().nullable(),
 });
 
 export type ChatGPTUsageResponse = z.infer<typeof ChatGPTUsageResponse>;
