@@ -1,92 +1,15 @@
 import chalk from "chalk";
-import { getServiceAdapter } from "../services/registry.js";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
   toJsonObject,
-} from "../utils/format-common.js";
-import type { ServiceUsageData, Result } from "../types/domain.js";
-import { ApiError } from "../types/domain.js";
-
-const ALL_SERVICES = ["claude", "chatgpt", "github-copilot"] as const;
-type KnownService = (typeof ALL_SERVICES)[number];
-
-const ENV_VAR_CANDIDATES = {
-  claude: ["CLAUDE_ACCESS_TOKEN"],
-  chatgpt: ["CHATGPT_ACCESS_TOKEN"],
-  "github-copilot": ["GITHUB_COPILOT_SESSION_TOKEN"],
-} as const satisfies Record<string, readonly string[]>;
-
-function isKnownService(service: string): service is KnownService {
-  return (ALL_SERVICES as readonly string[]).includes(service);
-}
-
-function getEnvVarCandidates(service: string): readonly string[] {
-  const normalized = service.toLowerCase();
-  if (isKnownService(normalized)) {
-    return ENV_VAR_CANDIDATES[normalized];
-  }
-  return [`${service.toUpperCase()}_ACCESS_TOKEN`];
-}
-
-type UsageCommandOptions = {
-  readonly service?: string;
-  readonly token?: string;
-  readonly json?: boolean;
-  readonly window?: string;
-};
-
-/**
- * Gets the access token for a specific service
- */
-function getAccessToken(
-  service: string,
-  options: UsageCommandOptions,
-): string | undefined {
-  if (options.token) {
-    return options.token;
-  }
-
-  const candidates = getEnvVarCandidates(service);
-
-  for (const name of candidates) {
-    const value = process.env[name];
-    if (value) return value;
-  }
-  return undefined;
-}
-
-/**
- * Fetches usage data for a single service
- */
-async function fetchServiceUsage(
-  serviceName: string,
-  options: UsageCommandOptions,
-): Promise<Result<ServiceUsageData, ApiError>> {
-  const adapter = getServiceAdapter(serviceName);
-
-  if (!adapter) {
-    return {
-      ok: false,
-      error: new ApiError(`Unknown service "${serviceName}"`),
-    };
-  }
-
-  const accessToken = getAccessToken(serviceName, options);
-
-  if (!accessToken) {
-    const candidates = getEnvVarCandidates(serviceName);
-    const display = candidates.join(" or ");
-    return {
-      ok: false,
-      error: new ApiError(`${display} is not set`),
-    };
-  }
-
-  return await adapter.fetchUsage({
-    accessToken,
-  });
-}
+} from "../utils/format-service-usage.js";
+import type { ServiceUsageData, ApiError } from "../types/domain.js";
+import type { UsageCommandOptions } from "./fetch-service-usage.js";
+import {
+  fetchServiceUsage,
+  selectServicesToQuery,
+} from "./fetch-service-usage.js";
 
 /**
  * Executes the usage command
@@ -94,14 +17,7 @@ async function fetchServiceUsage(
 export async function usageCommand(
   options: UsageCommandOptions,
 ): Promise<void> {
-  const normalizedService = options.service?.toLowerCase();
-
-  let servicesToQuery: string[];
-  if (!options.service || normalizedService === "all") {
-    servicesToQuery = [...ALL_SERVICES];
-  } else {
-    servicesToQuery = [options.service];
-  }
+  const servicesToQuery = selectServicesToQuery(options.service);
 
   // Fetch usage data from all services in parallel
   const results = await Promise.all(

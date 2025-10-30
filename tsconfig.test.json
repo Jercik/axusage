@@ -8,8 +8,15 @@
     "lib": ["es2022"],
 
     /* Test environment types */
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["**/*.test.*", "**/*.spec.*", "types/**/*.d.ts"],
+  "include": [
+    "**/*.test.*",
+    "**/*.spec.*",
+    "types/**/*.d.ts",
+    "src/**/*.ts",
+    "scripts/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

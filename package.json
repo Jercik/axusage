@@ -35,7 +35,8 @@
     "test:coverage": "vitest run --coverage",
     "commitlint:check": "commitlint --from HEAD~20 --to HEAD --verbose",
     "knip": "knip",
-    "fta": "fta ."
+    "fta": "fta . --json",
+    "fta:check": "node --experimental-strip-types scripts/check-fta.ts"
   },
   "keywords": [],
   "packageManager": "pnpm@10.20.0",
