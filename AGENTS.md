@@ -1,156 +1,3 @@
-# AGENTS.md
-
-To modify rules, edit the source ".md" files and run "sync-rules".
-
-# Rule: Functional Core, Imperative Shell
-
-Separate business logic from side effects by organizing code into a functional core and an imperative shell. The functional core contains pure, testable functions that operate only on provided data, free of I/O operations, database calls, or external state mutations. The imperative shell handles all side effects and orchestrates the functional core to perform business logic.
-
-This separation improves testability, maintainability, and reusability. Core logic can be tested in isolation without mocking external dependencies, and the imperative shell can be modified or swapped without changing business logic.
-
-Example of mixed logic and side effects:
-
-```ts
-// Bad: Logic and side effects are mixed
-function sendUserExpiryEmail(): void {
-  for (const user of db.getUsers()) {
-    if (user.subscriptionEndDate > Date.now()) continue;
-    if (user.isFreeTrial) continue;
-    email.send(user.email, "Your account has expired " + user.name + ".");
-  }
-}
-```
-
-Refactored using functional core and imperative shell:
-
-```ts
-// Functional core - pure functions with no side effects
-function getExpiredUsers(users: User[], cutoff: Date): User[] {
-  return users.filter(
-    (user) => user.subscriptionEndDate <= cutoff && !user.isFreeTrial,
-  );
-}
-
-function generateExpiryEmails(users: User[]): Array<[string, string]> {
-  return users.map((user) => [
-    user.email,
-    `Your account has expired ${user.name}.`,
-  ]);
-}
-
-// Imperative shell - handles side effects
-email.bulkSend(
-  generateExpiryEmails(getExpiredUsers(db.getUsers(), Date.now())),
-);
-```
-
-The functional core functions can now be easily tested with sample data and reused for different purposes without modification.
-
-
----
-
-# Rule: Use git-info for Repository Queries
-
-Prefer the `git-info` CLI over manual git/gh command chains for querying git and GitHub repository information. It provides structured JSON output, handles edge cases, and eliminates complex command pipelines.
-
-## Quick Reference
-
-```bash
-# Repository state
-git-info status [--json]                                      # Complete overview
-git-info validate [--json]                                    # Check prerequisites
-
-# Branch information
-git-info branch [branch] [--json] [--issue-id <id>]           # Branch details & PR status
-git-info default-branch [--json]                              # Discover default branch
-
-# Changes & commits
-git-info diff-range [base] [--json] [--head <branch>]         # Analyze commit range (defaults to main..HEAD)
-
-# Worktrees
-git-info worktrees [--json] [--issue-id <id>] [--uncommitted-only]  # List all worktrees
-
-# Pull requests
-git-info pr [branch] [--json]                                 # PR details & review state
-```
-
-## Common Anti-patterns to Replace
-
-```bash
-# ❌ Don't chain commands for branch info
-git branch --show-current && git rev-parse --abbrev-ref @{u} && git rev-list --count @{u}..HEAD
-
-# ✅ Use git-info
-git-info branch --json | jq '.tracking'
-
-# ❌ Don't manually discover default branch
-gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' || echo main
-
-# ✅ Use git-info
-git-info default-branch
-
-# ❌ Don't parse worktree list manually
-git worktree list --porcelain | grep -A1 "worktree" | ...
-
-# ✅ Use git-info
-git-info worktrees --json
-```
-
-## Common Queries
-
-| Question                            | Command                                                                          |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| **Repository & Branch State**       |                                                                                  |
-| What branch am I on?                | `git-info status --json \| jq -r '.branch.current'`                              |
-| Is working tree clean?              | `git-info status --json \| jq '.workingTree.isClean'`                            |
-| What's the default branch?          | `git-info default-branch`                                                        |
-| Am I on the default branch?         | `git-info status --json \| jq '.branch.isDefault'`                               |
-| **Branch Tracking**                 |                                                                                  |
-| Does branch exist locally/remotely? | `git-info branch mybranch --json \| jq '.exists'`                                |
-| How many commits ahead/behind?      | `git-info branch --json \| jq '.tracking \| {ahead, behind}'`                    |
-| Can I fast-forward merge?           | `git-info diff-range main --json \| jq '.fastForwardable'`                       |
-| **Pull Requests**                   |                                                                                  |
-| Does PR exist for this branch?      | `git-info pr --json \| jq '.exists'`                                             |
-| Is PR approved?                     | `git-info pr --json \| jq '.reviews.approved > 0'`                               |
-| Are CI checks passing?              | `git-info pr --json \| jq '.checks.failing == 0'`                                |
-| **Commits & Changes**               |                                                                                  |
-| How many commits since main?        | `git-info diff-range --json \| jq '.commits.count'`                              |
-| What files changed?                 | `git-info diff-range --json \| jq '.files'`                                      |
-| Are commits conventional?           | `git-info diff-range --json \| jq '[.commits.messages[].isConventional] \| all'` |
-| **Worktrees**                       |                                                                                  |
-| List all worktrees                  | `git-info worktrees --json`                                                      |
-| Find worktree by issue ID           | `git-info worktrees --issue-id NODE-123 --json`                                  |
-| Which worktrees have changes?       | `git-info worktrees --uncommitted-only --json`                                   |
-| **Pre-flight Checks**               |                                                                                  |
-| Is GitHub CLI authenticated?        | `git-info validate --json \| jq '.ghAuthenticated'`                              |
-| Can I create a PR?                  | `git-info validate --json \| jq '.errors \| length == 0'`                        |
-
-Use git-info for **reading** repository state. Use regular git commands for **modifying** it.
-
-
----
-
-# Rule: Ground Facts with Perplexity
-
-Verify facts with Perplexity before changing code or making claims. Use `mcp__perplexity__lookup` for quick, high‑confidence checks of specifics (API signatures, CLI flags and defaults, config keys, version compatibility). Use `mcp__perplexity__answer` when you’re uncertain, need comparisons or trade‑offs, or when a lookup result contradicts your expectation—ask focused follow‑ups and prefer official docs. If verification stays ambiguous, narrow the claim, mark assumptions explicitly, or ask for clarification; do not proceed on guesswork, especially for task‑critical or security‑sensitive decisions. Perplexity is fast and cheap—err on the side of overuse; a quick lookup costs far less than rework. When you rely on Perplexity, add a short source‑backed note to your status update.
-
-
----
-
-# Rule: Use Git Mv
-
-Use `git mv <old> <new>` for renaming or moving tracked files in Git. It stages both deletion and addition in one command, preserves history for `git log --follow`, and is the only reliable method for case-only renames on case-insensitive filesystems (Windows/macOS).
-
-```bash
-git mv old-file.js new-file.js              # Simple rename
-git mv file.js src/utils/file.js            # Move to directory
-git mv readme.md README.md                  # Case-only change
-for f in *.test.js; do git mv "$f" tests/; done  # Multiple files (use shell loop)
-```
-
-
----
-
 # Rule: Child Process Selection
 
 When working with the Node.js `node:child_process` module, follow these guidelines to select the appropriate function for executing commands. The choice depends on factors like synchronicity, access to streams, output handling, shell usage, and error management. Always prefer the function that best matches your needs to avoid unnecessary complexity or performance issues.
@@ -346,10 +193,22 @@ className={twMerge('flex gap-3', className)}
 Reply to an existing top-level comment (cannot reply to replies):
 
 ```bash
-pr-review-reply 456789 "Good catch, I'll fix this"
+pr-review-reply 456789 'Good catch, I'\''ll fix this'  # Escape apostrophe in single quotes
+pr-review-reply 456789 'Good catch, I will fix this'   # Or avoid contractions
 pr-review-reply 456789 -f reply.txt
-pr-review-reply 456789 "Thanks!" --pr 123  # Specify PR number to speed up search
+pr-review-reply 456789 'Thanks!' --pr 123  # Specify PR number to speed up search
 ```
+
+**Important**: Always use **single quotes** around Markdown content to preserve backticks and code fences. Double quotes trigger shell command substitution (`$(...)` and backticks), which will break backticked text and can execute unintended commands. For multiline replies with code blocks:
+
+````bash
+pr-review-reply 123 'Fixed in commit abc123.
+
+Code:
+```ts
+if (x) { }
+```' --pr 2 --yes
+````
 
 List comment IDs for a PR:
 
@@ -818,41 +677,6 @@ In pnpm projects, use `pnpm exec` to run locally installed binaries. Do not use 
 pnpm exec tsc --noEmit    # ✅ Uses local package
 npx tsc --noEmit          # ✅ Uses local package
 pnpx tsc --noEmit         # ❌ Downloads from registry, ignores local
-```
-
-
----
-
-# Rule: Readonly Properties
-
-Use `readonly` properties for object types by default. This will prevent accidental mutation at runtime.
-
-Omit `readonly` only when the property is genuinely mutable.
-
-```ts
-// BAD
-type User = {
-  id: string;
-};
-
-const user: User = {
-  id: "1",
-};
-
-user.id = "2";
-```
-
-```ts
-// GOOD
-type User = {
-  readonly id: string;
-};
-
-const user: User = {
-  id: "1",
-};
-
-user.id = "2"; // Error
 ```
 
 
