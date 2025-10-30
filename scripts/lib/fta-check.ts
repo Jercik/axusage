@@ -4,13 +4,12 @@ import type { FtaResult } from "../fta-types.js";
 export function parseThreshold(args: string[]): number {
   const arg = args.find((a) => a.startsWith("--threshold="));
   if (!arg) return 50;
-  const value = arg.split("=")[1];
-  // Be explicit about undefined/empty string to avoid relying on generic falsy checks
-  if (value === undefined) {
-    throw new Error("--threshold requires a value (e.g., --threshold=50)");
-  }
+  const [, value = ""] = arg.split("=");
+  // Check for missing or empty value ("--threshold=" yields empty string)
   if (value.trim() === "") {
-    throw new Error("--threshold requires a value (e.g., --threshold=50)");
+    throw new Error(
+      "--threshold requires a non-empty value (e.g., --threshold=50)",
+    );
   }
   const threshold = Number(value);
   if (Number.isNaN(threshold) || threshold <= 0) {
