@@ -36,6 +36,11 @@ export function parseResetDate(resetDateString: string): Date {
 
 /**
  * Calculates monthly period duration ending at the reset date
+ *
+ * Determines the period start by going back one month from the reset
+ * date and clamping the day to the last valid day of that previous
+ * month. This handles edge cases like Jan 31 → Feb 28/29 where the
+ * target month has fewer days than the reset date's day component.
  */
 export function calculatePeriodDuration(resetDate: Date): number {
   const periodEnd = resetDate.getTime();
