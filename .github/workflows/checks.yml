@@ -28,11 +28,14 @@ jobs:
       - name: Run format check
         run: pnpm format:check
 
-      - name: Run lint
-        run: pnpm lint
+      - name: Run knip
+        run: pnpm knip
 
       - name: Run typecheck
         run: pnpm typecheck
+
+      - name: Run lint
+        run: pnpm lint
 
       - name: Run tests
         run: pnpm test

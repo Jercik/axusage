@@ -3,13 +3,13 @@ import type {
   ServiceConfig,
   ServiceUsageData,
   Result,
-} from "#types/domain";
-import { ApiError } from "#types/domain";
+} from "../types/domain.js";
+import { ApiError } from "../types/domain.js";
 import type {
   ChatGPTUsageResponse,
   ChatGPTRateLimitWindow,
-} from "#types/chatgpt";
-import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "#types/chatgpt";
+} from "../types/chatgpt.js";
+import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "../types/chatgpt.js";
 
 const API_URL = "https://chatgpt.com/backend-api/wham/usage";
 

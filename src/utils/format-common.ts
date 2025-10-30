@@ -1,17 +1,17 @@
 import chalk from "chalk";
-import type { ServiceUsageData, UsageWindow } from "#types/domain";
+import type { ServiceUsageData, UsageWindow } from "../types/domain.js";
 
 /**
  * Formats a utilization value as a percentage string
  */
-export function formatUtilization(utilization: number): string {
+function formatUtilization(utilization: number): string {
   return `${utilization.toFixed(2)}%`;
 }
 
 /**
  * Formats a Date as a human-readable date string
  */
-export function formatResetTime(date: Date): string {
+function formatResetTime(date: Date): string {
   return date.toLocaleString();
 }
 
@@ -59,7 +59,7 @@ function getUtilizationColor(
 /**
  * Formats a single usage window for display
  */
-export function formatUsageWindow(window: UsageWindow): string {
+function formatUsageWindow(window: UsageWindow): string {
   const utilizationStr = formatUtilization(window.utilization);
   const coloredUtilization = getUtilizationColor(
     window.utilization,

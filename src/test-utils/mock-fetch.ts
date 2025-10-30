@@ -1,7 +1,8 @@
 /**
  * Mock fetch implementation for testing
+ * @internal - Only used by withMockFetch below
  */
-export function createMockFetch(
+function createMockFetch(
   responseBody: unknown,
   status = 200,
   statusText = "OK",

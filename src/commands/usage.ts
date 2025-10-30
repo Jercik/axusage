@@ -1,13 +1,13 @@
 import chalk from "chalk";
-import { getServiceAdapter } from "#services/registry";
+import { getServiceAdapter } from "../services/registry.js";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
-} from "#utils/format-common";
-import type { ServiceUsageData, Result } from "#types/domain";
-import { ApiError } from "#types/domain";
+} from "../utils/format-common.js";
+import type { ServiceUsageData, Result } from "../types/domain.js";
+import { ApiError } from "../types/domain.js";
 
-export type UsageCommandOptions = {
+type UsageCommandOptions = {
   readonly service?: string;
   readonly token?: string;
   readonly json?: boolean;

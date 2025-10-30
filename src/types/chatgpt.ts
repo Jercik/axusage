@@ -13,14 +13,12 @@ export const ChatGPTRateLimitWindow = z.object({
 
 export type ChatGPTRateLimitWindow = z.infer<typeof ChatGPTRateLimitWindow>;
 
-export const ChatGPTRateLimit = z.object({
+const ChatGPTRateLimit = z.object({
   allowed: z.boolean(),
   limit_reached: z.boolean(),
   primary_window: ChatGPTRateLimitWindow,
   secondary_window: ChatGPTRateLimitWindow,
 });
-
-export type ChatGPTRateLimit = z.infer<typeof ChatGPTRateLimit>;
 
 export const ChatGPTUsageResponse = z.object({
   plan_type: z.string(),

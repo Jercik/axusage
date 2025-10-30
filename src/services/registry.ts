@@ -1,7 +1,7 @@
-import type { ServiceAdapter } from "#types/domain";
-import { claudeAdapter } from "#adapters/claude";
-import { chatGPTAdapter } from "#adapters/chatgpt";
-import { githubCopilotAdapter } from "#adapters/githubCopilot";
+import type { ServiceAdapter } from "../types/domain.js";
+import { claudeAdapter } from "../adapters/claude.js";
+import { chatGPTAdapter } from "../adapters/chatgpt.js";
+import { githubCopilotAdapter } from "../adapters/githubCopilot.js";
 
 /**
  * Registry of available service adapters

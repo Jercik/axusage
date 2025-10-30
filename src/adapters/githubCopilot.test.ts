@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { githubCopilotAdapter } from "./githubCopilot.js";
 import { withMockFetch } from "../test-utils/mock-fetch.js";
-import type { Result, ServiceUsageData } from "#types/domain";
-import { ApiError } from "#types/domain";
+import type { Result, ServiceUsageData } from "../types/domain.js";
+import { ApiError } from "../types/domain.js";
 
 describe("GitHub Copilot Adapter", () => {
   describe("fetchUsage", () => {

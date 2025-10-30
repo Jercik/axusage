@@ -1,6 +1,10 @@
-pnpm exec lint-staged
+# Format code
+prettier $(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g') --write --ignore-unknown --log-level warn
+git update-index --again
+
 
 # Run code quality check as part of pre-commit
+pnpm -s run knip
 pnpm -s run typecheck
 pnpm -s run lint
 pnpm -s run test

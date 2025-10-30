@@ -3,10 +3,10 @@ import type {
   ServiceConfig,
   ServiceUsageData,
   Result,
-} from "#types/domain";
-import { ApiError } from "#types/domain";
-import type { UsageResponse } from "#types/usage";
-import { UsageResponse as UsageResponseSchema } from "#types/usage";
+} from "../types/domain.js";
+import { ApiError } from "../types/domain.js";
+import type { UsageResponse } from "../types/usage.js";
+import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 
 const API_URL = "https://api.anthropic.com/api/oauth/usage";
 const BETA_VERSION = "oauth-2025-04-20";

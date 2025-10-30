@@ -3,10 +3,10 @@ import type {
   ServiceConfig,
   ServiceUsageData,
   Result,
-} from "#types/domain";
-import { ApiError } from "#types/domain";
-import type { GitHubCopilotUsageResponse } from "#types/githubCopilot";
-import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "#types/githubCopilot";
+} from "../types/domain.js";
+import { ApiError } from "../types/domain.js";
+import type { GitHubCopilotUsageResponse } from "../types/githubCopilot.js";
+import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "../types/githubCopilot.js";
 
 const API_URL = "https://github.com/github-copilot/chat/entitlement";
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { chatGPTAdapter } from "./chatgpt.js";
 import { withMockFetch } from "../test-utils/mock-fetch.js";
-import type { Result, ServiceUsageData, ApiError } from "#types/domain";
+import type { Result, ServiceUsageData, ApiError } from "../types/domain.js";
 
 describe("ChatGPT Adapter", () => {
   describe("fetchUsage", () => {
