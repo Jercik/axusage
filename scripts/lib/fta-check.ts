@@ -2,10 +2,15 @@ import { execSync } from "node:child_process";
 import type { FtaResult } from "../fta-types.js";
 
 export function parseThreshold(args: string[]): number {
-  const arg = args.find((a) => a.startsWith("--threshold="));
+  const arg = args.find((a) => a.startsWith("--threshold"));
   if (!arg) return 50;
+  // Handle cases where '=' or value is missing
+  if (arg === "--threshold" || arg.endsWith("=")) {
+    throw new Error(
+      "--threshold requires a non-empty value (e.g., --threshold=50)",
+    );
+  }
   const [, value = ""] = arg.split("=");
-  // Check for missing or empty value ("--threshold=" yields empty string)
   if (value.trim() === "") {
     throw new Error(
       "--threshold requires a non-empty value (e.g., --threshold=50)",
