@@ -1,6 +1,8 @@
 import type { ServiceUsageData } from "../types/domain.js";
 import type { GitHubCopilotUsageResponse } from "../types/github-copilot.js";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /**
  * Parses GitHub reset date (YYYY-MM-DD) into a UTC Date
  */
@@ -52,7 +54,7 @@ export function calculatePeriodDuration(resetDate: Date): number {
   // First day of current month in UTC
   const firstOfCurrentMonth = Date.UTC(year, month, 1, 0, 0, 0);
   // Last day of previous month: subtract 1 day from first of current month
-  const lastPrevMonthDate = new Date(firstOfCurrentMonth - 24 * 60 * 60 * 1000);
+  const lastPrevMonthDate = new Date(firstOfCurrentMonth - MS_PER_DAY);
   const lastPrevMonthDay = lastPrevMonthDate.getUTCDate();
   const prevMonth = lastPrevMonthDate.getUTCMonth();
   const prevYear = lastPrevMonthDate.getUTCFullYear();
