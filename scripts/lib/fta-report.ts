@@ -1,5 +1,11 @@
 import type { FtaResult } from "../fta-types.js";
 
+function getCrossMark(): string {
+  const flag = (process.env.NO_EMOJI || "").toLowerCase();
+  if (flag === "1" || flag === "true") return "X";
+  return "❌";
+}
+
 export function generateSuggestions(result: FtaResult): string[] {
   const suggestions: string[] = [];
   suggestions.push(
@@ -50,7 +56,7 @@ export function formatViolation(result: FtaResult): string {
     .map((s) => `   - ${s}`)
     .join("\n");
   return `
-❌ ${result.file_name}
+${getCrossMark()} ${result.file_name}
    FTA Score: ${result.fta_score.toFixed(2)} (${result.assessment})
    Lines: ${result.line_count.toString()} | Cyclomatic Complexity: ${result.cyclo.toString()}
 
