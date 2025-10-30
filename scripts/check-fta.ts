@@ -53,44 +53,69 @@ function getViolations(threshold: number): FtaResult[] {
 
 /**
  * Generate improvement suggestions based on metrics
+ *
+ * The FTA (Failure to Analyze) score is best reduced by extracting code into
+ * separate files rather than making small optimizations within the same file.
+ * This is because FTA combines file size, cyclomatic complexity, and Halstead
+ * metrics - all of which are significantly impacted by file boundaries.
+ *
+ * Extracting functionality also creates opportunities to identify and reuse
+ * common patterns across the codebase.
  */
 function generateSuggestions(result: FtaResult): string[] {
   const suggestions: string[] = [];
 
-  if (result.cyclo > 15) {
+  // Primary recommendation: extract to separate files (most effective)
+  suggestions.push(
+    "🎯 Extract functionality into separate files (most effective for reducing FTA)",
+  );
+
+  // Specific extraction suggestions based on metrics
+  if (result.line_count > 100) {
     suggestions.push(
-      `Reduce number of logical paths (cyclomatic complexity: ${result.cyclo.toString()})`,
+      "Identify reusable components/utilities that could be extracted and shared",
     );
-  } else if (result.cyclo > 10) {
-    suggestions.push("Consider simplifying conditional logic");
   }
 
+  if (result.cyclo > 10) {
+    suggestions.push(
+      `Extract complex conditional logic into dedicated modules (cyclomatic: ${result.cyclo.toString()})`,
+    );
+  }
+
+  // File-specific guidance
   if (result.line_count > 300) {
-    suggestions.push("Break down into smaller, focused files");
+    suggestions.push(
+      "This file is too large - split into 3-4 focused modules by responsibility",
+    );
   } else if (result.line_count > 200) {
-    suggestions.push("Consider splitting into multiple files");
+    suggestions.push(
+      "Consider splitting into 2-3 modules by feature or concern",
+    );
   } else if (result.line_count > 100) {
-    suggestions.push("Extract complex logic into separate functions");
+    suggestions.push(
+      "Look for groups of related functions to extract as modules",
+    );
   }
 
   if (result.halstead.difficulty > 40) {
     suggestions.push(
-      "Simplify operator and operand usage (high difficulty score)",
+      `Complex operations detected (difficulty: ${result.halstead.difficulty.toFixed(1)}) - extract into helper functions`,
     );
   }
 
   if (result.halstead.bugs > 1.0) {
     suggestions.push(
-      `Estimated ${result.halstead.bugs.toFixed(2)} bugs - review code carefully`,
+      `High bug probability (${result.halstead.bugs.toFixed(2)}) - split complex logic for better testing`,
     );
   }
 
-  return suggestions.length > 0
-    ? suggestions
-    : [
-        "Break down into smaller, focused functions",
-        "Extract complex logic into separate files",
-      ];
+  // Add note about ineffective approaches
+  suggestions.push(
+    "⚠️ Note: Small refactors within the file won't significantly reduce FTA",
+  );
+
+  return suggestions;
 }
 
 /**
@@ -132,6 +157,16 @@ function printReport(violations: FtaResult[], threshold: number): void {
   console.log(
     "to measure maintainability. Higher scores indicate files that are more difficult to maintain.\n",
   );
+  console.log(
+    "📋 KEY INSIGHT: The most effective way to reduce FTA scores is to EXTRACT functionality",
+  );
+  console.log(
+    "   into separate files. This is an opportunity to identify reusable code that could",
+  );
+  console.log(
+    "   benefit other parts of your codebase. Small optimizations within a file rarely",
+  );
+  console.log("   make a significant impact on the FTA score.\n");
 
   violations.forEach((v, i) => {
     console.log(formatViolation(v));
