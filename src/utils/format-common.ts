@@ -102,48 +102,46 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 }
 
 /**
- * Formats service usage data as JSON
+ * Converts service usage data to a plain JSON-serializable object
  */
-export function formatServiceUsageDataAsJson(
+export function toJsonObject(
   data: ServiceUsageData,
   windowName?: string,
-): string {
+): unknown {
   if (windowName) {
     const window = data.windows.find((w) =>
       w.name.toLowerCase().includes(windowName.toLowerCase()),
     );
     if (window) {
-      return JSON.stringify(
-        {
-          name: window.name,
-          utilization: window.utilization,
-          resetsAt: window.resetsAt.toISOString(),
-          periodDurationMs: window.periodDurationMs,
-        },
-        null,
-        2,
-      );
+      return {
+        name: window.name,
+        utilization: window.utilization,
+        resetsAt: window.resetsAt.toISOString(),
+        periodDurationMs: window.periodDurationMs,
+      };
     }
-    return JSON.stringify(
-      { error: `Window "${windowName}" not found` },
-      null,
-      2,
-    );
+    return { error: `Window "${windowName}" not found` };
   }
 
-  return JSON.stringify(
-    {
-      service: data.service,
-      planType: data.planType,
-      windows: data.windows.map((w) => ({
-        name: w.name,
-        utilization: w.utilization,
-        resetsAt: w.resetsAt.toISOString(),
-        periodDurationMs: w.periodDurationMs,
-      })),
-      metadata: data.metadata,
-    },
-    null,
-    2,
-  );
+  return {
+    service: data.service,
+    planType: data.planType,
+    windows: data.windows.map((w) => ({
+      name: w.name,
+      utilization: w.utilization,
+      resetsAt: w.resetsAt.toISOString(),
+      periodDurationMs: w.periodDurationMs,
+    })),
+    metadata: data.metadata,
+  };
+}
+
+/**
+ * Formats service usage data as JSON string
+ */
+export function formatServiceUsageDataAsJson(
+  data: ServiceUsageData,
+  windowName?: string,
+): string {
+  return JSON.stringify(toJsonObject(data, windowName), null, 2);
 }

@@ -3,6 +3,7 @@ import { getServiceAdapter } from "../services/registry.js";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
+  toJsonObject,
 } from "../utils/format-common.js";
 import type { ServiceUsageData, Result } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
@@ -148,9 +149,6 @@ export async function usageCommand(
   const hasPartialFailures = errors.length > 0;
 
   if (options.json) {
-    const serialize = (data: ServiceUsageData) =>
-      JSON.parse(formatServiceUsageDataAsJson(data, options.window));
-
     const [singleSuccess] = successes;
 
     if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
@@ -158,8 +156,8 @@ export async function usageCommand(
     } else {
       const payload =
         successes.length === 1 && singleSuccess
-          ? serialize(singleSuccess)
-          : successes.map(serialize);
+          ? toJsonObject(singleSuccess, options.window)
+          : successes.map((data) => toJsonObject(data, options.window));
       const output = hasPartialFailures
         ? {
             results: payload,

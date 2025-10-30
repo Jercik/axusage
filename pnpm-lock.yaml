@@ -17,6 +17,9 @@ importers:
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
+      fta-cli:
+        specifier: ^3.0.0
+        version: 3.0.0
       zod:
         specifier: ^4.0.5
         version: 4.1.12
@@ -1103,6 +1106,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  fta-cli@3.0.0:
+    resolution: {integrity: sha512-SBmoqIwbN7PLDmwmrPgjr6Z6/S9jPhNz5TCPmEVFkIaeloc/T2WXLeeXqhG1+C0UQxpOfGrC7CUb4friqbc2kQ==}
+    hasBin: true
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -2755,6 +2762,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  fta-cli@3.0.0: {}
 
   get-caller-file@2.0.5: {}
 

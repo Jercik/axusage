@@ -34,7 +34,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "commitlint:check": "commitlint --from HEAD~20 --to HEAD --verbose",
-    "knip": "knip"
+    "knip": "knip",
+    "fta": "fta ."
   },
   "keywords": [],
   "packageManager": "pnpm@10.20.0",
@@ -45,6 +46,7 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.0",
     "dotenv": "^17.2.3",
+    "fta-cli": "^3.0.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {

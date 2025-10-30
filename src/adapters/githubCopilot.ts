@@ -47,7 +47,11 @@ function parseResetDate(resetDateString: string): Date {
 }
 
 /**
- * Calculates the period duration using the provided reset date
+ * Calculates the period duration for monthly billing
+ * GitHub's monthly quotas reset on a specific date each month.
+ * For a reset date like "2025-11-01", the billing period runs from
+ * the same date in the previous month (e.g., "2025-10-01") to the reset date.
+ * This represents a rolling monthly window, not a calendar month.
  */
 function calculatePeriodDuration(resetDate: Date): number {
   const periodEnd = resetDate.getTime();

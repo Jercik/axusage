@@ -1,0 +1,7 @@
+{
+  "output_limit": 250,
+  "score_cap": 60,
+  "exclude_filenames": ["*.test.{ts,tsx}"],
+  "include_comments": false,
+  "exclude_under": 10
+}
