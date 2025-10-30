@@ -19,6 +19,18 @@
     "erasableSyntaxOnly": true,
 
     /* Node ESM Module Resolution */
-    "module": "NodeNext"
+    "module": "NodeNext",
+
+    /* Path Mappings for Package Imports */
+    "baseUrl": ".",
+    "paths": {
+      "#types/*": ["./src/types/*"],
+      "#api/*": ["./src/api/*"],
+      "#utils/*": ["./src/utils/*"],
+      "#commands/*": ["./src/commands/*"],
+      "#adapters/*": ["./src/adapters/*"],
+      "#services/*": ["./src/services/*"],
+      "#test-utils/*": ["./src/test-utils/*"]
+    }
   }
 }

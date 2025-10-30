@@ -1,0 +1,10 @@
+GET /api/oauth/usage HTTP/1.1
+accept: application/json, text/plain, */*
+accept-encoding: gzip, compress, deflate, br
+anthropic-beta: oauth-2025-04-20
+authorization: Bearer <access-token>
+content-type: application/json
+user-agent: claude-code/2.0.28
+Connection: keep-alive
+Host: api.anthropic.com
+
