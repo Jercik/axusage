@@ -7,6 +7,7 @@ export function calculateUsageRate(
   resetsAt: Date,
   periodDurationMs: number,
 ): number {
+  if (periodDurationMs <= 0) return 0;
   const now = Date.now();
   const resetTime = resetsAt.getTime();
   const periodStart = resetTime - periodDurationMs;
