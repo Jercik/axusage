@@ -10,6 +10,7 @@ describe("claude parsing", () => {
     const resp: UsageResponse = {
       five_hour: { utilization: 1, resets_at: "2025-10-29T00:00:00Z" },
       seven_day: { utilization: 2, resets_at: "2025-10-30T00:00:00Z" },
+      // eslint-disable-next-line unicorn/no-null -- API returns null
       seven_day_oauth_apps: null,
       seven_day_opus: { utilization: 3, resets_at: "2025-11-01T00:00:00Z" },
     };

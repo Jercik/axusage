@@ -16,8 +16,8 @@ describe("GitHub Copilot Adapter", () => {
           },
           remaining: {
             premiumInteractions: 1392,
-            chatPercentage: 100.0,
-            premiumInteractionsPercentage: 92.83266666666667,
+            chatPercentage: 100,
+            premiumInteractionsPercentage: 92.832_666_666_666_67,
           },
           resetDate: "2025-11-01",
           overagesEnabled: false,
@@ -70,7 +70,7 @@ describe("GitHub Copilot Adapter", () => {
           },
           remaining: {
             premiumInteractions: 100,
-            premiumInteractionsPercentage: 5.0,
+            premiumInteractionsPercentage: 5,
           },
           resetDate: "2025-12-01",
         },

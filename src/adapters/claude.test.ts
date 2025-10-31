@@ -16,6 +16,7 @@ describe("Claude Adapter", () => {
           utilization: 17,
           resets_at: "2025-10-30T09:00:00.123769+00:00",
         },
+        // eslint-disable-next-line unicorn/no-null -- API returns null
         seven_day_oauth_apps: null,
         seven_day_opus: {
           utilization: 29,
