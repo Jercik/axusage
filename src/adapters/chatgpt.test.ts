@@ -14,17 +14,18 @@ describe("ChatGPT Adapter", () => {
           limit_reached: false,
           primary_window: {
             used_percent: 0,
-            limit_window_seconds: 17940,
-            reset_after_seconds: 17713,
-            reset_at: 1761749128, // Unix timestamp: 2025-10-29T14:52:08Z
+            limit_window_seconds: 17_940,
+            reset_after_seconds: 17_713,
+            reset_at: 1_761_749_128, // Unix timestamp: 2025-10-29T14:52:08Z
           },
           secondary_window: {
             used_percent: 4,
-            limit_window_seconds: 604740,
-            reset_after_seconds: 340972,
-            reset_at: 1762072387, // Unix timestamp: 2025-11-02T08:53:07Z
+            limit_window_seconds: 604_740,
+            reset_after_seconds: 340_972,
+            reset_at: 1_762_072_387, // Unix timestamp: 2025-11-02T08:53:07Z
           },
         },
+        // eslint-disable-next-line unicorn/no-null -- API returns null
         credits: null,
       };
 
@@ -61,8 +62,8 @@ describe("ChatGPT Adapter", () => {
       expect(primaryWindow).toEqual({
         name: "Primary Window (~5 hours)",
         utilization: 0,
-        resetsAt: new Date(1761749128 * 1000), // Convert Unix timestamp to Date
-        periodDurationMs: 17940 * 1000, // 17,940,000 ms (~4.98 hours)
+        resetsAt: new Date(1_761_749_128 * 1000), // Convert Unix timestamp to Date
+        periodDurationMs: 17_940 * 1000, // 17,940,000 ms (~4.98 hours)
       });
 
       // Check Secondary Window (~7 days)
@@ -70,8 +71,8 @@ describe("ChatGPT Adapter", () => {
       expect(secondaryWindow).toEqual({
         name: "Secondary Window (~7 days)",
         utilization: 4,
-        resetsAt: new Date(1762072387 * 1000), // Convert Unix timestamp to Date
-        periodDurationMs: 604740 * 1000, // 604,740,000 ms (~6.998 days)
+        resetsAt: new Date(1_762_072_387 * 1000), // Convert Unix timestamp to Date
+        periodDurationMs: 604_740 * 1000, // 604,740,000 ms (~6.998 days)
       });
     });
 
@@ -83,15 +84,15 @@ describe("ChatGPT Adapter", () => {
           limit_reached: true,
           primary_window: {
             used_percent: 100,
-            limit_window_seconds: 18000, // Exactly 5 hours
+            limit_window_seconds: 18_000, // Exactly 5 hours
             reset_after_seconds: 3600,
-            reset_at: 1761750000,
+            reset_at: 1_761_750_000,
           },
           secondary_window: {
             used_percent: 75,
-            limit_window_seconds: 604800, // Exactly 7 days
-            reset_after_seconds: 86400,
-            reset_at: 1762080000,
+            limit_window_seconds: 604_800, // Exactly 7 days
+            reset_after_seconds: 86_400,
+            reset_at: 1_762_080_000,
           },
         },
         credits: 0,
@@ -123,8 +124,8 @@ describe("ChatGPT Adapter", () => {
       expect(data.windows[1]?.utilization).toBe(75);
 
       // Verify exact period durations
-      expect(data.windows[0]?.periodDurationMs).toBe(18000000); // Exactly 5 hours
-      expect(data.windows[1]?.periodDurationMs).toBe(604800000); // Exactly 7 days
+      expect(data.windows[0]?.periodDurationMs).toBe(18_000_000); // Exactly 5 hours
+      expect(data.windows[1]?.periodDurationMs).toBe(604_800_000); // Exactly 7 days
     });
 
     it("should handle API errors gracefully", async () => {

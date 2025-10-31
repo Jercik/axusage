@@ -5,6 +5,6 @@ type UsageRateCategory = "green" | "yellow" | "red";
  */
 export function classifyUsageRate(rate: number): UsageRateCategory {
   if (rate > 1.5) return "red";
-  if (rate > 1.0) return "yellow";
+  if (rate > 1) return "yellow";
   return "green";
 }

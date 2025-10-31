@@ -23,13 +23,13 @@ function createMockFetch(
  */
 export function withMockFetch<T>(
   responseBody: unknown,
-  testFn: () => Promise<T>,
+  testFunction: () => Promise<T>,
   status = 200,
 ): Promise<T> {
-  const originalFetch = global.fetch;
-  global.fetch = createMockFetch(responseBody, status);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = createMockFetch(responseBody, status);
 
-  return testFn().finally(() => {
-    global.fetch = originalFetch;
+  return testFunction().finally(() => {
+    globalThis.fetch = originalFetch;
   });
 }

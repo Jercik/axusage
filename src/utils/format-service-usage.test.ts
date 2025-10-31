@@ -24,22 +24,22 @@ describe("format-service-usage toJsonObject", () => {
   };
 
   it("serializes whole object with ISO dates when no windowName provided", () => {
-    const obj = toJsonObject(base) as Record<string, unknown>;
-    expect(obj["service"]).toBe("X");
-    expect(obj["planType"]).toBe("plan");
-    const windows = obj["windows"] as Array<Record<string, unknown>>;
+    const object = toJsonObject(base) as Record<string, unknown>;
+    expect(object["service"]).toBe("X");
+    expect(object["planType"]).toBe("plan");
+    const windows = object["windows"] as Array<Record<string, unknown>>;
     expect(Array.isArray(windows)).toBe(true);
     expect(windows[0]?.["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
   });
 
   it("returns single window when windowName matches (case-insensitive includes)", () => {
-    const obj = toJsonObject(base, "prima") as Record<string, unknown>;
-    expect(obj["name"]).toBe("Primary");
-    expect(obj["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
+    const object = toJsonObject(base, "prima") as Record<string, unknown>;
+    expect(object["name"]).toBe("Primary");
+    expect(object["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
   });
 
   it("returns error object when windowName not found", () => {
-    const obj = toJsonObject(base, "missing") as Record<string, unknown>;
-    expect(Object.hasOwn(obj, "error")).toBe(true);
+    const object = toJsonObject(base, "missing") as Record<string, unknown>;
+    expect(Object.hasOwn(object, "error")).toBe(true);
   });
 });

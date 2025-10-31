@@ -9,14 +9,14 @@ describe("chatgpt parsing", () => {
   it("converts a rate limit window correctly", () => {
     const win = toUsageWindow("Primary", {
       used_percent: 12,
-      limit_window_seconds: 18000,
+      limit_window_seconds: 18_000,
       reset_after_seconds: 3600,
-      reset_at: 1761750000,
+      reset_at: 1_761_750_000,
     } satisfies ChatGPTRateLimitWindow);
     expect(win.name).toBe("Primary");
     expect(win.utilization).toBe(12);
-    expect(win.periodDurationMs).toBe(18000 * 1000);
-    expect(win.resetsAt.getTime()).toBe(1761750000 * 1000);
+    expect(win.periodDurationMs).toBe(18_000 * 1000);
+    expect(win.resetsAt.getTime()).toBe(1_761_750_000 * 1000);
   });
 
   it("maps response to domain model with metadata", () => {
@@ -38,6 +38,7 @@ describe("chatgpt parsing", () => {
           reset_at: 2000,
         },
       },
+      // eslint-disable-next-line unicorn/no-null -- API returns null
       credits: null,
     };
 

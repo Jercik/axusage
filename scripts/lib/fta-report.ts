@@ -7,10 +7,9 @@ function getCrossMark(): string {
 }
 
 export function generateSuggestions(result: FtaResult): string[] {
-  const suggestions: string[] = [];
-  suggestions.push(
+  const suggestions: string[] = [
     "🎯 Extract functionality into separate files (most effective for reducing FTA)",
-  );
+  ];
   if (result.line_count > 100) {
     suggestions.push(
       "Identify reusable components/utilities that could be extracted and shared",
@@ -39,7 +38,7 @@ export function generateSuggestions(result: FtaResult): string[] {
       `Complex operations detected (difficulty: ${result.halstead.difficulty.toFixed(1)}) - extract into helper functions`,
     );
   }
-  if (result.halstead.bugs > 1.0) {
+  if (result.halstead.bugs > 1) {
     suggestions.push(
       `High bug probability (${result.halstead.bugs.toFixed(2)}) - split complex logic for better testing`,
     );
@@ -93,10 +92,10 @@ export function printReport(violations: FtaResult[], threshold: number): void {
   );
   console.log("   make a significant impact on the FTA score.\n");
 
-  violations.forEach((v, i) => {
+  for (const [index, v] of violations.entries()) {
     console.log(formatViolation(v));
-    if (i < violations.length - 1) console.log();
-  });
+    if (index < violations.length - 1) console.log();
+  }
 
   console.log(
     `\nFound ${violations.length.toString()} file(s) exceeding threshold of ${threshold.toString()}`,

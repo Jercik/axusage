@@ -22,7 +22,9 @@ export function isKnownService(service: string): service is KnownService {
   return (ALL_SERVICES as readonly string[]).includes(service);
 }
 
-export function getEnvVarCandidates(service: string): readonly string[] {
+export function getEnvironmentVariableCandidates(
+  service: string,
+): readonly string[] {
   const normalized = service.toLowerCase();
   if (isKnownService(normalized)) {
     return ENV_VAR_CANDIDATES[normalized];
@@ -41,7 +43,7 @@ export function getAccessToken(
   options: UsageCommandOptions,
 ): string | undefined {
   if (options.token) return options.token;
-  const candidates = getEnvVarCandidates(service);
+  const candidates = getEnvironmentVariableCandidates(service);
   for (const name of candidates) {
     const value = process.env[name];
     if (value) return value;
@@ -63,7 +65,7 @@ export async function fetchServiceUsage(
 
   const accessToken = getAccessToken(serviceName, options);
   if (!accessToken) {
-    const candidates = getEnvVarCandidates(serviceName);
+    const candidates = getEnvironmentVariableCandidates(serviceName);
     const display = candidates.join(" or ");
     return {
       ok: false,

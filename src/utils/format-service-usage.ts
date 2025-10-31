@@ -39,12 +39,12 @@ function getUtilizationColor(
  * Formats a single usage window for display
  */
 function formatUsageWindow(window: UsageWindow): string {
-  const utilizationStr = formatUtilization(window.utilization);
+  const utilizationString = formatUtilization(window.utilization);
   const coloredUtilization = getUtilizationColor(
     window.utilization,
     window.resetsAt,
     window.periodDurationMs,
-  )(utilizationStr);
+  )(utilizationString);
   const resetTime = formatResetTime(window.resetsAt);
 
   const rate = calculateUsageRate(
@@ -52,10 +52,10 @@ function formatUsageWindow(window: UsageWindow): string {
     window.resetsAt,
     window.periodDurationMs,
   );
-  const rateStr = rate.toFixed(2);
+  const rateString = rate.toFixed(2);
 
   return `${chalk.bold(window.name)}:
-  Utilization: ${coloredUtilization} (${rateStr}x rate)
+  Utilization: ${coloredUtilization} (${rateString}x rate)
   Resets at:   ${resetTime}`;
 }
 
@@ -65,17 +65,19 @@ function formatUsageWindow(window: UsageWindow): string {
 export function formatServiceUsageData(data: ServiceUsageData): string {
   const header = [
     chalk.cyan.bold(`=== ${data.service} Usage ===`),
-    data.planType ? chalk.gray(`Plan: ${data.planType}`) : null,
+    data.planType ? chalk.gray(`Plan: ${data.planType}`) : undefined,
     data.metadata?.limitReached === true
       ? chalk.red("⚠ Rate limit reached")
       : data.metadata?.allowed === false
         ? chalk.red("⚠ Usage not allowed")
-        : null,
+        : undefined,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const windows = data.windows.map(formatUsageWindow).join("\n\n");
+  const windows = data.windows
+    .map((window) => formatUsageWindow(window))
+    .join("\n\n");
 
   return `${header}\n\n${windows}`;
 }
@@ -99,7 +101,7 @@ export function toJsonObject(
         periodDurationMs: window.periodDurationMs,
       };
     }
-    return { error: `Window "${windowName}" not found` };
+    return { error: `Window "${windowName}" not found`, success: false };
   }
 
   return {
@@ -122,5 +124,6 @@ export function formatServiceUsageDataAsJson(
   data: ServiceUsageData,
   windowName?: string,
 ): string {
+  // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
   return JSON.stringify(toJsonObject(data, windowName), null, 2);
 }

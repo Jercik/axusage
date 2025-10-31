@@ -1,20 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   isKnownService,
-  getEnvVarCandidates,
+  getEnvironmentVariableCandidates,
   selectServicesToQuery,
   getAccessToken,
   type UsageCommandOptions,
 } from "./fetch-service-usage.js";
 
 describe("fetch-service-usage helpers", () => {
-  const originalEnv = { ...process.env };
+  const originalEnvironment = { ...process.env };
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnvironment };
   });
   afterEach(() => {
-    process.env = originalEnv;
+    process.env = originalEnvironment;
   });
 
   it("isKnownService detects known services", () => {
@@ -25,12 +25,16 @@ describe("fetch-service-usage helpers", () => {
   });
 
   it("getEnvVarCandidates returns known list or fallback", () => {
-    expect(getEnvVarCandidates("claude")).toEqual(["CLAUDE_ACCESS_TOKEN"]);
-    expect(getEnvVarCandidates("custom")).toEqual(["CUSTOM_ACCESS_TOKEN"]);
+    expect(getEnvironmentVariableCandidates("claude")).toEqual([
+      "CLAUDE_ACCESS_TOKEN",
+    ]);
+    expect(getEnvironmentVariableCandidates("custom")).toEqual([
+      "CUSTOM_ACCESS_TOKEN",
+    ]);
   });
 
   it("selectServicesToQuery handles all, undefined, specific", () => {
-    expect(selectServicesToQuery(undefined)).toEqual([
+    expect(selectServicesToQuery()).toEqual([
       "claude",
       "chatgpt",
       "github-copilot",
@@ -44,11 +48,11 @@ describe("fetch-service-usage helpers", () => {
   });
 
   it("getAccessToken uses option.token first, then env", () => {
-    const opts: UsageCommandOptions = { token: "TKN" };
+    const options: UsageCommandOptions = { token: "TKN" };
     process.env.CLAUDE_ACCESS_TOKEN = "ENV_TKN";
-    expect(getAccessToken("claude", opts)).toBe("TKN");
+    expect(getAccessToken("claude", options)).toBe("TKN");
 
-    const envOnly: UsageCommandOptions = {};
-    expect(getAccessToken("claude", envOnly)).toBe("ENV_TKN");
+    const environmentOnly: UsageCommandOptions = {};
+    expect(getAccessToken("claude", environmentOnly)).toBe("ENV_TKN");
   });
 });

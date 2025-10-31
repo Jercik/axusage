@@ -3,11 +3,12 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import { includeIgnoreFile } from "@eslint/compat";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
-import { join } from "node:path";
+import path from "node:path";
 import { defineConfig } from "eslint/config";
 import vitest from "@vitest/eslint-plugin";
+import eslintPluginUnicorn from "eslint-plugin-unicorn";
 
-const gitignorePath = join(import.meta.dirname, ".gitignore");
+const gitignorePath = path.join(import.meta.dirname, ".gitignore");
 
 export default defineConfig(
   includeIgnoreFile(gitignorePath, "Copy patterns from .gitignore"),
@@ -42,6 +43,8 @@ export default defineConfig(
       "no-implicit-coercion": ["error", { allow: ["!!"] }],
     },
   },
+
+  eslintPluginUnicorn.configs.recommended,
 
   {
     name: "Disable type-checking for config files",

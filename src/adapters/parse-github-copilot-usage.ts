@@ -58,13 +58,13 @@ export function calculatePeriodDuration(resetDate: Date): number {
   // First day of current month in UTC
   const firstOfCurrentMonth = Date.UTC(year, month, 1, 0, 0, 0);
   // Last day of previous month: subtract 1 day from first of current month
-  const lastPrevMonthDate = new Date(firstOfCurrentMonth - MS_PER_DAY);
-  const lastPrevMonthDay = lastPrevMonthDate.getUTCDate();
-  const prevMonth = lastPrevMonthDate.getUTCMonth();
-  const prevYear = lastPrevMonthDate.getUTCFullYear();
+  const lastPreviousMonthDate = new Date(firstOfCurrentMonth - MS_PER_DAY);
+  const lastPreviousMonthDay = lastPreviousMonthDate.getUTCDate();
+  const previousMonth = lastPreviousMonthDate.getUTCMonth();
+  const previousYear = lastPreviousMonthDate.getUTCFullYear();
 
-  const targetDay = Math.min(day, lastPrevMonthDay);
-  const periodStart = Date.UTC(prevYear, prevMonth, targetDay, 0, 0, 0);
+  const targetDay = Math.min(day, lastPreviousMonthDay);
+  const periodStart = Date.UTC(previousYear, previousMonth, targetDay, 0, 0, 0);
 
   return Math.max(periodEnd - periodStart, 0);
 }

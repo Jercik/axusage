@@ -58,7 +58,7 @@ export async function usageCommand(
   // Exit if no services succeeded
   if (successes.length === 0) {
     console.error(chalk.red("\nNo services could be queried successfully."));
-    process.exit(1);
+    throw new Error("No services could be queried successfully.");
   }
 
   // Display results
@@ -80,10 +80,11 @@ export async function usageCommand(
             errors: errors.map(({ service, error }) => ({
               service,
               message: error.message,
-              status: error.status ?? null,
+              status: error.status,
             })),
           }
         : payload;
+      // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
       console.log(JSON.stringify(output, null, 2));
     }
   } else {
