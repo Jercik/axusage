@@ -7,5 +7,5 @@ git update-index --again
 pnpm -s run knip
 pnpm -s run typecheck
 pnpm -s run lint
+pnpm -s run fta:check
 pnpm -s run test
-pnpm -s run fta:check  
