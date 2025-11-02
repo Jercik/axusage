@@ -64,13 +64,10 @@ export async function fetchServiceUsage(
   }
 
   const accessToken = getAccessToken(serviceName, options);
+
+  // If no token is provided, use browser-based authentication
   if (!accessToken) {
-    const candidates = getEnvironmentVariableCandidates(serviceName);
-    const display = candidates.join(" or ");
-    return {
-      ok: false,
-      error: new ApiErrorClass(`${display} is not set`),
-    };
+    return await adapter.fetchUsage({ useBrowserAuth: true });
   }
 
   return await adapter.fetchUsage({ accessToken });

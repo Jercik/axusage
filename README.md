@@ -6,21 +6,55 @@ Monitor AI usage across Claude, ChatGPT, and GitHub Copilot from a single comman
 
 ```bash
 pnpm install
-cp .env.example .env
-# Add your tokens to .env (see below)
 pnpm run build
+
+# Set up authentication (recommended - one-time setup)
+node bin/agent-usage auth setup claude
+node bin/agent-usage auth setup chatgpt
+node bin/agent-usage auth setup github-copilot
+
+# Check authentication status
+node bin/agent-usage auth status
+
+# Fetch usage
 node bin/agent-usage
 ```
 
-## Getting Access Tokens
+## Authentication
 
-### Claude
+This tool supports two authentication methods:
+
+### 1. Browser-Based Authentication (Recommended)
+
+Browser-based auth provides persistent, long-lived sessions without manual token extraction.
+
+**Setup (one-time per service):**
+
+```bash
+# Set up authentication for each service
+node bin/agent-usage auth setup claude
+node bin/agent-usage auth setup chatgpt
+node bin/agent-usage auth setup github-copilot
+
+# Check authentication status
+node bin/agent-usage auth status
+```
+
+When you run `auth setup`, a browser window will open. Simply log in to the service as you normally would. Your authentication will be saved and automatically used for future requests.
+
+**Authenticated sessions are stored in:** `~/.agent-usage/browser-contexts/`
+
+### 2. Manual Token Authentication (Alternative)
+
+If you prefer to manage tokens manually, you can still provide them via environment variables or CLI flags.
+
+#### Claude
 
 1. Go to [Anthropic Console](https://console.anthropic.com/) → API settings
 2. Copy your OAuth access token (starts with `sk-ant-`)
 3. Add to `.env` as `CLAUDE_ACCESS_TOKEN`
 
-### ChatGPT
+#### ChatGPT
 
 1. Open [ChatGPT](https://chatgpt.com) → DevTools (F12) → Network tab
 2. Find any `backend-api/*` request → Request Headers
@@ -28,11 +62,13 @@ node bin/agent-usage
    - Right-click → "Copy value" to avoid truncation, then remove the leading `Bearer ` prefix
 4. Add to `.env` as `CHATGPT_ACCESS_TOKEN`
 
-### GitHub Copilot
+#### GitHub Copilot
 
 1. Sign in to GitHub.com → DevTools (F12) → Application/Storage → Cookies
 2. Copy the `user_session` cookie value (~48 chars, NOT `_gh_sess`)
 3. Add to `.env` as `GITHUB_COPILOT_SESSION_TOKEN`
+
+**Note:** Manual tokens may expire frequently, requiring re-extraction from the browser. Browser-based auth solves this problem with persistent sessions.
 
 ## Usage
 

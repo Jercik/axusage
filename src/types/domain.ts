@@ -51,7 +51,8 @@ export class ApiError extends Error {
  * Configuration for service clients
  */
 export type ServiceConfig = {
-  readonly accessToken: string;
+  readonly accessToken?: string;
+  readonly useBrowserAuth?: boolean;
 };
 
 /**
