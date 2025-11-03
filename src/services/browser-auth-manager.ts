@@ -59,7 +59,11 @@ export class BrowserAuthManager {
         const b = await launchChromium(this.headless);
         this.browser = b;
         return b;
-      })();
+      })().catch((error) => {
+        // Allow retries on subsequent calls if the launch fails
+        this.browserPromise = undefined;
+        throw error;
+      });
     }
     return this.browserPromise;
   }

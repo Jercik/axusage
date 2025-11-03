@@ -51,6 +51,11 @@ export function installAuthManagerCleanup(): void {
     void forceClose().finally(() => process.exit(143));
   });
   process.on("beforeExit", () => {
-    void forceClose();
+    // Best-effort cleanup on natural process exit; defer exit until closed
+    // to avoid leaving Chromium running in the background.
+    // Using exitCode preserves the intended code without forcing a new one.
+    // Note: process.exit() triggers 'exit' (not 'beforeExit'), so no loop.
+    if (process.exitCode === undefined) process.exitCode = 0;
+    void forceClose().finally(() => process.exit(process.exitCode ?? 0));
   });
 }

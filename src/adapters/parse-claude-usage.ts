@@ -96,11 +96,15 @@ export function coalesceArrayToUsageResponse(
       PLACEHOLDER_RESET_DATE,
   });
   const pick = (...match: string[]) => {
+    // Prefer exact key matches first to avoid unintended substring hits
+    const exact = items.find((it) => match.includes(keyOf(it)));
+    if (exact) return metricOf(exact);
     const found = items.find((it) => match.some((m) => keyOf(it).includes(m)));
     return found ? metricOf(found) : undefined;
   };
   const fiveHour = pick("five", "5-hour", "5hour");
-  const sevenDay = pick("7", "seven_day", "7-day", "week");
+  // Use specific identifiers; avoid generic '7' which could match 'seven_day_opus'
+  const sevenDay = pick("seven_day", "7-day", "week");
   const sevenDayOpus = pick("opus");
   const sevenDayOauth = pick("oauth");
 
