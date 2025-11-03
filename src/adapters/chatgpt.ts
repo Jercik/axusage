@@ -6,7 +6,10 @@ import type {
 import { ApiError } from "../types/domain.js";
 import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "../types/chatgpt.js";
 import { toServiceUsageData } from "./parse-chatgpt-usage.js";
-import { BrowserAuthManager } from "../services/browser-auth-manager.js";
+import {
+  acquireAuthManager,
+  releaseAuthManager,
+} from "../services/shared-browser-auth-manager.js";
 
 const API_URL = "https://chatgpt.com/backend-api/wham/usage";
 
@@ -19,8 +22,16 @@ export const chatGPTAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const manager = new BrowserAuthManager();
+    const manager = acquireAuthManager();
     try {
+      if (!manager.hasAuth("chatgpt")) {
+        return {
+          ok: false,
+          error: new ApiError(
+            "No saved authentication for chatgpt. Run 'agent-usage auth setup chatgpt' first.",
+          ),
+        };
+      }
       const body = await manager.makeAuthenticatedRequest("chatgpt", API_URL);
       const data = JSON.parse(body);
       const parseResult = ChatGPTUsageResponseSchema.safeParse(data);
@@ -48,7 +59,7 @@ export const chatGPTAdapter: ServiceAdapter = {
         ),
       };
     } finally {
-      await manager.close();
+      await releaseAuthManager();
     }
   },
 };

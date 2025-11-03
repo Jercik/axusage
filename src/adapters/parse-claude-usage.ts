@@ -1,4 +1,5 @@
 import type { ServiceUsageData } from "../types/domain.js";
+import { z } from "zod";
 import type { UsageResponse } from "../types/usage.js";
 
 /**
@@ -48,4 +49,54 @@ export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
       },
     ],
   };
+}
+
+/**
+ * Some Claude endpoints return an array of usage items instead of the
+ * expected object. Attempt to coalesce common shapes into UsageResponse.
+ */
+export function coalesceArrayToUsageResponse(
+  data: unknown,
+): UsageResponse | undefined {
+  if (!Array.isArray(data)) return undefined;
+  const Item = z.object({
+    window: z.string().optional(),
+    period: z.string().optional(),
+    name: z.string().optional(),
+    key: z.string().optional(),
+    utilization: z.number().optional(),
+    percentage: z.number().optional(),
+    percent: z.number().optional(),
+    resets_at: z.string().optional(),
+    reset_at: z.string().optional(),
+    resetsAt: z.string().optional(),
+    resetAt: z.string().optional(),
+  });
+  const arrayParse = z.array(Item).safeParse(data);
+  if (!arrayParse.success) return undefined;
+  const items = arrayParse.data;
+  const keyOf = (it: z.infer<typeof Item>) =>
+    (it.window || it.period || it.name || it.key || "").toLowerCase();
+  const metricOf = (it: Partial<z.infer<typeof Item>>) => ({
+    utilization: it.utilization ?? it.percentage ?? it.percent ?? 0,
+    resets_at:
+      it.resets_at ??
+      it.reset_at ??
+      it.resetsAt ??
+      it.resetAt ??
+      new Date().toISOString(),
+  });
+  const pick = (...match: string[]) => {
+    const found = items.find((it) => match.some((m) => keyOf(it).includes(m)));
+    return found ? metricOf(found) : undefined;
+  };
+  const coalesced = {
+    five_hour: pick("five", "5-hour", "5hour") ?? metricOf(items[0] ?? {}),
+    seven_day:
+      pick("7", "seven_day", "7-day", "week") ??
+      metricOf(items[1] ?? items[0] ?? {}),
+    seven_day_oauth_apps: pick("oauth") ?? undefined,
+    seven_day_opus: pick("opus") ?? metricOf(items[2] ?? items[0] ?? {}),
+  } satisfies UsageResponse;
+  return coalesced;
 }

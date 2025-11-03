@@ -1,6 +1,16 @@
 import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
-import type { SupportedService } from "../services/supported-service.js";
+import {
+  SUPPORTED_SERVICES,
+  validateService,
+} from "../services/supported-service.js";
+import { rm } from "node:fs/promises";
+import path from "node:path";
+import { homedir } from "node:os";
+import {
+  getAuthMetaPathFor,
+  getStorageStatePathFor,
+} from "../services/auth-storage-path.js";
 
 /**
  * Options for the auth setup command
@@ -16,31 +26,14 @@ type AuthStatusOptions = {
   readonly service?: string;
 };
 
-const SUPPORTED_SERVICES: SupportedService[] = [
-  "claude",
-  "chatgpt",
-  "github-copilot",
-];
-
 /**
- * Validate and get service name
+ * Options for the auth clear command
  */
-function validateService(service: string | undefined): SupportedService {
-  if (!service) {
-    throw new Error(
-      `Service is required. Supported services: ${SUPPORTED_SERVICES.join(", ")}`,
-    );
-  }
+type AuthClearOptions = {
+  readonly service?: string;
+};
 
-  const normalizedService = service.toLowerCase();
-  if (!SUPPORTED_SERVICES.includes(normalizedService as SupportedService)) {
-    throw new Error(
-      `Unsupported service: ${service}. Supported services: ${SUPPORTED_SERVICES.join(", ")}`,
-    );
-  }
-
-  return normalizedService as SupportedService;
-}
+// Supported services and validation are provided by supported-service module
 
 /**
  * Set up authentication for a service
@@ -68,7 +61,8 @@ export async function authSetupCommand(
         `\n✗ Failed to set up authentication for ${service}: ${error instanceof Error ? error.message : String(error)}`,
       ),
     );
-    throw error;
+    process.exitCode = 1;
+    return;
   } finally {
     await manager.close();
   }
@@ -107,5 +101,33 @@ export async function authStatusCommand(
     }
   } finally {
     await manager.close();
+  }
+}
+
+/**
+ * Clear saved authentication for a service
+ */
+export async function authClearCommand(
+  options: AuthClearOptions,
+): Promise<void> {
+  const service = validateService(options.service);
+  const dataDirectory = path.join(
+    homedir(),
+    ".agent-usage",
+    "browser-contexts",
+  );
+  const storage = getStorageStatePathFor(dataDirectory, service);
+  const meta = getAuthMetaPathFor(dataDirectory, service);
+  try {
+    await rm(storage, { force: true });
+    await rm(meta, { force: true });
+    console.log(chalk.green(`\n✓ Cleared authentication for ${service}`));
+  } catch (error) {
+    console.error(
+      chalk.red(
+        `\n✗ Failed to clear authentication for ${service}: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+    process.exitCode = 1;
   }
 }

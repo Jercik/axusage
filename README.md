@@ -40,6 +40,25 @@ When you run `auth setup`, a browser window will open. Simply log in to the serv
 
 **Authenticated sessions are stored in:** `~/.agent-usage/browser-contexts/`
 
+Security notes:
+
+- Files in this directory contain sensitive session data. They are created with owner-only permissions (0600 for files, 0700 for the directory) where possible.
+- To revoke access, clear saved auth per service:
+
+```bash
+node bin/agent-usage auth clear claude
+node bin/agent-usage auth clear chatgpt
+node bin/agent-usage auth clear github-copilot
+```
+
+Browser installation:
+
+- Playwright Chromium is installed automatically on `pnpm install` via a postinstall script. If needed, you can install manually:
+
+```bash
+pnpm exec playwright install chromium --with-deps
+```
+
 ## Usage
 
 ```bash

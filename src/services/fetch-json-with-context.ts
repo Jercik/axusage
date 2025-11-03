@@ -35,7 +35,7 @@ export async function fetchJsonWithContext(
         `Request failed: ${String(result.status)} ${result.statusText}`,
       );
     }
-    if (!result.contentType.includes("application/json")) {
+    if (!result.contentType.toLowerCase().startsWith("application/json")) {
       throw new Error(`Expected JSON response, got ${result.contentType}`);
     }
     return result.text;

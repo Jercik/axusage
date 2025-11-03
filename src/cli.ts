@@ -6,13 +6,18 @@ import { usageCommand } from "./commands/usage-command.js";
 import {
   authSetupCommand,
   authStatusCommand,
+  authClearCommand,
 } from "./commands/auth-command.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
+import { installAuthManagerCleanup } from "./services/shared-browser-auth-manager.js";
 
 const program = new Command()
   .name(packageJson.name)
   .description(packageJson.description)
   .version(packageJson.version);
+
+// Ensure browser resources are cleaned when process exits
+installAuthManagerCleanup();
 
 // Usage command (default)
 program
@@ -57,6 +62,14 @@ auth
   .option("-s, --service <service>", "Check status for specific service")
   .action(async (options: { service?: string }) => {
     await authStatusCommand(options);
+  });
+
+auth
+  .command("clear")
+  .description("Clear saved browser authentication for a service")
+  .argument("<service>", "Service to clear (claude, chatgpt, github-copilot)")
+  .action(async (service: string) => {
+    await authClearCommand({ service });
   });
 
 program.parse();

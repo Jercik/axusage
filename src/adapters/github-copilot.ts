@@ -6,7 +6,10 @@ import type {
 import { ApiError } from "../types/domain.js";
 import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "../types/github-copilot.js";
 import { toServiceUsageData } from "./parse-github-copilot-usage.js";
-import { BrowserAuthManager } from "../services/browser-auth-manager.js";
+import {
+  acquireAuthManager,
+  releaseAuthManager,
+} from "../services/shared-browser-auth-manager.js";
 
 // Copilot web fetches entitlements from this endpoint (requires GitHub session cookies)
 const API_URL = "https://github.com/github-copilot/chat/entitlement";
@@ -20,8 +23,16 @@ export const githubCopilotAdapter: ServiceAdapter = {
   name: "GitHub Copilot",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const manager = new BrowserAuthManager();
+    const manager = acquireAuthManager();
     try {
+      if (!manager.hasAuth("github-copilot")) {
+        return {
+          ok: false,
+          error: new ApiError(
+            "No saved authentication for github-copilot. Run 'agent-usage auth setup github-copilot' first.",
+          ),
+        };
+      }
       const body = await manager.makeAuthenticatedRequest(
         "github-copilot",
         API_URL,
@@ -65,7 +76,7 @@ export const githubCopilotAdapter: ServiceAdapter = {
         ),
       };
     } finally {
-      await manager.close();
+      await releaseAuthManager();
     }
   },
 };

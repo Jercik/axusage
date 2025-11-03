@@ -1,6 +1,6 @@
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, chmod } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
@@ -66,8 +66,18 @@ export class BrowserAuthManager {
   async setupAuth(service: SupportedService): Promise<void> {
     const config = getServiceAuthConfig(service);
 
-    // Ensure data directory exists
-    await mkdir(this.dataDir, { recursive: true });
+    // Ensure data directory exists (restrict permissions to owner)
+    await mkdir(this.dataDir, { recursive: true, mode: 0o700 }).catch(
+      (error: unknown) => {
+        // mkdir may ignore mode due to umask; enforce via chmod
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      },
+    );
+    try {
+      await chmod(this.dataDir, 0o700);
+    } catch {
+      // best effort
+    }
 
     const browser = await this.ensureBrowser();
     const context = await browser.newContext();
