@@ -9,6 +9,7 @@ import { fetchJsonWithContext } from "./fetch-json-with-context.js";
 import { launchChromium } from "./launch-chromium.js";
 import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 import { setupAuthInContext } from "./setup-auth-flow.js";
+import { fetchJsonWithStorage } from "./fetch-json-with-storage.js";
 
 /**
  * Configuration for browser authentication manager
@@ -109,6 +110,10 @@ export class BrowserAuthManager {
     service: SupportedService,
     url: string,
   ): Promise<string> {
+    if (service === "claude") {
+      // Use request context with saved storage state to avoid navigation to API domain
+      return await fetchJsonWithStorage(this.getStorageStatePath(service), url);
+    }
     const context = await this.getAuthContext(service);
     try {
       if (service === "chatgpt") {
