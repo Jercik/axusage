@@ -25,7 +25,7 @@
     "clean": "rm -rf dist *.tsbuildinfo",
     "rebuild": "pnpm run clean && pnpm run build",
     "prepare": "husky",
-    "postinstall": "playwright install chromium",
+    "postinstall": "playwright install chromium --with-deps",
     "prepublishOnly": "pnpm run rebuild",
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",

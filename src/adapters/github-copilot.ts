@@ -8,6 +8,7 @@ import { GitHubCopilotUsageResponse as GitHubCopilotUsageResponseSchema } from "
 import { toServiceUsageData } from "./parse-github-copilot-usage.js";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 
+// Copilot web fetches entitlements from this endpoint (requires GitHub session cookies)
 const API_URL = "https://github.com/github-copilot/chat/entitlement";
 
 /** Functional core is extracted to ./parse-github-copilot-usage.ts */
