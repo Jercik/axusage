@@ -1,20 +1,18 @@
 import chalk from "chalk";
-import {
-  BrowserAuthManager,
-  type SupportedService,
-} from "../services/browser-auth-manager.js";
+import { BrowserAuthManager } from "../services/browser-auth-manager.js";
+import type { SupportedService } from "../services/supported-service.js";
 
 /**
  * Options for the auth setup command
  */
-export type AuthSetupOptions = {
+type AuthSetupOptions = {
   readonly service?: string;
 };
 
 /**
  * Options for the auth status command
  */
-export type AuthStatusOptions = {
+type AuthStatusOptions = {
   readonly service?: string;
 };
 

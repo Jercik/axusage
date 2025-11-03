@@ -4,50 +4,16 @@ import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-
-/**
- * Service names that support browser-based authentication
- */
-export type SupportedService = "claude" | "chatgpt" | "github-copilot";
+import type { SupportedService } from "./supported-service.js";
+import { getServiceAuthConfig } from "./service-auth-configs.js";
+import { fetchJsonWithContext } from "./fetch-json-with-context.js";
 
 /**
  * Configuration for browser authentication manager
  */
-export type BrowserAuthConfig = {
+type BrowserAuthConfig = {
   readonly dataDir?: string;
   readonly headless?: boolean;
-};
-
-/**
- * Service-specific configuration for authentication
- */
-export type ServiceAuthConfig = {
-  readonly url: string;
-  readonly waitForSelector?: string;
-  readonly instructions: string;
-};
-
-/**
- * Service authentication configurations
- */
-const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
-  claude: {
-    url: "https://console.anthropic.com",
-    waitForSelector: 'a[href*="/settings/"]',
-    instructions:
-      "Please log in to your Anthropic account in the browser window.",
-  },
-  chatgpt: {
-    url: "https://chatgpt.com",
-    waitForSelector: 'div[data-testid="profile-button"]',
-    instructions: "Please log in to your ChatGPT account in the browser window.",
-  },
-  "github-copilot": {
-    url: "https://github.com/login",
-    waitForSelector: 'img[alt*="@"]',
-    instructions:
-      "Please log in to your GitHub account in the browser window.",
-  },
 };
 
 /**
@@ -93,7 +59,7 @@ export class BrowserAuthManager {
    * Set up authentication for a service by launching a browser for the user to log in
    */
   async setupAuth(service: SupportedService): Promise<void> {
-    const config = SERVICE_AUTH_CONFIGS[service];
+    const config = getServiceAuthConfig(service);
 
     // Ensure data directory exists
     await mkdir(this.dataDir, { recursive: true });
@@ -108,7 +74,9 @@ export class BrowserAuthManager {
       console.log(`\n${config.instructions}`);
       if (config.waitForSelector) {
         console.log("Waiting for login to complete...\n");
-        await page.waitForSelector(config.waitForSelector, { timeout: 300_000 }); // 5 minutes
+        await page.waitForSelector(config.waitForSelector, {
+          timeout: 300_000,
+        }); // 5 minutes
       }
 
       // Save the authenticated state
@@ -145,30 +113,8 @@ export class BrowserAuthManager {
     url: string,
   ): Promise<string> {
     const context = await this.getAuthContext(service);
-
     try {
-      const page = await context.newPage();
-      const response = await page.goto(url, { waitUntil: "networkidle" });
-
-      if (!response) {
-        throw new Error(`Failed to navigate to ${url}`);
-      }
-
-      if (!response.ok()) {
-        throw new Error(
-          `Request failed: ${String(response.status())} ${response.statusText()}`,
-        );
-      }
-
-      const contentType = response.headers()["content-type"] || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error(`Expected JSON response, got ${contentType}`);
-      }
-
-      const body = await response.text();
-      await page.close();
-
-      return body;
+      return await fetchJsonWithContext(context, url);
     } finally {
       await context.close();
     }
