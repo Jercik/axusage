@@ -1,7 +1,8 @@
 import type { BrowserContext, Response } from "playwright";
 
 const USAGE_PAGE = "https://claude.ai/settings/usage";
-const MATCH_PATTERNS = ["/usage", "quota", "limit"] as const;
+const USAGE_API =
+  /^https:\/\/claude\.ai\/api\/organizations\/[^/]+\/usage(?:\?.*)?$/iu;
 
 function isJsonResponse(response: Response): boolean {
   const headers = response.headers();
@@ -15,12 +16,8 @@ export async function fetchClaudeJsonFromPage(
   const page = await context.newPage();
   try {
     const waitForJson = page.waitForResponse(
-      (response) => {
-        const url = response.url();
-        const matches = MATCH_PATTERNS.some((pat) => url.includes(pat));
-        return matches && isJsonResponse(response);
-      },
-      { timeout: 30_000 },
+      (response) => USAGE_API.test(response.url()) && isJsonResponse(response),
+      { timeout: 60_000 },
     );
 
     await page.goto(USAGE_PAGE, { waitUntil: "domcontentloaded" });
