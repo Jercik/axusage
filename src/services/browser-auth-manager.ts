@@ -6,9 +6,9 @@ import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { fetchJsonWithContext } from "./fetch-json-with-context.js";
-import { verifySessionByFetching } from "./verify-session.js";
 import { launchChromium } from "./launch-chromium.js";
-import { waitForLogin } from "./wait-for-login.js";
+import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
+import { setupAuthInContext } from "./setup-auth-flow.js";
 
 /**
  * Configuration for browser authentication manager
@@ -48,7 +48,7 @@ export class BrowserAuthManager {
   }
 
   /**
-   * Launch browser if not already launched
+   * Ensure a Chromium browser instance is available
    */
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browser) {
@@ -68,34 +68,16 @@ export class BrowserAuthManager {
 
     const browser = await this.ensureBrowser();
     const context = await browser.newContext();
-
     try {
-      const page = await context.newPage();
-      await page.goto(config.url);
-
       console.log(`\n${config.instructions}`);
-      const selectors =
-        config.waitForSelectors ??
-        (config.waitForSelector ? [config.waitForSelector] : []);
-      if (selectors.length > 0) {
-        console.log(
-          "Waiting for login to complete (or press Enter to continue)\n",
-        );
-        await waitForLogin(page, selectors);
-      }
-
-      // Optionally verify the session by hitting a JSON endpoint
-      if (config.verifyUrl) {
-        const ok = await verifySessionByFetching(context, config.verifyUrl);
-        if (!ok) {
-          console.warn(
-            `\n⚠ Unable to verify session via ${config.verifyUrl}. Saving state anyway...`,
-          );
-        }
-      }
-
-      // Save the authenticated state
-      await context.storageState({ path: this.getStorageStatePath(service) });
+      console.log(
+        "Waiting for login to complete (or press Enter to continue)\n",
+      );
+      await setupAuthInContext(
+        service,
+        context,
+        this.getStorageStatePath(service),
+      );
       console.log(
         `\n✓ Authentication saved for ${service}. You can now close the browser.`,
       );
@@ -129,6 +111,9 @@ export class BrowserAuthManager {
   ): Promise<string> {
     const context = await this.getAuthContext(service);
     try {
+      if (service === "chatgpt") {
+        return await fetchChatGPTJson(context, url);
+      }
       return await fetchJsonWithContext(context, url);
     } finally {
       await context.close();
