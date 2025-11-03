@@ -67,7 +67,8 @@ export const claudeAdapter: ServiceAdapter = {
         else if (typeof sc === "number") status = sc;
       }
       // Be precise: avoid brittle substring matching for status codes
-      const is401 = status === 401 || /\b401\b/u.test(message);
+      // Match standalone 401 or 401 followed by a non-digit/end (handles "HTTP 401", "status:401", etc.)
+      const is401 = status === 401 || /(?:\b401\b|401(?=\D|$))/u.test(message);
       const hint = is401
         ? "Claude usage is not exposed via Console session. The only documented programmatic access is the Admin Usage API, which requires an Admin API key."
         : undefined;

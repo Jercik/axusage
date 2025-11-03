@@ -88,6 +88,6 @@ async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
     await page.waitForTimeout(POLL_INTERVAL_MS);
   }
   throw new Error(
-    "Timed out waiting for ChatGPT session. Please ensure you completed the login process successfully. If the problem persists, try again or check your network connection.",
+    "Timed out waiting for ChatGPT session. If you've already completed login, press Enter in the terminal to continue manually. Otherwise, try again or check your network connection.",
   );
 }
