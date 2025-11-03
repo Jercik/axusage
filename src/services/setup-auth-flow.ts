@@ -69,6 +69,19 @@ async function waitForLoginForService(
 
 const POLL_INTERVAL_MS = 800;
 
+/**
+ * Polls for an active ChatGPT session until the deadline.
+ *
+ * Uses {@link getChatGPTAccessToken} on the provided Playwright `page` to
+ * detect a successful login without relying on fixed selectors. The function
+ * sleeps for {@link POLL_INTERVAL_MS} between attempts and returns as soon as
+ * a valid access token is detected. If no session is established before the
+ * provided `deadline` (epoch milliseconds), an error is thrown.
+ *
+ * @param page Playwright page associated with the ChatGPT login flow.
+ * @param deadline Unix epoch timestamp in milliseconds after which polling
+ *                 stops and the call fails with a timeout error.
+ */
 async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
   while (Date.now() < deadline) {
     if (await getChatGPTAccessToken(page)) return;
