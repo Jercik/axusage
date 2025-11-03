@@ -56,10 +56,6 @@ export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
 }
 
 /**
- * Some Claude endpoints return an array of usage items instead of the
- * expected object. Attempt to coalesce common shapes into UsageResponse.
- */
-/**
  * Best-effort coalescing for array-shaped Claude usage responses.
  *
  * Notes:
