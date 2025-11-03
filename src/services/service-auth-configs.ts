@@ -1,4 +1,6 @@
 import type { SupportedService } from "./supported-service.js";
+import type { BrowserContext } from "playwright";
+import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 
 /**
  * Service-specific configuration for authentication
@@ -8,6 +10,10 @@ type ServiceAuthConfig = {
   readonly waitForSelector?: string;
   readonly waitForSelectors?: readonly string[];
   readonly verifyUrl?: string;
+  readonly verifyFunction?: (
+    context: BrowserContext,
+    url: string,
+  ) => Promise<boolean>;
   readonly instructions: string;
 };
 
@@ -30,6 +36,14 @@ const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
       'a[href^="/account"]',
     ],
     verifyUrl: "https://chatgpt.com/backend-api/wham/usage",
+    verifyFunction: async (context, url) => {
+      try {
+        await fetchChatGPTJson(context, url);
+        return true;
+      } catch {
+        return false;
+      }
+    },
     instructions:
       "Please log in to your ChatGPT account in the browser window.",
   },

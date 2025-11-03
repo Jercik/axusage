@@ -13,6 +13,12 @@ export const CLAUDE_PERIOD_DURATIONS = {
 } as const;
 
 /**
+ * Placeholder reset date used when an endpoint omits a concrete reset timestamp.
+ * Far-future value avoids implying a recent reset.
+ */
+const PLACEHOLDER_RESET_DATE = "2099-12-31T00:00:00.000Z" as const;
+
+/**
  * Converts Claude response to common domain model
  */
 export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
@@ -87,7 +93,7 @@ export function coalesceArrayToUsageResponse(
       it.reset_at ??
       it.resetsAt ??
       it.resetAt ??
-      "2099-12-31T00:00:00.000Z",
+      PLACEHOLDER_RESET_DATE,
   });
   const pick = (...match: string[]) => {
     const found = items.find((it) => match.some((m) => keyOf(it).includes(m)));

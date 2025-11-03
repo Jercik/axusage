@@ -3,7 +3,6 @@ import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { waitForLogin } from "./wait-for-login.js";
 import { verifySessionByFetching } from "./verify-session.js";
-import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 import { chmod } from "node:fs/promises";
 import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
 import { getChatGPTAccessToken } from "./get-chatgpt-access-token.js";
@@ -25,11 +24,9 @@ export async function setupAuthInContext(
     await waitForLoginForService(service, page, selectors);
 
     if (config.verifyUrl) {
-      const ok = await verifySessionForService(
-        service,
-        context,
-        config.verifyUrl,
-      );
+      const ok = config.verifyFunction
+        ? await config.verifyFunction(context, config.verifyUrl)
+        : await verifySessionByFetching(context, config.verifyUrl);
       if (!ok) {
         console.warn(
           `\n⚠ Unable to verify session via ${config.verifyUrl}. Saving state anyway...`,
@@ -67,21 +64,8 @@ async function waitForLoginForService(
   }
 }
 
-async function verifySessionForService(
-  service: SupportedService,
-  context: BrowserContext,
-  verifyUrl: string,
-): Promise<boolean> {
-  if (service === "chatgpt") {
-    try {
-      await fetchChatGPTJson(context, verifyUrl);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  return verifySessionByFetching(context, verifyUrl);
-}
+// ChatGPT has a custom login readiness check (token polling). Verification uses
+// config.verifyFunction when provided in service-auth-configs.
 
 const POLL_INTERVAL_MS = 800;
 
@@ -91,5 +75,7 @@ async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
     if (token) return;
     await page.waitForTimeout(POLL_INTERVAL_MS);
   }
-  throw new Error("Timed out waiting for ChatGPT session to become available");
+  throw new Error(
+    "Timed out waiting for ChatGPT session to become available. Please ensure you completed the login process in the browser window before closing it.",
+  );
 }

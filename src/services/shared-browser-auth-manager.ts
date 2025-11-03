@@ -18,9 +18,8 @@ export async function releaseAuthManager(): Promise<void> {
     );
     // Avoid closing the manager in an over-release state
     return;
-  } else {
-    references -= 1;
   }
+  references -= 1;
   if (references === 0 && manager) {
     await manager.close();
     manager = undefined;
