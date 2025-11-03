@@ -8,9 +8,8 @@ import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
 import { requestService } from "./request-service.js";
 import { doSetupAuth } from "./do-setup-auth.js";
-import { getAuthMetaPathFor } from "./auth-storage-path.js";
-import { readFile } from "node:fs/promises";
 import { getStorageStatePathFor } from "./auth-storage-path.js";
+import { createAuthContext } from "./create-auth-context.js";
 
 /**
  * Configuration for browser authentication manager
@@ -27,6 +26,7 @@ export class BrowserAuthManager {
   private readonly dataDir: string;
   private readonly headless: boolean;
   private browser: Browser | undefined = undefined;
+  private browserPromise: Promise<Browser> | undefined = undefined;
 
   constructor(config: BrowserAuthConfig = {}) {
     this.dataDir =
@@ -54,10 +54,14 @@ export class BrowserAuthManager {
    * Ensure a Chromium browser instance is available
    */
   private async ensureBrowser(): Promise<Browser> {
-    if (!this.browser) {
-      this.browser = await launchChromium(this.headless);
+    if (!this.browserPromise) {
+      this.browserPromise = (async () => {
+        const b = await launchChromium(this.headless);
+        this.browser = b;
+        return b;
+      })();
     }
-    return this.browser;
+    return this.browserPromise;
   }
 
   /**
@@ -97,26 +101,8 @@ export class BrowserAuthManager {
    * Get a browser context with saved authentication for a service
    */
   async getAuthContext(service: SupportedService): Promise<BrowserContext> {
-    const storageStatePath = this.getStorageStatePath(service);
-
-    if (!existsSync(storageStatePath)) {
-      throw new Error(
-        `No saved authentication for ${service}. Run 'agent-usage auth setup ${service}' first.`,
-      );
-    }
-
     const browser = await this.ensureBrowser();
-    let userAgent: string | undefined;
-    try {
-      const metaPath = getAuthMetaPathFor(this.dataDir, service);
-      const metaRaw = await readFile(metaPath, "utf8");
-      const meta = JSON.parse(metaRaw) as { userAgent?: string };
-      userAgent =
-        typeof meta.userAgent === "string" ? meta.userAgent : undefined;
-    } catch {
-      // no meta found; proceed without a custom user agent
-    }
-    return browser.newContext({ storageState: storageStatePath, userAgent });
+    return createAuthContext(browser, this.dataDir, service);
   }
 
   /**
@@ -126,7 +112,12 @@ export class BrowserAuthManager {
     service: SupportedService,
     url: string,
   ): Promise<string> {
-    return requestService(service, url, () => this.getAuthContext(service));
+    const context = await this.getAuthContext(service);
+    try {
+      return await requestService(service, url, () => Promise.resolve(context));
+    } finally {
+      await context.close();
+    }
   }
 
   /**
@@ -136,6 +127,7 @@ export class BrowserAuthManager {
     if (this.browser) {
       await this.browser.close();
       this.browser = undefined;
+      this.browserPromise = undefined;
     }
   }
 }

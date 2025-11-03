@@ -5,7 +5,7 @@ Monitor AI usage across Claude, ChatGPT, and GitHub Copilot from a single comman
 ## Quick Start
 
 ```bash
-pnpm install
+pnpm install  # Downloads Playwright Chromium (~300MB) automatically
 pnpm run build
 
 # Set up authentication (one-time setup per service)
@@ -53,7 +53,7 @@ node bin/agent-usage auth clear github-copilot
 
 Browser installation:
 
-- Playwright Chromium is installed automatically on `pnpm install` via a postinstall script. If needed, you can install manually:
+- Playwright Chromium is installed automatically on `pnpm install` via a postinstall script. If this fails in your environment, install manually:
 
 ```bash
 pnpm exec playwright install chromium --with-deps

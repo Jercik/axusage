@@ -3,11 +3,9 @@
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
 import { usageCommand } from "./commands/usage-command.js";
-import {
-  authSetupCommand,
-  authStatusCommand,
-  authClearCommand,
-} from "./commands/auth-command.js";
+import { authSetupCommand } from "./commands/auth-setup-command.js";
+import { authStatusCommand } from "./commands/auth-status-command.js";
+import { authClearCommand } from "./commands/auth-clear-command.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
 import { installAuthManagerCleanup } from "./services/shared-browser-auth-manager.js";
 
