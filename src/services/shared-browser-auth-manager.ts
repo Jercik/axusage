@@ -14,10 +14,10 @@ export function acquireAuthManager(): BrowserAuthManager {
 
 export async function releaseAuthManager(): Promise<void> {
   if (references <= 0) {
-    // Over-release guard: surface a warning to aid debugging
+    // Over-release guard: ignore unmatched release
     if (references === 0) {
       console.warn(
-        "releaseAuthManager() called more times than acquireAuthManager()",
+        "releaseAuthManager() called without a matching acquire; ignoring",
       );
     }
     // Avoid closing the manager in an over-release state

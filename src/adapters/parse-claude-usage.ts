@@ -59,6 +59,14 @@ export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
  * Some Claude endpoints return an array of usage items instead of the
  * expected object. Attempt to coalesce common shapes into UsageResponse.
  */
+/**
+ * Best-effort coalescing for array-shaped Claude usage responses.
+ *
+ * Notes:
+ * - Requires 5-hour, 7-day, and 7-day Opus windows; otherwise returns undefined.
+ * - OAuth apps window is optional in the schema and will only be included
+ *   when present in the source data.
+ */
 export function coalesceArrayToUsageResponse(
   data: unknown,
 ): UsageResponse | undefined {
@@ -108,10 +116,16 @@ export function coalesceArrayToUsageResponse(
 
   // Only return a coalesced response when all required windows are found.
   if (!fiveHour || !sevenDay || !sevenDayOpus) return undefined;
-  return {
+  const result: {
+    five_hour: NonNullable<typeof fiveHour>;
+    seven_day: NonNullable<typeof sevenDay>;
+    seven_day_opus: NonNullable<typeof sevenDayOpus>;
+    seven_day_oauth_apps?: NonNullable<typeof sevenDayOauth> | null;
+  } = {
     five_hour: fiveHour,
     seven_day: sevenDay,
-    seven_day_oauth_apps: sevenDayOauth,
     seven_day_opus: sevenDayOpus,
-  } satisfies UsageResponse;
+  };
+  if (sevenDayOauth) result.seven_day_oauth_apps = sevenDayOauth;
+  return result satisfies UsageResponse;
 }
