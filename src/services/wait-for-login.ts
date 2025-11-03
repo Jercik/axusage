@@ -15,8 +15,9 @@ export async function waitForLogin(
   );
   const timeoutMs = 300_000; // 5 minutes
   const deadline = Date.now() + timeoutMs;
+  // Prevent unhandled rejections if the page closes before all waiters finish
   const waiters = selectors.map((sel) =>
-    page.waitForSelector(sel, { timeout: timeoutMs }),
+    page.waitForSelector(sel, { timeout: timeoutMs }).catch(() => {}),
   );
   const interval = setInterval(() => {
     const remaining = Math.max(0, deadline - Date.now());
