@@ -1,15 +1,20 @@
 import type {
   ServiceAdapter,
-  ServiceConfig,
   ServiceUsageData,
   Result,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
-import { toServiceUsageData } from "./parse-claude-usage.js";
+import {
+  toServiceUsageData,
+  coalesceArrayToUsageResponse,
+} from "./parse-claude-usage.js";
+import {
+  acquireAuthManager,
+  releaseAuthManager,
+} from "../services/shared-browser-auth-manager.js";
 
 const API_URL = "https://api.anthropic.com/api/oauth/usage";
-const BETA_VERSION = "oauth-2025-04-20";
 
 /** Functional core is extracted to ./parse-claude-usage.ts */
 
@@ -19,42 +24,29 @@ const BETA_VERSION = "oauth-2025-04-20";
 export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
-  async fetchUsage(
-    config: ServiceConfig,
-  ): Promise<Result<ServiceUsageData, ApiError>> {
+  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
+    const manager = acquireAuthManager();
     try {
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${config.accessToken}`,
-          "anthropic-beta": BETA_VERSION,
-          "content-type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const body = await response
-          .text()
-          .catch(() => "Unable to read response");
+      if (!manager.hasAuth("claude")) {
         return {
           ok: false,
           error: new ApiError(
-            `API request failed: ${String(response.status)} ${response.statusText}`,
-            response.status,
-            body,
+            "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
           ),
         };
       }
-
-      const data = await response.json();
-      const parseResult = UsageResponseSchema.safeParse(data);
+      const body = await manager.makeAuthenticatedRequest("claude", API_URL);
+      const data = JSON.parse(body);
+      const parseResult = UsageResponseSchema.safeParse(
+        coalesceArrayToUsageResponse(data) ?? data,
+      );
 
       if (!parseResult.success) {
         return {
           ok: false,
           error: new ApiError(
             `Invalid response format: ${parseResult.error.message}`,
-            response.status,
+            undefined,
             data,
           ),
         };
@@ -65,12 +57,31 @@ export const claudeAdapter: ServiceAdapter = {
         value: toServiceUsageData(parseResult.data),
       };
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      let status: number | undefined;
+      if (typeof error === "object" && error !== null) {
+        const errorObject = error as Record<string, unknown>;
+        const s = errorObject.status;
+        const sc = errorObject.statusCode;
+        if (typeof s === "number") status = s;
+        else if (typeof sc === "number") status = sc;
+      }
+      // Be precise: avoid brittle substring matching for status codes
+      // Match standalone 401 or 401 followed by a non-digit/end (handles "HTTP 401", "status:401", etc.)
+      const is401 = status === 401 || /(?:\b401\b|401(?=\D|$))/u.test(message);
+      const hint = is401
+        ? "Claude usage is not exposed via Console session. The only documented programmatic access is the Admin Usage API, which requires an Admin API key."
+        : undefined;
       return {
         ok: false,
         error: new ApiError(
-          `Network error: ${error instanceof Error ? error.message : String(error)}`,
+          hint
+            ? `${message}. ${hint}`
+            : `Browser authentication failed: ${message}`,
         ),
       };
+    } finally {
+      await releaseAuthManager();
     }
   },
 };

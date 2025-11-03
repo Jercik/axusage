@@ -14,7 +14,7 @@ const UsageMetric = z.object({
 export const UsageResponse = z.object({
   five_hour: UsageMetric,
   seven_day: UsageMetric,
-  seven_day_oauth_apps: UsageMetric.nullable(),
+  seven_day_oauth_apps: UsageMetric.nullable().optional(),
   seven_day_opus: UsageMetric,
 });
 

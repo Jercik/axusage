@@ -23,7 +23,7 @@ export async function usageCommand(
   const results = await Promise.all(
     servicesToQuery.map(async (serviceName) => ({
       service: serviceName,
-      result: await fetchServiceUsage(serviceName, options),
+      result: await fetchServiceUsage(serviceName),
     })),
   );
 

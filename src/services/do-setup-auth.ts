@@ -1,0 +1,33 @@
+import type { BrowserContext } from "playwright";
+import type { SupportedService } from "./supported-service.js";
+import { setupAuthInContext } from "./setup-auth-flow.js";
+import { writeFile, chmod } from "node:fs/promises";
+import path from "node:path";
+import { getAuthMetaPathFor } from "./auth-storage-path.js";
+
+export async function doSetupAuth(
+  service: SupportedService,
+  context: BrowserContext,
+  storagePath: string,
+  instructions: string,
+): Promise<void> {
+  console.log(`\n${instructions}`);
+  console.log("Waiting for login to complete (or press Enter to continue)\n");
+  const userAgent = await setupAuthInContext(service, context, storagePath);
+  try {
+    if (userAgent) {
+      const metaPath = getAuthMetaPathFor(path.dirname(storagePath), service);
+      await writeFile(metaPath, JSON.stringify({ userAgent }), "utf8");
+      try {
+        await chmod(metaPath, 0o600);
+      } catch {
+        // best effort
+      }
+    }
+  } catch {
+    // ignore errors when writing meta; not critical
+  }
+  console.log(
+    `\n✓ Authentication saved for ${service}. You can now close the browser.`,
+  );
+}

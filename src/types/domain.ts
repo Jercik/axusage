@@ -48,18 +48,9 @@ export class ApiError extends Error {
 }
 
 /**
- * Configuration for service clients
- */
-export type ServiceConfig = {
-  readonly accessToken: string;
-};
-
-/**
  * Service adapter interface
  */
 export interface ServiceAdapter {
   readonly name: string;
-  fetchUsage(
-    config: ServiceConfig,
-  ): Promise<Result<ServiceUsageData, ApiError>>;
+  fetchUsage(): Promise<Result<ServiceUsageData, ApiError>>;
 }

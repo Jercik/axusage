@@ -1,12 +1,15 @@
 import type {
   ServiceAdapter,
-  ServiceConfig,
   ServiceUsageData,
   Result,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "../types/chatgpt.js";
 import { toServiceUsageData } from "./parse-chatgpt-usage.js";
+import {
+  acquireAuthManager,
+  releaseAuthManager,
+} from "../services/shared-browser-auth-manager.js";
 
 const API_URL = "https://chatgpt.com/backend-api/wham/usage";
 
@@ -18,34 +21,19 @@ const API_URL = "https://chatgpt.com/backend-api/wham/usage";
 export const chatGPTAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
-  async fetchUsage(
-    config: ServiceConfig,
-  ): Promise<Result<ServiceUsageData, ApiError>> {
+  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
+    const manager = acquireAuthManager();
     try {
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${config.accessToken}`,
-          "content-type": "application/json",
-          accept: "*/*",
-        },
-      });
-
-      if (!response.ok) {
-        const body = await response
-          .text()
-          .catch(() => "Unable to read response");
+      if (!manager.hasAuth("chatgpt")) {
         return {
           ok: false,
           error: new ApiError(
-            `API request failed: ${String(response.status)} ${response.statusText}`,
-            response.status,
-            body,
+            "No saved authentication for chatgpt. Run 'agent-usage auth setup chatgpt' first.",
           ),
         };
       }
-
-      const data = await response.json();
+      const body = await manager.makeAuthenticatedRequest("chatgpt", API_URL);
+      const data = JSON.parse(body);
       const parseResult = ChatGPTUsageResponseSchema.safeParse(data);
 
       if (!parseResult.success) {
@@ -53,7 +41,7 @@ export const chatGPTAdapter: ServiceAdapter = {
           ok: false,
           error: new ApiError(
             `Invalid response format: ${parseResult.error.message}`,
-            response.status,
+            undefined,
             data,
           ),
         };
@@ -67,9 +55,11 @@ export const chatGPTAdapter: ServiceAdapter = {
       return {
         ok: false,
         error: new ApiError(
-          `Network error: ${error instanceof Error ? error.message : String(error)}`,
+          `Browser authentication failed: ${error instanceof Error ? error.message : String(error)}`,
         ),
       };
+    } finally {
+      await releaseAuthManager();
     }
   },
 };
