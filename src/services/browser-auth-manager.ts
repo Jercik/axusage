@@ -30,7 +30,8 @@ export class BrowserAuthManager {
     this.dataDir =
       config.dataDir ||
       path.join(homedir(), ".agent-usage", "browser-contexts");
-    this.headless = config.headless ?? false;
+    // Default to headless for non-interactive usage flows; auth setup passes headless: false
+    this.headless = config.headless ?? true;
   }
 
   /**
