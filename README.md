@@ -87,3 +87,20 @@ Human-readable format shows:
 - Color coding: 🟢 on track | 🟡 over budget | 🔴 significantly over
 
 JSON format returns structured data for programmatic use.
+
+## Troubleshooting
+
+### Authentication setup hangs
+
+- The CLI shows a countdown while waiting for login.
+- If you have completed login, press Enter in the terminal to continue.
+- If it still fails, run `node bin/agent-usage auth clear <service>` and retry.
+
+### "No saved authentication" error
+
+- Check which services are authenticated: `node bin/agent-usage auth status`.
+- Set up the missing service: `node bin/agent-usage auth setup <service>`.
+
+### Sessions expire
+
+- Browser sessions can expire based on provider policy. Re-run `auth setup` for the affected service when you see authentication errors.
