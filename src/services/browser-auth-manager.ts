@@ -123,6 +123,17 @@ export class BrowserAuthManager {
     try {
       return await requestService(service, url, () => Promise.resolve(context));
     } finally {
+      // Persist any refreshed cookies/tokens back to disk so sessions extend naturally
+      try {
+        await context.storageState({ path: this.getStorageStatePath(service) });
+        try {
+          await chmod(this.getStorageStatePath(service), 0o600);
+        } catch {
+          // best effort: permissions may already be correct or OS may ignore
+        }
+      } catch {
+        // ignore persistence errors; do not block request completion
+      }
       await context.close();
     }
   }

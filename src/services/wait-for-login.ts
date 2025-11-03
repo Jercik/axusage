@@ -1,6 +1,7 @@
 import type { Page } from "playwright";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
 
 /**
  * Waits until one of the selectors appears on the page, or the user presses Enter to continue.
@@ -13,7 +14,6 @@ export async function waitForLogin(
   const manual = reader.question(
     "Press Enter to continue without waiting for login... ",
   );
-  const LOGIN_TIMEOUT_MS = 300_000; // 5 minutes
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
   // Prevent unhandled rejections if the page closes before all waiters finish

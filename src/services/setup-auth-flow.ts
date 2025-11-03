@@ -5,6 +5,7 @@ import { waitForLogin } from "./wait-for-login.js";
 import { verifySessionByFetching } from "./verify-session.js";
 import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 import { chmod } from "node:fs/promises";
+import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
 
 export async function setupAuthInContext(
   service: SupportedService,
@@ -56,7 +57,7 @@ async function waitForLoginForService(
 ): Promise<void> {
   if (service === "chatgpt") {
     // Robust poll from Node-side to survive navigations
-    const deadline = Date.now() + 90_000;
+    const deadline = Date.now() + LOGIN_TIMEOUT_MS;
     await pollChatGPTSession(page, deadline);
     return;
   }
