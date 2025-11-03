@@ -103,13 +103,7 @@ export class BrowserAuthManager {
     service: SupportedService,
     url: string,
   ): Promise<string> {
-    const storagePath = this.getStorageStatePath(service);
-    return requestService(
-      service,
-      url,
-      () => this.getAuthContext(service),
-      storagePath,
-    );
+    return requestService(service, url, () => this.getAuthContext(service));
   }
 
   /**
