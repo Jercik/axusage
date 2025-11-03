@@ -104,3 +104,108 @@ JSON format returns structured data for programmatic use.
 ### Sessions expire
 
 - Browser sessions can expire based on provider policy. Re-run `auth setup` for the affected service when you see authentication errors.
+
+## Remote authentication and Prometheus export
+
+You can perform the interactive login flow on a workstation (for example, a local macOS laptop) and reuse the resulting browser session on a headless Linux server that collects usage and exports it for Prometheus.
+
+### 1. Authenticate locally on macOS
+
+1. Install dependencies and run the normal `auth setup` flow for every service you need:
+
+   ```bash
+   pnpm install
+   pnpm run build
+
+   node bin/agent-usage auth setup claude
+   node bin/agent-usage auth setup chatgpt
+   node bin/agent-usage auth setup github-copilot
+   ```
+
+2. Confirm the workstation has valid sessions:
+
+   ```bash
+   node bin/agent-usage auth status
+   ```
+
+3. Package the saved contexts so they can be transferred. The sessions live under `~/.agent-usage/browser-contexts/`:
+
+   ```bash
+   tar czf agent-usage-contexts.tgz -C "$HOME/.agent-usage" browser-contexts
+   ```
+
+### 2. Transfer the browser contexts to the Linux server
+
+1. Copy the archive to the server with `scp` (replace `user@server` with your login):
+
+   ```bash
+   scp agent-usage-contexts.tgz user@server:/tmp/
+   ```
+
+2. On the server, create the target directory if it does not already exist, unpack the archive, and lock down the permissions:
+
+   ```bash
+   ssh user@server
+   mkdir -p ~/.agent-usage
+   tar xzf /tmp/agent-usage-contexts.tgz -C ~/.agent-usage
+   chmod 700 ~/.agent-usage
+   find ~/.agent-usage/browser-contexts -type d -exec chmod 700 {} +
+   find ~/.agent-usage/browser-contexts -type f -exec chmod 600 {} +
+   ```
+
+3. Verify that the sessions are available on the server:
+
+   ```bash
+   node bin/agent-usage auth status
+   ```
+
+   If the server does not yet have the project installed, clone or deploy the same commit as the workstation and run `pnpm install` followed by `pnpm run build` before checking the status.
+
+### 3. Export metrics for Prometheus
+
+The CLI can emit JSON, which can be converted into Prometheus textfile metrics (compatible with `node_exporter --collector.textfile.directory`). The example below runs the CLI, emits gauges per service/window, and writes them to `/var/lib/node_exporter/textfile_collector/agent_usage.prom`.
+
+1. Install `jq` on the server (`sudo apt install jq`, `brew install jq`, etc.).
+
+2. Save the following script as `/opt/agent-usage/export-agent-usage-metrics.sh` (adjust paths as needed) and make it executable (`chmod +x`):
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euo pipefail
+
+   REPO_DIR="/opt/agent-usage"
+   TEXTFILE_DIR="/var/lib/node_exporter/textfile_collector"
+
+   cd "$REPO_DIR"
+
+   # Capture usage as JSON; surface failures to systemd/cron via the exit code
+   usage_json=$(node bin/agent-usage --json)
+
+   tmp_file=$(mktemp)
+   {
+     echo "# HELP agent_usage_utilization_percent Current utilization percentage by service/window"
+     echo "# TYPE agent_usage_utilization_percent gauge"
+     echo "$usage_json" | jq -r '
+       (.results // .)
+       | (if type == "array" then . else [.] end)
+       | .[]
+       | .service as $service
+       | .windows[]
+       | "agent_usage_utilization_percent{service=\"\($service)\",window=\"\(.name)\"} \(.utilization)"
+     '
+   } >"$tmp_file"
+
+   mv "$tmp_file" "$TEXTFILE_DIR/agent_usage.prom"
+   ```
+
+   The script writes a complete file on every run so Prometheus never sees partial metrics. When any service fails, the CLI exits non-zero and the script stops before overwriting the previous metrics file.
+
+3. Schedule the exporter (cron example, runs every 15 minutes):
+
+   ```cron
+   */15 * * * * /opt/agent-usage/export-agent-usage-metrics.sh
+   ```
+
+   For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read `~/.agent-usage/browser-contexts` and write to the textfile directory.
+
+4. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
