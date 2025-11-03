@@ -10,11 +10,7 @@ import { getStorageStatePathFor } from "../services/auth-storage-path.js";
 
 type AuthStatusOptions = { readonly service?: string };
 
-export async function authStatusCommand(
-  options: AuthStatusOptions,
-): Promise<void> {
-  // Keep async signature for command consistency
-  await Promise.resolve();
+export function authStatusCommand(options: AuthStatusOptions): void {
   const servicesToCheck = options.service
     ? [validateService(options.service)]
     : SUPPORTED_SERVICES;

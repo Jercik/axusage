@@ -22,7 +22,10 @@ export async function verifySessionByFetching(
       return true;
     } catch {
       // Wait a bit and try again; tokens/cookies may not be settled yet
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      // Skip the delay after the final attempt to avoid unnecessary wait
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
   }
   return false;
