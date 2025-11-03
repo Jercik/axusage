@@ -33,8 +33,8 @@ export async function waitForLogin(
       console.log("Login wait timed out; finishing up...");
       return;
     }
-    // Round up to the next minute for clearer UX
-    const minutes = Math.ceil(remaining / 60_000);
+    // Round up to the next minute for clearer UX, ensure at least 1
+    const minutes = Math.max(1, Math.ceil(remaining / 60_000));
     console.log(
       `Still waiting for login... ${String(minutes)} minute(s) remaining`,
     );
