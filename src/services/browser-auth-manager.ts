@@ -5,11 +5,10 @@ import { homedir } from "node:os";
 import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
-import { fetchJsonWithContext } from "./fetch-json-with-context.js";
 import { launchChromium } from "./launch-chromium.js";
-import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
-import { setupAuthInContext } from "./setup-auth-flow.js";
-import { fetchJsonWithStorage } from "./fetch-json-with-storage.js";
+import { requestService } from "./request-service.js";
+import { doSetupAuth } from "./do-setup-auth.js";
+import { getStorageStatePathFor } from "./auth-storage-path.js";
 
 /**
  * Configuration for browser authentication manager
@@ -38,7 +37,7 @@ export class BrowserAuthManager {
    * Get the storage state file path for a service
    */
   private getStorageStatePath(service: SupportedService): string {
-    return path.join(this.dataDir, `${service}-auth.json`);
+    return getStorageStatePathFor(this.dataDir, service);
   }
 
   /**
@@ -70,17 +69,11 @@ export class BrowserAuthManager {
     const browser = await this.ensureBrowser();
     const context = await browser.newContext();
     try {
-      console.log(`\n${config.instructions}`);
-      console.log(
-        "Waiting for login to complete (or press Enter to continue)\n",
-      );
-      await setupAuthInContext(
+      await doSetupAuth(
         service,
         context,
         this.getStorageStatePath(service),
-      );
-      console.log(
-        `\n✓ Authentication saved for ${service}. You can now close the browser.`,
+        config.instructions,
       );
     } finally {
       await context.close();
@@ -110,19 +103,13 @@ export class BrowserAuthManager {
     service: SupportedService,
     url: string,
   ): Promise<string> {
-    if (service === "claude") {
-      // Use request context with saved storage state to avoid navigation to API domain
-      return await fetchJsonWithStorage(this.getStorageStatePath(service), url);
-    }
-    const context = await this.getAuthContext(service);
-    try {
-      if (service === "chatgpt") {
-        return await fetchChatGPTJson(context, url);
-      }
-      return await fetchJsonWithContext(context, url);
-    } finally {
-      await context.close();
-    }
+    const storagePath = this.getStorageStatePath(service);
+    return requestService(
+      service,
+      url,
+      () => this.getAuthContext(service),
+      storagePath,
+    );
   }
 
   /**

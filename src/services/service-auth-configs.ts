@@ -14,8 +14,12 @@ type ServiceAuthConfig = {
 const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
   claude: {
     url: "https://console.anthropic.com",
-    waitForSelector: 'a[href*="/settings/"]',
-    verifyUrl: "https://api.anthropic.com/api/oauth/usage",
+    waitForSelectors: [
+      'a[href*="/settings/"]',
+      'a[href*="/account"]',
+      'button[aria-label="Account"]',
+    ],
+    verifyUrl: "https://console.anthropic.com/api/oauth/usage",
     instructions:
       "Please log in to your Anthropic account in the browser window.",
   },
