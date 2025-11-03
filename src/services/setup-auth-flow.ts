@@ -71,8 +71,7 @@ const POLL_INTERVAL_MS = 800;
 
 async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
   while (Date.now() < deadline) {
-    const token = await getChatGPTAccessToken(page);
-    if (token) return;
+    if (await getChatGPTAccessToken(page)) return;
     await page.waitForTimeout(POLL_INTERVAL_MS);
   }
   throw new Error(
