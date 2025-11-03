@@ -6,6 +6,7 @@ import type { SupportedService } from "./supported-service.js";
 type ServiceAuthConfig = {
   readonly url: string;
   readonly waitForSelector?: string;
+  readonly waitForSelectors?: readonly string[];
   readonly instructions: string;
 };
 
@@ -18,7 +19,12 @@ const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
   },
   chatgpt: {
     url: "https://chatgpt.com",
-    waitForSelector: 'div[data-testid="profile-button"]',
+    waitForSelectors: [
+      'button[aria-label="User menu"]',
+      'a[href="/settings"]',
+      'a[href^="/settings"]',
+      'a[href^="/account"]',
+    ],
     instructions:
       "Please log in to your ChatGPT account in the browser window.",
   },

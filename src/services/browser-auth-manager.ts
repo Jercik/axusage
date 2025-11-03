@@ -7,6 +7,7 @@ import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { fetchJsonWithContext } from "./fetch-json-with-context.js";
+import { waitForLogin } from "./wait-for-login.js";
 
 /**
  * Configuration for browser authentication manager
@@ -82,11 +83,14 @@ export class BrowserAuthManager {
       await page.goto(config.url);
 
       console.log(`\n${config.instructions}`);
-      if (config.waitForSelector) {
-        console.log("Waiting for login to complete...\n");
-        await page.waitForSelector(config.waitForSelector, {
-          timeout: 300_000,
-        }); // 5 minutes
+      const selectors =
+        config.waitForSelectors ??
+        (config.waitForSelector ? [config.waitForSelector] : []);
+      if (selectors.length > 0) {
+        console.log(
+          "Waiting for login to complete (or press Enter to continue)\n",
+        );
+        await waitForLogin(page, selectors);
       }
 
       // Save the authenticated state
