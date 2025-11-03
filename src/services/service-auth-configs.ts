@@ -7,6 +7,7 @@ type ServiceAuthConfig = {
   readonly url: string;
   readonly waitForSelector?: string;
   readonly waitForSelectors?: readonly string[];
+  readonly verifyUrl?: string;
   readonly instructions: string;
 };
 
@@ -25,12 +26,14 @@ const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
       'a[href^="/settings"]',
       'a[href^="/account"]',
     ],
+    verifyUrl: "https://chatgpt.com/backend-api/wham/usage",
     instructions:
       "Please log in to your ChatGPT account in the browser window.",
   },
   "github-copilot": {
     url: "https://github.com/login",
     waitForSelector: 'img[alt*="@"]',
+    verifyUrl: "https://github.com/github-copilot/chat/entitlement",
     instructions: "Please log in to your GitHub account in the browser window.",
   },
 };

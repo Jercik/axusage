@@ -1,4 +1,3 @@
-import { chromium } from "playwright";
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -7,6 +6,8 @@ import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { fetchJsonWithContext } from "./fetch-json-with-context.js";
+import { verifySessionByFetching } from "./verify-session.js";
+import { launchChromium } from "./launch-chromium.js";
 import { waitForLogin } from "./wait-for-login.js";
 
 /**
@@ -51,17 +52,7 @@ export class BrowserAuthManager {
    */
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browser) {
-      try {
-        this.browser = await chromium.launch({ headless: this.headless });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/Executable doesn't exist|playwright\s+install/iu.test(message)) {
-          throw new Error(
-            "Playwright browsers are not installed. Run `pnpm exec playwright install chromium` or `npx playwright install chromium`, then retry.",
-          );
-        }
-        throw error;
-      }
+      this.browser = await launchChromium(this.headless);
     }
     return this.browser;
   }
@@ -91,6 +82,16 @@ export class BrowserAuthManager {
           "Waiting for login to complete (or press Enter to continue)\n",
         );
         await waitForLogin(page, selectors);
+      }
+
+      // Optionally verify the session by hitting a JSON endpoint
+      if (config.verifyUrl) {
+        const ok = await verifySessionByFetching(context, config.verifyUrl);
+        if (!ok) {
+          console.warn(
+            `\n⚠ Unable to verify session via ${config.verifyUrl}. Saving state anyway...`,
+          );
+        }
       }
 
       // Save the authenticated state
