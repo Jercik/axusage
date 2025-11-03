@@ -41,10 +41,16 @@ export const claudeAdapter: ServiceAdapter = {
         value: toServiceUsageData(parseResult.data),
       };
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const hint = message.includes("401")
+        ? "Claude usage is not exposed via Console session. The only documented programmatic access is the Admin Usage API, which requires an Admin API key."
+        : undefined;
       return {
         ok: false,
         error: new ApiError(
-          `Browser authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+          hint
+            ? `${message}. ${hint}`
+            : `Browser authentication failed: ${message}`,
         ),
       };
     } finally {
