@@ -20,26 +20,14 @@ export async function setupAuthInContext(
       config.waitForSelectors ??
       (config.waitForSelector ? [config.waitForSelector] : []);
 
-    if (service === "chatgpt") {
-      // Robust poll from Node-side to survive navigations
-      const deadline = Date.now() + 90_000;
-      await pollChatGPTSession(page, deadline);
-    } else if (selectors.length > 0) {
-      await waitForLogin(page, selectors);
-    }
+    await waitForLoginForService(service, page, selectors);
 
     if (config.verifyUrl) {
-      let ok = false;
-      if (service === "chatgpt") {
-        try {
-          await fetchChatGPTJson(context, config.verifyUrl);
-          ok = true;
-        } catch {
-          ok = false;
-        }
-      } else {
-        ok = await verifySessionByFetching(context, config.verifyUrl);
-      }
+      const ok = await verifySessionForService(
+        service,
+        context,
+        config.verifyUrl,
+      );
       if (!ok) {
         console.warn(
           `\n⚠ Unable to verify session via ${config.verifyUrl}. Saving state anyway...`,
@@ -59,6 +47,38 @@ export async function setupAuthInContext(
   } finally {
     await page.close();
   }
+}
+
+async function waitForLoginForService(
+  service: SupportedService,
+  page: Page,
+  selectors: readonly string[],
+): Promise<void> {
+  if (service === "chatgpt") {
+    // Robust poll from Node-side to survive navigations
+    const deadline = Date.now() + 90_000;
+    await pollChatGPTSession(page, deadline);
+    return;
+  }
+  if (selectors.length > 0) {
+    await waitForLogin(page, selectors);
+  }
+}
+
+async function verifySessionForService(
+  service: SupportedService,
+  context: BrowserContext,
+  verifyUrl: string,
+): Promise<boolean> {
+  if (service === "chatgpt") {
+    try {
+      await fetchChatGPTJson(context, verifyUrl);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return verifySessionByFetching(context, verifyUrl);
 }
 
 async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
