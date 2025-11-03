@@ -58,8 +58,8 @@ auth
   .command("status")
   .description("Check authentication status for services")
   .option("-s, --service <service>", "Check status for specific service")
-  .action(async (options: { service?: string }) => {
-    await authStatusCommand(options);
+  .action((options: { service?: string }) => {
+    authStatusCommand(options);
   });
 
 auth
