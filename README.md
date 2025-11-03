@@ -77,6 +77,18 @@ node bin/agent-usage --service claude --json
 
 > ℹ️ `pnpm run start` triggers a clean rebuild before executing the CLI. The shorter `pnpm run usage` script skips the rebuild step and is intended only when `dist/` is already up to date.
 
+## Prometheus metrics
+
+The CLI can export usage data as Prometheus [textfile collector](https://prometheus.io/docs/guides/node-exporter/#textfile-collector) metrics for ingestion by node_exporter or other compatible agents.
+
+```bash
+node bin/agent-usage usage --prometheus-textfile /var/lib/node_exporter/textfile_collector/agent_usage.prom
+```
+
+When the option is supplied the scrape status for every requested service is recorded, even if some of them fail. The file is recreated on every run, so ensure the target directory is writable by the user running the command.
+
+Packaged systemd units and automation scripts for Debian 12 can be found in [`ops/debian12`](ops/debian12/README.md).
+
 ## Output
 
 Human-readable format shows:

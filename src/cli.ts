@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
+import type { UsageCommandOptions } from "./commands/fetch-service-usage.js";
 import { usageCommand } from "./commands/usage-command.js";
 import { authSetupCommand } from "./commands/auth-setup-command.js";
 import { authStatusCommand } from "./commands/auth-status-command.js";
@@ -32,11 +33,13 @@ program
     "-w, --window <window>",
     "Show specific usage window (for filtering JSON output)",
   )
-  .action(
-    async (options: { service?: string; json?: boolean; window?: string }) => {
-      await usageCommand(options);
-    },
-  );
+  .option(
+    "--prometheus-textfile <path>",
+    "Write metrics to a Prometheus textfile exporter path",
+  )
+  .action(async (options: UsageCommandOptions) => {
+    await usageCommand(options);
+  });
 
 // Auth command group
 const auth = program

@@ -8,6 +8,7 @@ export type UsageCommandOptions = {
   readonly service?: string;
   readonly json?: boolean;
   readonly window?: string;
+  readonly prometheusTextfile?: string;
 };
 
 export function selectServicesToQuery(service?: string): string[] {

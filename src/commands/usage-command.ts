@@ -4,6 +4,7 @@ import {
   formatServiceUsageDataAsJson,
   toJsonObject,
 } from "../utils/format-service-usage.js";
+import { writePrometheusTextFile } from "../utils/prometheus-exporter.js";
 import type { ServiceUsageData, ApiError } from "../types/domain.js";
 import type { UsageCommandOptions } from "./fetch-service-usage.js";
 import {
@@ -96,6 +97,15 @@ export async function usageCommand(
       }
       console.log(formatServiceUsageData(data));
     }
+  }
+
+  if (options.prometheusTextfile) {
+    await writePrometheusTextFile({
+      services: servicesToQuery,
+      successes,
+      errors,
+      outputPath: options.prometheusTextfile,
+    });
   }
 
   if (hasPartialFailures) {

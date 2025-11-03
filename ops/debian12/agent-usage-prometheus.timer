@@ -1,0 +1,13 @@
+[Unit]
+Description=Schedule agent-usage Prometheus textfile exports
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=1h
+RandomizedDelaySec=5m
+AccuracySec=1m
+Persistent=true
+Unit=agent-usage-prometheus.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Export agent-usage metrics as Prometheus textfile
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=agent-usage
+Group=agent-usage
+EnvironmentFile=/etc/default/agent-usage-prometheus
+Environment=PATH=/usr/local/bin:/usr/bin
+ExecStart=/opt/agent-usage/ops/debian12/agent-usage-prometheus.sh
