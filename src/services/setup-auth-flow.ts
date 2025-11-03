@@ -81,8 +81,10 @@ async function verifySessionForService(
   return verifySessionByFetching(context, verifyUrl);
 }
 
+const POLL_INTERVAL_MS = 800;
+
 async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
-  while (Date.now() <= deadline) {
+  while (Date.now() < deadline) {
     try {
       const token = await page.evaluate(async () => {
         try {
@@ -91,9 +93,16 @@ async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
             headers: { Accept: "application/json" },
           });
           if (!response.ok) return;
-          const data = (await response.json()) as { accessToken?: string };
-          if (typeof data.accessToken === "string" && data.accessToken) {
-            return data.accessToken;
+          const data: unknown = await response.json();
+          if (
+            data &&
+            typeof data === "object" &&
+            "accessToken" in data &&
+            typeof (data as { accessToken?: unknown }).accessToken ===
+              "string" &&
+            (data as { accessToken?: string }).accessToken
+          ) {
+            return (data as { accessToken: string }).accessToken;
           }
         } catch {
           return;
@@ -103,6 +112,7 @@ async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
     } catch {
       // Execution context may be destroyed during login redirects; retry.
     }
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(POLL_INTERVAL_MS);
   }
+  throw new Error("Timed out waiting for ChatGPT session to become available");
 }

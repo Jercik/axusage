@@ -11,7 +11,14 @@ export function acquireAuthManager(): BrowserAuthManager {
 }
 
 export async function releaseAuthManager(): Promise<void> {
-  references = Math.max(0, references - 1);
+  if (references === 0) {
+    // Over-release guard: surface a warning to aid debugging
+    console.warn(
+      "releaseAuthManager() called more times than acquireAuthManager()",
+    );
+  } else {
+    references -= 1;
+  }
   if (references === 0 && manager) {
     await manager.close();
     manager = undefined;

@@ -74,7 +74,14 @@ export class BrowserAuthManager {
     await mkdir(this.dataDir, { recursive: true, mode: 0o700 }).catch(
       (error: unknown) => {
         // mkdir may ignore mode due to umask; enforce via chmod
-        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        if (
+          !error ||
+          typeof error !== "object" ||
+          !("code" in error) ||
+          (error as { code?: unknown }).code !== "EEXIST"
+        ) {
+          throw error;
+        }
       },
     );
     try {

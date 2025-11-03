@@ -13,11 +13,14 @@ export async function waitForLogin(
   const manual = reader.question(
     "Press Enter to continue without waiting for login... ",
   );
-  const timeoutMs = 300_000; // 5 minutes
+  const LOGIN_TIMEOUT_MS = 300_000; // 5 minutes
+  const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
   // Prevent unhandled rejections if the page closes before all waiters finish
   const waiters = selectors.map((sel) =>
-    page.waitForSelector(sel, { timeout: timeoutMs }).catch(() => {}),
+    page.waitForSelector(sel, { timeout: timeoutMs }).catch(() => {
+      // Intentionally ignored: the page may navigate/close before selector resolves
+    }),
   );
   const interval = setInterval(() => {
     const remaining = Math.max(0, deadline - Date.now());

@@ -96,7 +96,7 @@ export function coalesceArrayToUsageResponse(
   const fiveHour = pick("five", "5-hour", "5hour");
   const sevenDay = pick("7", "seven_day", "7-day", "week");
   const sevenDayOpus = pick("opus");
-  const sevenDayOauth = pick("oauth") ?? undefined;
+  const sevenDayOauth = pick("oauth");
 
   // Only return a coalesced response when all required windows are found.
   if (!fiveHour || !sevenDay || !sevenDayOpus) return undefined;
