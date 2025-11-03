@@ -43,7 +43,10 @@ const auth = program
 auth
   .command("setup")
   .description("Set up browser-based authentication for a service")
-  .argument("<service>", "Service to authenticate (claude, chatgpt, github-copilot)")
+  .argument(
+    "<service>",
+    "Service to authenticate (claude, chatgpt, github-copilot)",
+  )
   .action(async (service: string) => {
     await authSetupCommand({ service });
   });

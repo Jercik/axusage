@@ -50,7 +50,17 @@ export class BrowserAuthManager {
    */
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await chromium.launch({ headless: this.headless });
+      try {
+        this.browser = await chromium.launch({ headless: this.headless });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/Executable doesn't exist|playwright\s+install/iu.test(message)) {
+          throw new Error(
+            "Playwright browsers are not installed. Run `pnpm exec playwright install chromium` or `npx playwright install chromium`, then retry.",
+          );
+        }
+        throw error;
+      }
     }
     return this.browser;
   }
