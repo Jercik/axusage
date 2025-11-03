@@ -10,7 +10,9 @@ export async function waitForLogin(
   selectors: readonly string[],
 ): Promise<void> {
   const reader = createInterface({ input, output });
-  const manual = reader.question("");
+  const manual = reader.question(
+    "Press Enter to continue without waiting for login... ",
+  );
   const timeoutMs = 300_000; // 5 minutes
   const deadline = Date.now() + timeoutMs;
   const waiters = selectors.map((sel) =>

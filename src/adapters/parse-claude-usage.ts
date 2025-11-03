@@ -79,24 +79,31 @@ export function coalesceArrayToUsageResponse(
     (it.window || it.period || it.name || it.key || "").toLowerCase();
   const metricOf = (it: Partial<z.infer<typeof Item>>) => ({
     utilization: it.utilization ?? it.percentage ?? it.percent ?? 0,
+    // Use a far-future timestamp as a safe placeholder when a reset
+    // time is not provided rather than "now", which could falsely
+    // imply a recent reset.
     resets_at:
       it.resets_at ??
       it.reset_at ??
       it.resetsAt ??
       it.resetAt ??
-      new Date().toISOString(),
+      "2099-12-31T00:00:00.000Z",
   });
   const pick = (...match: string[]) => {
     const found = items.find((it) => match.some((m) => keyOf(it).includes(m)));
     return found ? metricOf(found) : undefined;
   };
-  const coalesced = {
-    five_hour: pick("five", "5-hour", "5hour") ?? metricOf(items[0] ?? {}),
-    seven_day:
-      pick("7", "seven_day", "7-day", "week") ??
-      metricOf(items[1] ?? items[0] ?? {}),
-    seven_day_oauth_apps: pick("oauth") ?? undefined,
-    seven_day_opus: pick("opus") ?? metricOf(items[2] ?? items[0] ?? {}),
+  const fiveHour = pick("five", "5-hour", "5hour");
+  const sevenDay = pick("7", "seven_day", "7-day", "week");
+  const sevenDayOpus = pick("opus");
+  const sevenDayOauth = pick("oauth") ?? undefined;
+
+  // Only return a coalesced response when all required windows are found.
+  if (!fiveHour || !sevenDay || !sevenDayOpus) return undefined;
+  return {
+    five_hour: fiveHour,
+    seven_day: sevenDay,
+    seven_day_oauth_apps: sevenDayOauth,
+    seven_day_opus: sevenDayOpus,
   } satisfies UsageResponse;
-  return coalesced;
 }

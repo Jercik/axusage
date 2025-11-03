@@ -8,10 +8,12 @@ import { fetchJsonWithContext } from "./fetch-json-with-context.js";
 export async function verifySessionByFetching(
   context: BrowserContext,
   url: string,
-  retries = 5,
+  maxAttempts = 5,
   delayMs = 1500,
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < retries; attempt++) {
+  // Try up to `maxAttempts` times; some providers need a brief
+  // delay for session cookies/tokens to settle after login.
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       await fetchJsonWithContext(context, url);
       return true;

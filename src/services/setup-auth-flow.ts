@@ -1,4 +1,4 @@
-import type { BrowserContext } from "playwright";
+import type { BrowserContext, Page } from "playwright";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { waitForLogin } from "./wait-for-login.js";
@@ -23,32 +23,7 @@ export async function setupAuthInContext(
     if (service === "chatgpt") {
       // Robust poll from Node-side to survive navigations
       const deadline = Date.now() + 90_000;
-      for (; Date.now() <= deadline; ) {
-        try {
-          const token = await page.evaluate(async () => {
-            try {
-              const response = await fetch(
-                "https://chatgpt.com/api/auth/session",
-                {
-                  credentials: "include",
-                  headers: { Accept: "application/json" },
-                },
-              );
-              if (!response.ok) return;
-              const data = (await response.json()) as { accessToken?: string };
-              if (typeof data.accessToken === "string" && data.accessToken) {
-                return data.accessToken;
-              }
-            } catch {
-              return;
-            }
-          });
-          if (token) break;
-        } catch {
-          // Execution context may be destroyed during login redirects; retry.
-        }
-        await page.waitForTimeout(800);
-      }
+      await pollChatGPTSession(page, deadline);
     } else if (selectors.length > 0) {
       await waitForLogin(page, selectors);
     }
@@ -83,5 +58,31 @@ export async function setupAuthInContext(
     return userAgent;
   } finally {
     await page.close();
+  }
+}
+
+async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
+  while (Date.now() <= deadline) {
+    try {
+      const token = await page.evaluate(async () => {
+        try {
+          const response = await fetch("https://chatgpt.com/api/auth/session", {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) return;
+          const data = (await response.json()) as { accessToken?: string };
+          if (typeof data.accessToken === "string" && data.accessToken) {
+            return data.accessToken;
+          }
+        } catch {
+          return;
+        }
+      });
+      if (token) return;
+    } catch {
+      // Execution context may be destroyed during login redirects; retry.
+    }
+    await page.waitForTimeout(800);
   }
 }
