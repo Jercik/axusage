@@ -14,6 +14,9 @@ export async function waitForLogin(
   const manual = reader.question(
     "Press Enter to continue without waiting for login... ",
   );
+  // Absorb rejection when the interface is closed to prevent
+  // unhandled promise rejection (AbortError) after a selector wins.
+  const manualSilenced = manual.catch(() => {});
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
   // Prevent unhandled rejections if the page closes before all waiters finish
@@ -37,7 +40,7 @@ export async function waitForLogin(
     );
   }, 60_000);
   try {
-    await Promise.race([manual, ...waiters]);
+    await Promise.race([manualSilenced, ...waiters]);
   } finally {
     clearInterval(interval);
     reader.close();
