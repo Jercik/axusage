@@ -16,6 +16,8 @@ export async function releaseAuthManager(): Promise<void> {
     console.warn(
       "releaseAuthManager() called more times than acquireAuthManager()",
     );
+    // Avoid closing the manager in an over-release state
+    return;
   } else {
     references -= 1;
   }
@@ -42,12 +44,12 @@ export function installAuthManagerCleanup(): void {
   if (cleanupInstalled) return;
   cleanupInstalled = true;
   process.on("SIGINT", () => {
-    void forceClose();
-    process.exit(130);
+    // Ensure browser is actually closed before exiting
+    void forceClose().finally(() => process.exit(130));
   });
   process.on("SIGTERM", () => {
-    void forceClose();
-    process.exit(143);
+    // Ensure browser is actually closed before exiting
+    void forceClose().finally(() => process.exit(143));
   });
   process.on("beforeExit", () => {
     void forceClose();

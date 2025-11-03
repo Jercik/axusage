@@ -23,7 +23,13 @@ export async function waitForLogin(
     }),
   );
   const interval = setInterval(() => {
-    const remaining = Math.max(0, deadline - Date.now());
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      // Stop logging once timeout elapses to avoid confusing "0 minute(s)" spam
+      clearInterval(interval);
+      console.log("Login wait timed out; finishing up...");
+      return;
+    }
     // Round up to the next minute for clearer UX
     const minutes = Math.ceil(remaining / 60_000);
     console.log(

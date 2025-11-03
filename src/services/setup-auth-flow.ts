@@ -6,6 +6,7 @@ import { verifySessionByFetching } from "./verify-session.js";
 import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 import { chmod } from "node:fs/promises";
 import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
+import { getChatGPTAccessToken } from "./get-chatgpt-access-token.js";
 
 export async function setupAuthInContext(
   service: SupportedService,
@@ -86,33 +87,8 @@ const POLL_INTERVAL_MS = 800;
 
 async function pollChatGPTSession(page: Page, deadline: number): Promise<void> {
   while (Date.now() < deadline) {
-    try {
-      const token = await page.evaluate(async () => {
-        try {
-          const response = await fetch("https://chatgpt.com/api/auth/session", {
-            credentials: "include",
-            headers: { Accept: "application/json" },
-          });
-          if (!response.ok) return;
-          const data: unknown = await response.json();
-          if (
-            data &&
-            typeof data === "object" &&
-            "accessToken" in data &&
-            typeof (data as { accessToken?: unknown }).accessToken ===
-              "string" &&
-            (data as { accessToken?: string }).accessToken
-          ) {
-            return (data as { accessToken: string }).accessToken;
-          }
-        } catch {
-          return;
-        }
-      });
-      if (token) return;
-    } catch {
-      // Execution context may be destroyed during login redirects; retry.
-    }
+    const token = await getChatGPTAccessToken(page);
+    if (token) return;
     await page.waitForTimeout(POLL_INTERVAL_MS);
   }
   throw new Error("Timed out waiting for ChatGPT session to become available");

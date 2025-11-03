@@ -1,4 +1,5 @@
 import type { BrowserContext } from "playwright";
+import { getChatGPTAccessToken } from "./get-chatgpt-access-token.js";
 
 /**
  * Fetch JSON from ChatGPT backend API using the web session token.
@@ -11,54 +12,50 @@ export async function fetchChatGPTJson(
   const page = await context.newPage();
   try {
     await page.goto("https://chatgpt.com/", { waitUntil: "domcontentloaded" });
-    const result = await page.evaluate(async (targetUrl) => {
-      const sessionResponse = await fetch(
-        "https://chatgpt.com/api/auth/session",
-        {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-        },
-      );
-      if (!sessionResponse.ok) {
-        return {
-          ok: false,
-          status: sessionResponse.status,
-          statusText: sessionResponse.statusText,
-          contentType: sessionResponse.headers.get("content-type") || "",
-          text: await sessionResponse.text(),
-        };
-      }
-      const session = (await sessionResponse.json()) as {
+    const token = await getChatGPTAccessToken(page);
+    type EvalResult = {
+      ok: boolean;
+      status: number;
+      statusText: string;
+      contentType: string;
+      text: string;
+    };
+    const result: EvalResult = await page.evaluate(
+      async ({
+        targetUrl,
+        accessToken,
+      }: {
+        targetUrl: string;
         accessToken?: string;
-      };
-      const token = session.accessToken;
-      if (!token) {
+      }) => {
+        if (!accessToken) {
+          return {
+            ok: false,
+            status: 401,
+            statusText: "No accessToken in session",
+            contentType: "application/json",
+            text: JSON.stringify({ error: "missing accessToken" }),
+          } as EvalResult;
+        }
+        const apiResponse = await fetch(targetUrl, {
+          credentials: "include",
+          headers: {
+            Accept: "application/json, text/plain, */*",
+            Authorization: `Bearer ${accessToken}`,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        const text = await apiResponse.text();
         return {
-          ok: false,
-          status: 401,
-          statusText: "No accessToken in session",
-          contentType: "application/json",
-          text: JSON.stringify({ error: "missing accessToken" }),
-        };
-      }
-
-      const apiResponse = await fetch(targetUrl, {
-        credentials: "include",
-        headers: {
-          Accept: "application/json, text/plain, */*",
-          Authorization: `Bearer ${token}`,
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      });
-      const text = await apiResponse.text();
-      return {
-        ok: apiResponse.ok,
-        status: apiResponse.status,
-        statusText: apiResponse.statusText,
-        contentType: apiResponse.headers.get("content-type") || "",
-        text,
-      };
-    }, url);
+          ok: apiResponse.ok,
+          status: apiResponse.status,
+          statusText: apiResponse.statusText,
+          contentType: apiResponse.headers.get("content-type") || "",
+          text,
+        } as EvalResult;
+      },
+      { targetUrl: url, accessToken: token },
+    );
 
     if (!result.ok) {
       throw new Error(
