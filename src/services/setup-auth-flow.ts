@@ -9,7 +9,7 @@ export async function setupAuthInContext(
   service: SupportedService,
   context: BrowserContext,
   storagePath: string,
-): Promise<void> {
+): Promise<string | undefined> {
   const page = await context.newPage();
   try {
     const config = getServiceAuthConfig(service);
@@ -18,7 +18,37 @@ export async function setupAuthInContext(
     const selectors =
       config.waitForSelectors ??
       (config.waitForSelector ? [config.waitForSelector] : []);
-    if (selectors.length > 0) {
+
+    if (service === "chatgpt") {
+      // Robust poll from Node-side to survive navigations
+      const deadline = Date.now() + 90_000;
+      for (; Date.now() <= deadline; ) {
+        try {
+          const token = await page.evaluate(async () => {
+            try {
+              const response = await fetch(
+                "https://chatgpt.com/api/auth/session",
+                {
+                  credentials: "include",
+                  headers: { Accept: "application/json" },
+                },
+              );
+              if (!response.ok) return;
+              const data = (await response.json()) as { accessToken?: string };
+              if (typeof data.accessToken === "string" && data.accessToken) {
+                return data.accessToken;
+              }
+            } catch {
+              return;
+            }
+          });
+          if (token) break;
+        } catch {
+          // Execution context may be destroyed during login redirects; retry.
+        }
+        await page.waitForTimeout(800);
+      }
+    } else if (selectors.length > 0) {
       await waitForLogin(page, selectors);
     }
 
@@ -41,7 +71,10 @@ export async function setupAuthInContext(
       }
     }
 
+    // Capture user agent for future headless contexts
+    const userAgent = await page.evaluate(() => navigator.userAgent);
     await context.storageState({ path: storagePath });
+    return userAgent;
   } finally {
     await page.close();
   }

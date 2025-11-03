@@ -22,7 +22,7 @@ const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
       "Please log in to your Anthropic account in the browser window.",
   },
   chatgpt: {
-    url: "https://chatgpt.com",
+    url: "https://chatgpt.com/codex/settings/usage",
     waitForSelectors: [
       'button[aria-label="User menu"]',
       'a[href="/settings"]',

@@ -7,3 +7,10 @@ export function getStorageStatePathFor(
 ): string {
   return path.join(dataDirectory, `${service}-auth.json`);
 }
+
+export function getAuthMetaPathFor(
+  dataDirectory: string,
+  service: SupportedService,
+): string {
+  return path.join(dataDirectory, `${service}-auth.meta.json`);
+}

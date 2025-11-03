@@ -8,6 +8,8 @@ import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
 import { requestService } from "./request-service.js";
 import { doSetupAuth } from "./do-setup-auth.js";
+import { getAuthMetaPathFor } from "./auth-storage-path.js";
+import { readFile } from "node:fs/promises";
 import { getStorageStatePathFor } from "./auth-storage-path.js";
 
 /**
@@ -94,7 +96,17 @@ export class BrowserAuthManager {
     }
 
     const browser = await this.ensureBrowser();
-    return browser.newContext({ storageState: storageStatePath });
+    let userAgent: string | undefined;
+    try {
+      const metaPath = getAuthMetaPathFor(this.dataDir, service);
+      const metaRaw = await readFile(metaPath, "utf8");
+      const meta = JSON.parse(metaRaw) as { userAgent?: string };
+      userAgent =
+        typeof meta.userAgent === "string" ? meta.userAgent : undefined;
+    } catch {
+      // no meta found; proceed without a custom user agent
+    }
+    return browser.newContext({ storageState: storageStatePath, userAgent });
   }
 
   /**
