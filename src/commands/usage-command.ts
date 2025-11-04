@@ -4,6 +4,7 @@ import {
   formatServiceUsageDataAsJson,
   toJsonObject,
 } from "../utils/format-service-usage.js";
+import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
 import type { ServiceUsageData, ApiError } from "../types/domain.js";
 import type { UsageCommandOptions } from "./fetch-service-usage.js";
 import {
@@ -64,16 +65,18 @@ export async function usageCommand(
   // Display results
   const hasPartialFailures = errors.length > 0;
 
-  if (options.json) {
+  const format: "text" | "json" | "prometheus" = options.format ?? "text";
+
+  if (format === "json") {
     const [singleSuccess] = successes;
 
     if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
-      console.log(formatServiceUsageDataAsJson(singleSuccess, options.window));
+      console.log(formatServiceUsageDataAsJson(singleSuccess));
     } else {
       const payload =
         successes.length === 1 && singleSuccess
-          ? toJsonObject(singleSuccess, options.window)
-          : successes.map((data) => toJsonObject(data, options.window));
+          ? toJsonObject(singleSuccess)
+          : successes.map((data) => toJsonObject(data));
       const output = hasPartialFailures
         ? {
             results: payload,
@@ -87,6 +90,10 @@ export async function usageCommand(
       // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
       console.log(JSON.stringify(output, null, 2));
     }
+  } else if (format === "prometheus") {
+    // Emit Prometheus text metrics using prom-client
+    const output = await formatPrometheusMetrics(successes);
+    process.stdout.write(output);
   } else {
     // For human-readable output, display each service's results
     for (const data of successes) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import packageJson from "../package.json" with { type: "json" };
 import { usageCommand } from "./commands/usage-command.js";
 import { authSetupCommand } from "./commands/auth-setup-command.js";
@@ -27,13 +27,16 @@ program
     "-s, --service <service>",
     `Service to query (${getAvailableServices().join(", ")}, all) - defaults to all`,
   )
-  .option("-j, --json", "Output raw JSON response")
-  .option(
-    "-w, --window <window>",
-    "Show specific usage window (for filtering JSON output)",
+  .addOption(
+    new Option("-o, --format <format>", "Output format")
+      .choices(["text", "json", "prometheus"])
+      .default("text"),
   )
   .action(
-    async (options: { service?: string; json?: boolean; window?: string }) => {
+    async (options: {
+      service?: string;
+      format?: "text" | "json" | "prometheus";
+    }) => {
       await usageCommand(options);
     },
   );
