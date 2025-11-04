@@ -6,8 +6,7 @@ const ALL_SERVICES = ["claude", "chatgpt", "github-copilot"] as const;
 
 export type UsageCommandOptions = {
   readonly service?: string;
-  readonly json?: boolean;
-  readonly window?: string;
+  readonly format?: "text" | "json" | "prometheus";
 };
 
 export function selectServicesToQuery(service?: string): string[] {

@@ -71,8 +71,11 @@ node bin/agent-usage --service chatgpt
 node bin/agent-usage --service github-copilot
 
 # JSON output
-node bin/agent-usage --json
-node bin/agent-usage --service claude --json
+node bin/agent-usage --format=json
+node bin/agent-usage --service claude --format=json
+
+# Prometheus text output
+node bin/agent-usage --format=prometheus
 ```
 
 > ℹ️ `pnpm run start` triggers a clean rebuild before executing the CLI. The shorter `pnpm run usage` script skips the rebuild step and is intended only when `dist/` is already up to date.
@@ -163,7 +166,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 
 ### 3. Export metrics for Prometheus
 
-The CLI can emit JSON, which can be converted into Prometheus textfile metrics (compatible with `node_exporter --collector.textfile.directory`). The example below runs the CLI, emits gauges per service/window, and writes them to `/var/lib/node_exporter/textfile_collector/agent_usage.prom`.
+The CLI can emit Prometheus text directly using `--format=prometheus`, producing metrics compatible with `node_exporter --collector.textfile.directory`. The example below runs the CLI, emits gauges per service/window, and writes them to `/var/lib/node_exporter/textfile_collector/agent_usage.prom`.
 
 1. Install `jq` on the server (`sudo apt install jq`, `brew install jq`, etc.).
 
@@ -178,22 +181,9 @@ The CLI can emit JSON, which can be converted into Prometheus textfile metrics (
 
    cd "$REPO_DIR"
 
-   # Capture usage as JSON; surface failures to systemd/cron via the exit code
-   usage_json=$(node bin/agent-usage --json)
-
+   # Capture usage as Prometheus text; non-zero exit on partial failures is preserved
    tmp_file=$(mktemp)
-   {
-     echo "# HELP agent_usage_utilization_percent Current utilization percentage by service/window"
-     echo "# TYPE agent_usage_utilization_percent gauge"
-     echo "$usage_json" | jq -r '
-       (.results // .)
-       | (if type == "array" then . else [.] end)
-       | .[]
-       | .service as $service
-       | .windows[]
-       | "agent_usage_utilization_percent{service=\"\($service)\",window=\"\(.name)\"} \(.utilization)"
-     '
-   } >"$tmp_file"
+   node bin/agent-usage --format=prometheus >"$tmp_file"
 
    mv "$tmp_file" "$TEXTFILE_DIR/agent_usage.prom"
    ```
@@ -209,3 +199,7 @@ The CLI can emit JSON, which can be converted into Prometheus textfile metrics (
    For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read `~/.agent-usage/browser-contexts` and write to the textfile directory.
 
 4. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
+
+Notes:
+
+- Use `--service <name>` to restrict services.

@@ -85,25 +85,7 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 /**
  * Converts service usage data to a plain JSON-serializable object
  */
-export function toJsonObject(
-  data: ServiceUsageData,
-  windowName?: string,
-): unknown {
-  if (windowName) {
-    const window = data.windows.find((w) =>
-      w.name.toLowerCase().includes(windowName.toLowerCase()),
-    );
-    if (window) {
-      return {
-        name: window.name,
-        utilization: window.utilization,
-        resetsAt: window.resetsAt.toISOString(),
-        periodDurationMs: window.periodDurationMs,
-      };
-    }
-    return { error: `Window "${windowName}" not found`, success: false };
-  }
-
+export function toJsonObject(data: ServiceUsageData): unknown {
   return {
     service: data.service,
     planType: data.planType,
@@ -120,10 +102,7 @@ export function toJsonObject(
 /**
  * Formats service usage data as JSON string
  */
-export function formatServiceUsageDataAsJson(
-  data: ServiceUsageData,
-  windowName?: string,
-): string {
+export function formatServiceUsageDataAsJson(data: ServiceUsageData): string {
   // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
-  return JSON.stringify(toJsonObject(data, windowName), null, 2);
+  return JSON.stringify(toJsonObject(data), null, 2);
 }

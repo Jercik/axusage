@@ -23,23 +23,12 @@ describe("format-service-usage toJsonObject", () => {
     metadata: { allowed: true, limitReached: false },
   };
 
-  it("serializes whole object with ISO dates when no windowName provided", () => {
+  it("serializes whole object with ISO dates", () => {
     const object = toJsonObject(base) as Record<string, unknown>;
     expect(object["service"]).toBe("X");
     expect(object["planType"]).toBe("plan");
     const windows = object["windows"] as Array<Record<string, unknown>>;
     expect(Array.isArray(windows)).toBe(true);
     expect(windows[0]?.["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
-  });
-
-  it("returns single window when windowName matches (case-insensitive includes)", () => {
-    const object = toJsonObject(base, "prima") as Record<string, unknown>;
-    expect(object["name"]).toBe("Primary");
-    expect(object["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
-  });
-
-  it("returns error object when windowName not found", () => {
-    const object = toJsonObject(base, "missing") as Record<string, unknown>;
-    expect(Object.hasOwn(object, "error")).toBe(true);
   });
 });
