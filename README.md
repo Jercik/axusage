@@ -242,3 +242,6 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 Notes:
 
 - Use `--service <name>` to restrict services.
+- Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `auth setup` as needed.
+- If you transfer browser contexts between machines, ensure the target system is secure and permissions are restricted to the intended user.
+- The CLI stores authentication data in `~/.agent-usage/browser-contexts`; protect this directory to prevent unauthorized access.

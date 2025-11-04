@@ -23,5 +23,5 @@ export async function formatPrometheusMetrics(
     }
   }
 
-  return await registry.metrics();
+  return registry.metrics();
 }
