@@ -13,6 +13,7 @@ import {
   acquireAuthManager,
   releaseAuthManager,
 } from "../services/shared-browser-auth-manager.js";
+import { z } from "zod";
 
 const API_URL = "https://api.anthropic.com/api/oauth/usage";
 
@@ -42,6 +43,14 @@ export const claudeAdapter: ServiceAdapter = {
       );
 
       if (!parseResult.success) {
+        // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
+        console.error("Raw API response:", JSON.stringify(data, null, 2));
+        /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
+        console.error(
+          "Validation errors:",
+          JSON.stringify(z.treeifyError(parseResult.error), null, 2),
+        );
+        /* eslint-enable unicorn/no-null */
         return {
           ok: false,
           error: new ApiError(
