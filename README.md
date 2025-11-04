@@ -137,6 +137,8 @@ You can perform the interactive login flow on a workstation (for example, a loca
    tar czf agent-usage-contexts.tgz -C ~ .agent-usage/browser-contexts
    ```
 
+   Archive structure: `browser-contexts/claude/`, `browser-contexts/chatgpt/`, etc.
+
 ### 2. Transfer the browser contexts to the Linux server
 
 1. Copy the archive to the server with `scp` (replace `user@server` with your login):
@@ -181,8 +183,9 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 
    cd "$REPO_DIR"
 
-   # Capture usage as Prometheus text; non-zero exit on partial failures is preserved.
-   # On failure, the previous .prom file remains in place so Prometheus continues scraping the last data.
+   # Capture usage as Prometheus text.
+   # CLI exits with code 2 on partial failures; set -e stops the script before overwrite.
+   # On error, the previous .prom remains so Prometheus continues scraping the last valid data.
    tmp_file=$(mktemp)
    node bin/agent-usage --format=prometheus >"$tmp_file"
 
@@ -227,6 +230,13 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 
    [Install]
    WantedBy=timers.target
+   ```
+
+   Enable and start the timer, then check status:
+
+   ```bash
+   sudo systemctl enable --now agent-usage-exporter.timer
+   sudo systemctl list-timers agent-usage-exporter.timer
    ```
 
 4. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.

@@ -65,7 +65,7 @@ export async function usageCommand(
   // Display results
   const hasPartialFailures = errors.length > 0;
 
-  const format = options.format ?? "text";
+  const format: "text" | "json" | "prometheus" = options.format ?? "text";
 
   if (format === "json") {
     const [singleSuccess] = successes;
