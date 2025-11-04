@@ -112,7 +112,7 @@ JSON format returns structured data for programmatic use.
 
 You can perform the interactive login flow on a workstation (for example, a local macOS laptop) and reuse the resulting browser session on a headless Linux server that collects usage and exports it for Prometheus.
 
-### 1. Authenticate locally on macOS
+### 1. Authenticate on a workstation
 
 1. Install dependencies and run the normal `auth setup` flow for every service you need:
 
@@ -134,7 +134,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 3. Package the saved contexts so they can be transferred. The sessions live under `~/.agent-usage/browser-contexts/`:
 
    ```bash
-   tar czf agent-usage-contexts.tgz -C "$HOME/.agent-usage" browser-contexts
+   tar czf agent-usage-contexts.tgz -C ~ .agent-usage/browser-contexts
    ```
 
 ### 2. Transfer the browser contexts to the Linux server
@@ -142,7 +142,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 1. Copy the archive to the server with `scp` (replace `user@server` with your login):
 
    ```bash
-   scp agent-usage-contexts.tgz user@server:/tmp/
+   scp agent-usage-contexts.tgz user@server:~/
    ```
 
 2. On the server, create the target directory if it does not already exist, unpack the archive, and lock down the permissions:
@@ -150,9 +150,9 @@ You can perform the interactive login flow on a workstation (for example, a loca
    ```bash
    ssh user@server
    mkdir -p ~/.agent-usage
-   tar xzf /tmp/agent-usage-contexts.tgz -C ~/.agent-usage
-   chmod 700 ~/.agent-usage
-   find ~/.agent-usage/browser-contexts -type d -exec chmod 700 {} +
+   tar xzf ~/agent-usage-contexts.tgz -C ~/.agent-usage
+   # Directories 700, files 600
+   find ~/.agent-usage -type d -exec chmod 700 {} +
    find ~/.agent-usage/browser-contexts -type f -exec chmod 600 {} +
    ```
 
@@ -181,7 +181,8 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 
    cd "$REPO_DIR"
 
-   # Capture usage as Prometheus text; non-zero exit on partial failures is preserved
+   # Capture usage as Prometheus text; non-zero exit on partial failures is preserved.
+   # On failure, the previous .prom file remains in place so Prometheus continues scraping the last data.
    tmp_file=$(mktemp)
    node bin/agent-usage --format=prometheus >"$tmp_file"
 
@@ -193,10 +194,40 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 3. Schedule the exporter (cron example, runs every 15 minutes):
 
    ```cron
+   # Run as the same user that owns ~/.agent-usage
    */15 * * * * /opt/agent-usage/export-agent-usage-metrics.sh
    ```
 
    For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read `~/.agent-usage/browser-contexts` and write to the textfile directory.
+
+   Example systemd units (adjust `User=` and paths):
+
+   `/etc/systemd/system/agent-usage-exporter.service`:
+
+   ```ini
+   [Unit]
+   Description=Export agent usage metrics
+
+   [Service]
+   Type=oneshot
+   User=agent
+   Environment=HOME=/home/agent
+   ExecStart=/opt/agent-usage/export-agent-usage-metrics.sh
+   ```
+
+   `/etc/systemd/system/agent-usage-exporter.timer`:
+
+   ```ini
+   [Unit]
+   Description=Run agent usage exporter every 15 minutes
+
+   [Timer]
+   OnCalendar=*:0/15
+   Persistent=true
+
+   [Install]
+   WantedBy=timers.target
+   ```
 
 4. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
 

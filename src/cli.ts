@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import packageJson from "../package.json" with { type: "json" };
 import { usageCommand } from "./commands/usage-command.js";
 import { authSetupCommand } from "./commands/auth-setup-command.js";
@@ -27,9 +27,10 @@ program
     "-s, --service <service>",
     `Service to query (${getAvailableServices().join(", ")}, all) - defaults to all`,
   )
-  .option(
-    "-o, --format <format>",
-    "Output format: text|json|prometheus (default: text)",
+  .addOption(
+    new Option("-o, --format <format>", "Output format")
+      .choices(["text", "json", "prometheus"])
+      .default("text"),
   )
   .action(
     async (options: {
