@@ -170,9 +170,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 
 The CLI can emit Prometheus text directly using `--format=prometheus`, producing metrics compatible with `node_exporter --collector.textfile.directory`. The example below runs the CLI, emits gauges per service/window, and writes them to `/var/lib/node_exporter/textfile_collector/agent_usage.prom`.
 
-1. Install `jq` on the server (`sudo apt install jq`, `brew install jq`, etc.).
-
-2. Save the following script as `/opt/agent-usage/export-agent-usage-metrics.sh` (adjust paths as needed) and make it executable (`chmod +x`):
+1. Save the following script as `/opt/agent-usage/export-agent-usage-metrics.sh` (adjust paths as needed) and make it executable (`chmod +x`):
 
    ```bash
    #!/usr/bin/env bash
@@ -194,7 +192,7 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 
    The script writes a complete file on every run so Prometheus never sees partial metrics. When any service fails, the CLI exits non-zero and the script stops before overwriting the previous metrics file.
 
-3. Schedule the exporter (cron example, runs every 15 minutes):
+2. Schedule the exporter (cron example, runs every 15 minutes):
 
    ```cron
    # Run as the same user that owns ~/.agent-usage
@@ -239,7 +237,7 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
    sudo systemctl list-timers agent-usage-exporter.timer
    ```
 
-4. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
+3. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
 
 Notes:
 
