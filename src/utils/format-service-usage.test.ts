@@ -31,4 +31,20 @@ describe("format-service-usage toJsonObject", () => {
     expect(Array.isArray(windows)).toBe(true);
     expect(windows[0]?.["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
   });
+
+  it("omits reset timestamps when unavailable", () => {
+    const object = toJsonObject({
+      ...base,
+      windows: [
+        {
+          name: "Primary",
+          utilization: 10,
+          resetsAt: undefined,
+          periodDurationMs: 1000,
+        },
+      ],
+    }) as Record<string, unknown>;
+    const windows = object["windows"] as Array<Record<string, unknown>>;
+    expect(windows[0]?.["resetsAt"]).toBeUndefined();
+  });
 });

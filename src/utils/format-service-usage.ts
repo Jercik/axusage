@@ -13,8 +13,8 @@ function formatUtilization(utilization: number): string {
 /**
  * Formats a Date as a human-readable date string
  */
-function formatResetTime(date: Date): string {
-  return date.toLocaleString();
+function formatResetTime(date: Date | undefined): string {
+  return date ? date.toLocaleString() : "Not scheduled";
 }
 
 /**
@@ -24,11 +24,9 @@ function formatResetTime(date: Date): string {
  * Red: significantly over budget (rate > 1.5)
  */
 function getUtilizationColor(
-  utilization: number,
-  resetsAt: Date,
-  periodDurationMs: number,
+  rate: number | undefined,
 ): (text: string) => string {
-  const rate = calculateUsageRate(utilization, resetsAt, periodDurationMs);
+  if (rate === undefined) return chalk.gray;
   const bucket = classifyUsageRate(rate);
   if (bucket === "red") return chalk.red;
   if (bucket === "yellow") return chalk.yellow;
@@ -40,22 +38,17 @@ function getUtilizationColor(
  */
 function formatUsageWindow(window: UsageWindow): string {
   const utilizationString = formatUtilization(window.utilization);
-  const coloredUtilization = getUtilizationColor(
-    window.utilization,
-    window.resetsAt,
-    window.periodDurationMs,
-  )(utilizationString);
-  const resetTime = formatResetTime(window.resetsAt);
-
   const rate = calculateUsageRate(
     window.utilization,
     window.resetsAt,
     window.periodDurationMs,
   );
-  const rateString = rate.toFixed(2);
+  const coloredUtilization = getUtilizationColor(rate)(utilizationString);
+  const resetTime = formatResetTime(window.resetsAt);
+  const rateString = rate === undefined ? "n/a" : `${rate.toFixed(2)}x rate`;
 
   return `${chalk.bold(window.name)}:
-  Utilization: ${coloredUtilization} (${rateString}x rate)
+  Utilization: ${coloredUtilization} (${rateString})
   Resets at:   ${resetTime}`;
 }
 
@@ -92,7 +85,7 @@ export function toJsonObject(data: ServiceUsageData): unknown {
     windows: data.windows.map((w) => ({
       name: w.name,
       utilization: w.utilization,
-      resetsAt: w.resetsAt.toISOString(),
+      resetsAt: w.resetsAt?.toISOString(),
       periodDurationMs: w.periodDurationMs,
     })),
     metadata: data.metadata,

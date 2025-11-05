@@ -66,7 +66,8 @@ describe("github-copilot parsing", () => {
       expect(w.name).toBe("Monthly Premium Interactions");
       // (1500 - 1392)/1500*100 = 7.2
       expect(w.utilization).toBeCloseTo(7.2, 5);
-      expect(w.resetsAt.toISOString()).toBe("2025-11-01T00:00:00.000Z");
+      expect(w.resetsAt).toBeDefined();
+      expect(w.resetsAt?.toISOString()).toBe("2025-11-01T00:00:00.000Z");
       expect(w.periodDurationMs).toBeGreaterThan(0);
     });
   });

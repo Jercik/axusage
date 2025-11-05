@@ -30,4 +30,9 @@ describe("calculate-usage-rate", () => {
     // utilization 25 / elapsed% 50 = 0.5
     expect(rate).toBeCloseTo(0.5, 5);
   });
+
+  it("returns undefined when reset timestamp is missing", () => {
+    const rate = calculateUsageRate(25, undefined, 1000);
+    expect(rate).toBeUndefined();
+  });
 });

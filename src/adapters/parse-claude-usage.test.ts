@@ -44,4 +44,20 @@ describe("claude parsing", () => {
     expect(data.windows).toHaveLength(4);
     expect(data.windows[2]?.name).toBe("7-Day OAuth Apps");
   });
+
+  it("handles missing reset timestamp by propagating undefined", () => {
+    const resp: UsageResponse = {
+      five_hour: {
+        utilization: 0,
+        resets_at: undefined, // API null is transformed to undefined by the schema
+      },
+      seven_day: { utilization: 2, resets_at: "2025-10-30T00:00:00Z" },
+      // eslint-disable-next-line unicorn/no-null -- API returns null
+      seven_day_oauth_apps: null,
+      seven_day_opus: { utilization: 3, resets_at: "2025-11-01T00:00:00Z" },
+    };
+
+    const data = toServiceUsageData(resp);
+    expect(data.windows[0]?.resetsAt).toBeUndefined();
+  });
 });

@@ -5,7 +5,9 @@ import { z } from "zod";
  */
 const UsageMetric = z.object({
   utilization: z.number(),
-  resets_at: z.iso.datetime({ offset: true }),
+  resets_at: z
+    .union([z.iso.datetime({ offset: true }), z.null()])
+    .transform((value): string | undefined => value ?? undefined),
 });
 
 /**

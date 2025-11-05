@@ -8,7 +8,7 @@
 export type UsageWindow = {
   readonly name: string;
   readonly utilization: number; // Percentage (0-100)
-  readonly resetsAt: Date;
+  readonly resetsAt: Date | undefined;
   readonly periodDurationMs: number;
 };
 
