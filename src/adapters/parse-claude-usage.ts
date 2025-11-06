@@ -20,7 +20,8 @@ const parseResetTimestamp = (
 ): Date | undefined => {
   if (!timestamp) return undefined;
   const date = new Date(timestamp);
-  // Number.isNaN avoids the implicit coercion that plain isNaN would perform on the Date object.
+  // Number.isNaN checks whether getTime() returned NaN (for invalid dates)
+  // without type coercion, unlike the global isNaN().
   return Number.isNaN(date.getTime()) ? undefined : date;
 };
 

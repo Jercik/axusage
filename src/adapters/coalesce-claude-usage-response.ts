@@ -24,6 +24,9 @@ const UsageWindowCandidates = z.array(UsageWindowCandidate);
  * Tokenizes labels so we can match windows even when punctuation varies,
  * e.g. "7-day" vs "seven_day".
  * Splits on any non-alphanumeric characters (hyphen, underscore, space, etc.).
+ *
+ * Note: labels are normalized to lowercase in {@link normalizeLabel}, so the
+ * character class here only needs to handle lowercase a–z and digits.
  */
 const tokenizeLabel = (label: string): Set<string> =>
   new Set(label.split(/[^a-z0-9]+/gu).filter(Boolean));
