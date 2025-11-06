@@ -14,7 +14,7 @@ function formatUtilization(utilization: number): string {
  * Formats a Date as a human-readable date string
  */
 function formatResetTime(date: Date | undefined): string {
-  return date ? date.toLocaleString() : "Not scheduled";
+  return date ? date.toLocaleString() : "Not available";
 }
 
 /**

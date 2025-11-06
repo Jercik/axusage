@@ -19,6 +19,10 @@ type UsageWindowCandidate = z.infer<typeof UsageWindowCandidate>;
 
 const UsageWindowCandidates = z.array(UsageWindowCandidate);
 
+/**
+ * Tokenizes labels so we can match windows even when punctuation varies,
+ * e.g. "7-day" vs "seven_day".
+ */
 const tokenizeLabel = (label: string): Set<string> =>
   new Set(label.split(/[^a-z0-9]+/gu).filter(Boolean));
 
@@ -42,10 +46,13 @@ const resolveResetTimestamp = (
   ];
   for (const value of values) {
     if (value === undefined) continue;
-    return value ?? undefined;
+    return value === null ? undefined : value;
   }
   return undefined;
 };
+
+const resolveUtilization = (candidate: UsageWindowCandidate): number =>
+  candidate.utilization ?? candidate.percentage ?? candidate.percent ?? 0;
 
 const selectMetric = (
   candidates: readonly UsageWindowCandidate[],
@@ -54,31 +61,15 @@ const selectMetric = (
   for (const candidate of candidates) {
     const label = normaliseLabel(candidate);
     if (!label) continue;
-    if (matchers.includes(label)) {
-      const resetsAt = resolveResetTimestamp(candidate);
-      if (resetsAt === undefined) continue;
-      return {
-        utilization:
-          candidate.utilization ??
-          candidate.percentage ??
-          candidate.percent ??
-          0,
-        resets_at: resetsAt,
-      };
-    }
     const tokens = tokenizeLabel(label);
-    if (matchers.some((matcher) => tokens.has(matcher))) {
-      const resetsAt = resolveResetTimestamp(candidate);
-      if (resetsAt === undefined) continue;
-      return {
-        utilization:
-          candidate.utilization ??
-          candidate.percentage ??
-          candidate.percent ??
-          0,
-        resets_at: resetsAt,
-      };
-    }
+    const matches =
+      matchers.includes(label) ||
+      matchers.some((matcher) => tokens.has(matcher));
+    if (!matches) continue;
+    return {
+      utilization: resolveUtilization(candidate),
+      resets_at: resolveResetTimestamp(candidate),
+    };
   }
   return undefined;
 };

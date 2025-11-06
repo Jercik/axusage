@@ -60,4 +60,31 @@ describe("claude parsing", () => {
     const data = toServiceUsageData(resp);
     expect(data.windows[0]?.resetsAt).toBeUndefined();
   });
+
+  it("keeps windows when every reset timestamp is missing", () => {
+    const resp: UsageResponse = {
+      five_hour: {
+        utilization: 1,
+        resets_at: undefined,
+      },
+      seven_day: {
+        utilization: 2,
+        resets_at: undefined,
+      },
+      seven_day_oauth_apps: {
+        utilization: 3,
+        resets_at: undefined,
+      },
+      seven_day_opus: {
+        utilization: 4,
+        resets_at: undefined,
+      },
+    };
+
+    const data = toServiceUsageData(resp);
+    expect(data.windows).toHaveLength(4);
+    for (const window of data.windows) {
+      expect(window.resetsAt).toBeUndefined();
+    }
+  });
 });
