@@ -23,6 +23,7 @@ const UsageWindowCandidates = z.array(UsageWindowCandidate);
 /**
  * Tokenizes labels so we can match windows even when punctuation varies,
  * e.g. "7-day" vs "seven_day".
+ * Splits on any non-alphanumeric characters (hyphen, underscore, space, etc.).
  */
 const tokenizeLabel = (label: string): Set<string> =>
   new Set(label.split(/[^a-z0-9]+/gu).filter(Boolean));
@@ -53,8 +54,10 @@ const resolveResetTimestamp = (
   return null;
 };
 
-const resolveUtilization = (candidate: UsageWindowCandidate): number =>
-  candidate.utilization ?? candidate.percentage ?? candidate.percent ?? 0;
+const resolveUtilization = (candidate: UsageWindowCandidate): number => {
+  if (candidate.utilization !== undefined) return candidate.utilization;
+  return candidate.percentage ?? candidate.percent ?? 0;
+};
 
 const selectMetric = (
   candidates: readonly UsageWindowCandidate[],
@@ -82,6 +85,8 @@ const selectMetric = (
  *
  * Notes:
  * - Requires 5-hour, 7-day, and 7-day Opus windows; otherwise returns undefined.
+ * - Windows with missing reset timestamps are retained with `resets_at: null`,
+ *   which the schema transforms to undefined for consumers.
  * - OAuth apps window is optional in the schema and will only be included
  *   when present in the source data.
  */

@@ -5,6 +5,7 @@ import { z } from "zod";
  */
 const UsageMetric = z.object({
   utilization: z.number(),
+  // Transform API null to undefined so the rest of the app only handles string | undefined.
   resets_at: z.iso
     .datetime({ offset: true })
     .nullish()
