@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { UsageResponse } from "../types/usage.js";
+import type { UsageResponseInput } from "../types/usage.js";
 
 const UsageWindowCandidate = z.object({
   window: z.string().optional(),
@@ -16,6 +16,7 @@ const UsageWindowCandidate = z.object({
 });
 
 type UsageWindowCandidate = z.infer<typeof UsageWindowCandidate>;
+type UsageMetricInput = UsageResponseInput["five_hour"];
 
 const UsageWindowCandidates = z.array(UsageWindowCandidate);
 
@@ -26,7 +27,7 @@ const UsageWindowCandidates = z.array(UsageWindowCandidate);
 const tokenizeLabel = (label: string): Set<string> =>
   new Set(label.split(/[^a-z0-9]+/gu).filter(Boolean));
 
-const normaliseLabel = (candidate: UsageWindowCandidate): string =>
+const normalizeLabel = (candidate: UsageWindowCandidate): string =>
   (
     candidate.window ||
     candidate.period ||
@@ -37,7 +38,7 @@ const normaliseLabel = (candidate: UsageWindowCandidate): string =>
 
 const resolveResetTimestamp = (
   candidate: UsageWindowCandidate,
-): string | undefined => {
+): string | null => {
   const values = [
     candidate.resets_at,
     candidate.reset_at,
@@ -46,9 +47,10 @@ const resolveResetTimestamp = (
   ];
   for (const value of values) {
     if (value === undefined) continue;
-    return value === null ? undefined : value;
+    return value;
   }
-  return undefined;
+  // eslint-disable-next-line unicorn/no-null -- Schema expects explicit null for absent timestamps
+  return null;
 };
 
 const resolveUtilization = (candidate: UsageWindowCandidate): number =>
@@ -57,17 +59,18 @@ const resolveUtilization = (candidate: UsageWindowCandidate): number =>
 const selectMetric = (
   candidates: readonly UsageWindowCandidate[],
   matchers: readonly string[],
-): { utilization: number; resets_at: string | undefined } | undefined => {
+): UsageMetricInput | undefined => {
   for (const candidate of candidates) {
-    const label = normaliseLabel(candidate);
+    const label = normalizeLabel(candidate);
     if (!label) continue;
     const tokens = tokenizeLabel(label);
     const matches =
       matchers.includes(label) ||
       matchers.some((matcher) => tokens.has(matcher));
     if (!matches) continue;
+    const utilization = resolveUtilization(candidate);
     return {
-      utilization: resolveUtilization(candidate),
+      utilization,
       resets_at: resolveResetTimestamp(candidate),
     };
   }
@@ -84,7 +87,7 @@ const selectMetric = (
  */
 export function coalesceClaudeUsageResponse(
   data: unknown,
-): UsageResponse | undefined {
+): UsageResponseInput | undefined {
   if (!Array.isArray(data)) return undefined;
   const parsed = UsageWindowCandidates.safeParse(data);
   if (!parsed.success) return undefined;
@@ -110,17 +113,12 @@ export function coalesceClaudeUsageResponse(
 
   if (!fiveHour || !sevenDay || !sevenDayOpus) return undefined;
 
-  const result: {
-    five_hour: typeof fiveHour;
-    seven_day: typeof sevenDay;
-    seven_day_opus: typeof sevenDayOpus;
-    seven_day_oauth_apps?: typeof sevenDayOauth;
-  } = {
+  const result: UsageResponseInput = {
     five_hour: fiveHour,
     seven_day: sevenDay,
     seven_day_opus: sevenDayOpus,
   };
   if (sevenDayOauth) result.seven_day_oauth_apps = sevenDayOauth;
 
-  return result satisfies UsageResponse;
+  return result;
 }
