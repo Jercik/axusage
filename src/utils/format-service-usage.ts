@@ -45,11 +45,11 @@ function formatUsageWindow(window: UsageWindow): string {
   );
   const coloredUtilization = getUtilizationColor(rate)(utilizationString);
   const resetTime = formatResetTime(window.resetsAt);
-  // Build numeric part first; append suffix only when rate is available
-  const rateString = rate === undefined ? "n/a" : rate.toFixed(2);
+  // Build full display string for rate to keep formatting consistent
+  const rateDisplay = rate === undefined ? "n/a" : `${rate.toFixed(2)}x rate`;
 
   return `${chalk.bold(window.name)}:
-  Utilization: ${coloredUtilization} (${rateString}${rate === undefined ? "" : "x rate"})
+  Utilization: ${coloredUtilization} (${rateDisplay})
   Resets at:   ${resetTime}`;
 }
 
