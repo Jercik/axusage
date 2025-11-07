@@ -3,7 +3,11 @@ import {
   toServiceUsageData,
   CLAUDE_PERIOD_DURATIONS,
 } from "./parse-claude-usage.js";
-import type { UsageResponse } from "../types/usage.js";
+import {
+  UsageResponse as UsageResponseSchema,
+  type UsageResponse,
+  type UsageResponseInput,
+} from "../types/usage.js";
 
 describe("claude parsing", () => {
   it("excludes oauth apps window when null and uses correct durations", () => {
@@ -46,10 +50,11 @@ describe("claude parsing", () => {
   });
 
   it("handles missing reset timestamp by propagating undefined", () => {
-    const resp: UsageResponse = {
+    const resp: UsageResponseInput = {
       five_hour: {
         utilization: 0,
-        resets_at: undefined, // API null is transformed to undefined by the schema
+        // eslint-disable-next-line unicorn/no-null -- API returns null
+        resets_at: null, // API null is transformed to undefined by the schema
       },
       seven_day: { utilization: 2, resets_at: "2025-10-30T00:00:00Z" },
       // eslint-disable-next-line unicorn/no-null -- API returns null
@@ -57,7 +62,7 @@ describe("claude parsing", () => {
       seven_day_opus: { utilization: 3, resets_at: "2025-11-01T00:00:00Z" },
     };
 
-    const data = toServiceUsageData(resp);
+    const data = toServiceUsageData(UsageResponseSchema.parse(resp));
     expect(data.windows[0]?.resetsAt).toBeUndefined();
   });
 
