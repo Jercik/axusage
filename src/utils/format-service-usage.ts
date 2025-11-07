@@ -46,7 +46,8 @@ function formatUsageWindow(window: UsageWindow): string {
   const coloredUtilization = getUtilizationColor(rate)(utilizationString);
   const resetTime = formatResetTime(window.resetsAt);
   // Build full display string for rate to keep formatting consistent
-  const rateDisplay = rate === undefined ? "n/a" : `${rate.toFixed(2)}x rate`;
+  const rateDisplay =
+    rate === undefined ? "Not available" : `${rate.toFixed(2)}x rate`;
 
   return `${chalk.bold(window.name)}:
   Utilization: ${coloredUtilization} (${rateDisplay})
