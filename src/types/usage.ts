@@ -5,7 +5,13 @@ import { z } from "zod";
  */
 const UsageMetric = z.object({
   utilization: z.number(),
-  resets_at: z.iso.datetime({ offset: true }),
+  // Transform API null to undefined so the rest of the app only handles string | undefined.
+  resets_at: z.iso
+    .datetime({ offset: true })
+    .nullish()
+    .transform((value): string | undefined =>
+      value === null ? undefined : value,
+    ),
 });
 
 /**
@@ -19,3 +25,4 @@ export const UsageResponse = z.object({
 });
 
 export type UsageResponse = z.infer<typeof UsageResponse>;
+export type UsageResponseInput = z.input<typeof UsageResponse>;

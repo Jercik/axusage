@@ -5,10 +5,8 @@ import type {
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
-import {
-  toServiceUsageData,
-  coalesceArrayToUsageResponse,
-} from "./parse-claude-usage.js";
+import { toServiceUsageData } from "./parse-claude-usage.js";
+import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
 import {
   acquireAuthManager,
   releaseAuthManager,
@@ -39,7 +37,7 @@ export const claudeAdapter: ServiceAdapter = {
       const body = await manager.makeAuthenticatedRequest("claude", API_URL);
       const data = JSON.parse(body);
       const parseResult = UsageResponseSchema.safeParse(
-        coalesceArrayToUsageResponse(data) ?? data,
+        coalesceClaudeUsageResponse(data) ?? data,
       );
 
       if (!parseResult.success) {

@@ -4,9 +4,10 @@
  */
 export function calculateUsageRate(
   utilization: number,
-  resetsAt: Date,
+  resetsAt: Date | undefined,
   periodDurationMs: number,
-): number {
+): number | undefined {
+  if (!resetsAt) return undefined;
   if (periodDurationMs <= 0) return 0;
   const now = Date.now();
   const resetTime = resetsAt.getTime();
