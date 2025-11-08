@@ -2,7 +2,9 @@ import envPaths from "env-paths";
 import path from "node:path";
 
 /**
- * Get cross-platform application paths using env-paths
+ * env-paths resolves directories during module initialization, so changes to
+ * environment variables (like XDG_DATA_HOME) after the first import will not
+ * be picked up without restarting the process.
  */
 const paths = envPaths("agent-usage", { suffix: "" });
 
