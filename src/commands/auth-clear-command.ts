@@ -1,12 +1,11 @@
 import chalk from "chalk";
 import { rm } from "node:fs/promises";
-import path from "node:path";
-import { homedir } from "node:os";
 import { validateService } from "../services/supported-service.js";
 import {
   getAuthMetaPathFor,
   getStorageStatePathFor,
 } from "../services/auth-storage-path.js";
+import { getBrowserContextsDirectory } from "../services/app-paths.js";
 
 type AuthClearOptions = { readonly service?: string };
 
@@ -14,11 +13,7 @@ export async function authClearCommand(
   options: AuthClearOptions,
 ): Promise<void> {
   const service = validateService(options.service);
-  const dataDirectory = path.join(
-    homedir(),
-    ".agent-usage",
-    "browser-contexts",
-  );
+  const dataDirectory = getBrowserContextsDirectory();
   const storage = getStorageStatePathFor(dataDirectory, service);
   const meta = getAuthMetaPathFor(dataDirectory, service);
   try {

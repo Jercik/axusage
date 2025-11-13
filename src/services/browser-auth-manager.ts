@@ -1,8 +1,6 @@
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
 import { mkdir, chmod } from "node:fs/promises";
-import { homedir } from "node:os";
-import path from "node:path";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
@@ -10,6 +8,7 @@ import { requestService } from "./request-service.js";
 import { doSetupAuth } from "./do-setup-auth.js";
 import { getStorageStatePathFor } from "./auth-storage-path.js";
 import { createAuthContext } from "./create-auth-context.js";
+import { getBrowserContextsDirectory } from "./app-paths.js";
 
 /**
  * Configuration for browser authentication manager
@@ -29,9 +28,7 @@ export class BrowserAuthManager {
   private browserPromise: Promise<Browser> | undefined = undefined;
 
   constructor(config: BrowserAuthConfig = {}) {
-    this.dataDir =
-      config.dataDir ||
-      path.join(homedir(), ".agent-usage", "browser-contexts");
+    this.dataDir = config.dataDir || getBrowserContextsDirectory();
     // Default to headless for non-interactive usage flows; auth setup passes headless: false
     this.headless = config.headless ?? true;
   }

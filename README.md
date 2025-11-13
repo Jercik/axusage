@@ -38,7 +38,15 @@ node bin/agent-usage auth status
 
 When you run `auth setup`, a browser window will open. Simply log in to the service as you normally would. Your authentication will be saved and automatically used for future requests.
 
-**Authenticated sessions are stored in:** `~/.agent-usage/browser-contexts/`
+**Authenticated sessions directory (via [`env-paths`](https://github.com/sindresorhus/env-paths)):**
+
+- Linux: `~/.local/share/agent-usage/browser-contexts/` (or `$XDG_DATA_HOME/agent-usage/browser-contexts/`)
+- macOS: `~/Library/Application Support/agent-usage/browser-contexts/`
+- Windows: `%LOCALAPPDATA%\agent-usage\Data\browser-contexts\`
+
+You can override the location by providing `BrowserAuthConfig.dataDir`, but the CLI defaults to these platform-appropriate directories.
+
+> **Migration note:** Releases before env-paths support stored sessions under `~/.agent-usage/browser-contexts/`. Upgrade by either rerunning `node bin/agent-usage auth setup <service>` or moving the old directory into the platform-specific path above (for example, `mv ~/.agent-usage/browser-contexts ~/.local/share/agent-usage/browser-contexts` on Linux).
 
 Security notes:
 
@@ -131,10 +139,11 @@ You can perform the interactive login flow on a workstation (for example, a loca
    node bin/agent-usage auth status
    ```
 
-3. Package the saved contexts so they can be transferred. The sessions live under `~/.agent-usage/browser-contexts/`:
+3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
 
    ```bash
-   tar czf agent-usage-contexts.tgz -C ~ .agent-usage/browser-contexts
+   CONTEXT_DIR="$HOME/.local/share/agent-usage/browser-contexts"  # Linux default; adjust on macOS/Windows
+   tar czf agent-usage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
    ```
 
    Archive structure: `browser-contexts/claude/`, `browser-contexts/chatgpt/`, etc.
@@ -151,11 +160,13 @@ You can perform the interactive login flow on a workstation (for example, a loca
 
    ```bash
    ssh user@server
-   mkdir -p ~/.agent-usage
-   tar xzf ~/agent-usage-contexts.tgz -C ~/.agent-usage
+   CONTEXT_DIR="$HOME/.local/share/agent-usage/browser-contexts"  # Linux default; adjust per platform
+   AGENT_USAGE_DIR="$(dirname "$CONTEXT_DIR")"
+   mkdir -p "$CONTEXT_DIR"
+   tar xzf ~/agent-usage-contexts.tgz -C "$AGENT_USAGE_DIR"
    # Directories 700, files 600
-   find ~/.agent-usage -type d -exec chmod 700 {} +
-   find ~/.agent-usage/browser-contexts -type f -exec chmod 600 {} +
+   find "$AGENT_USAGE_DIR" -type d -exec chmod 700 {} +
+   find "$CONTEXT_DIR" -type f -exec chmod 600 {} +
    ```
 
 3. Verify that the sessions are available on the server:
@@ -195,11 +206,11 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
 2. Schedule the exporter (cron example, runs every 15 minutes):
 
    ```cron
-   # Run as the same user that owns ~/.agent-usage
+   # Run as the same user that owns the agent-usage browser contexts directory
    */15 * * * * /opt/agent-usage/export-agent-usage-metrics.sh
    ```
 
-   For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read `~/.agent-usage/browser-contexts` and write to the textfile directory.
+   For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read the contexts directory listed above and write to the textfile directory.
 
    Example systemd units (adjust `User=` and paths):
 
@@ -244,4 +255,4 @@ Notes:
 - Use `--service <name>` to restrict services.
 - Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `auth setup` as needed.
 - If you transfer browser contexts between machines, ensure the target system is secure and permissions are restricted to the intended user.
-- The CLI stores authentication data in `~/.agent-usage/browser-contexts`; protect this directory to prevent unauthorized access.
+- The CLI stores authentication data in the platform-specific directories listed above; protect that directory to prevent unauthorized access.

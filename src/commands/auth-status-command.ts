@@ -1,12 +1,11 @@
 import chalk from "chalk";
 import { existsSync } from "node:fs";
-import path from "node:path";
-import { homedir } from "node:os";
 import {
   SUPPORTED_SERVICES,
   validateService,
 } from "../services/supported-service.js";
 import { getStorageStatePathFor } from "../services/auth-storage-path.js";
+import { getBrowserContextsDirectory } from "../services/app-paths.js";
 
 type AuthStatusOptions = { readonly service?: string };
 
@@ -15,11 +14,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     ? [validateService(options.service)]
     : SUPPORTED_SERVICES;
 
-  const dataDirectory = path.join(
-    homedir(),
-    ".agent-usage",
-    "browser-contexts",
-  );
+  const dataDirectory = getBrowserContextsDirectory();
 
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
