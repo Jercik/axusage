@@ -46,8 +46,6 @@ When you run `auth setup`, a browser window will open. Simply log in to the serv
 
 You can override the location by providing `BrowserAuthConfig.dataDir`, but the CLI defaults to these platform-appropriate directories.
 
-> **Migration note:** Releases before env-paths support stored sessions under `~/.agent-usage/browser-contexts/`. Upgrade by either rerunning `node bin/agent-usage auth setup <service>` or moving the old directory into the platform-specific path above (for example, `mv ~/.agent-usage/browser-contexts ~/.local/share/agent-usage/browser-contexts` on Linux).
-
 Security notes:
 
 - Files in this directory contain sensitive session data. They are created with owner-only permissions (0600 for files, 0700 for the directory) where possible.
