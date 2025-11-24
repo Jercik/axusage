@@ -1,6 +1,10 @@
 import { chromium } from "playwright";
 import type { Browser } from "playwright";
 
+/**
+ * Launch Chromium with automation indicators disabled to reduce Cloudflare bot detection
+ * during the authentication flow.
+ */
 export async function launchChromium(headless: boolean): Promise<Browser> {
   try {
     return await chromium.launch({

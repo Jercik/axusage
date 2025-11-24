@@ -4,6 +4,8 @@ const USAGE_PAGE = "https://claude.ai/settings/usage";
 const USAGE_API =
   /^https:\/\/claude\.ai\/api\/organizations\/[^/]+\/usage(?:\?.*)?$/iu;
 const LOGIN_URL_PATTERN = /claude\.ai\/login/iu;
+const LOGIN_REDIRECT_ERROR_MESSAGE =
+  "Redirected to login page. Please run 'agent-usage auth setup claude' to re-authenticate.";
 
 function isJsonResponse(response: Response): boolean {
   const headers = response.headers();
@@ -20,6 +22,9 @@ export async function fetchClaudeJsonFromPage(
       (response) => USAGE_API.test(response.url()) && isJsonResponse(response),
       { timeout: 60_000 },
     );
+    waitForJson.catch(() => {
+      // Avoid unhandled rejection if we bail early on login redirect
+    });
 
     const response = await page.goto(USAGE_PAGE, {
       waitUntil: "domcontentloaded",
@@ -27,9 +32,7 @@ export async function fetchClaudeJsonFromPage(
 
     // Fast fail if we are redirected to login
     if (response && LOGIN_URL_PATTERN.test(response.url())) {
-      throw new Error(
-        "Redirected to login page. Please run 'agent-usage auth setup claude' to re-authenticate.",
-      );
+      throw new Error(LOGIN_REDIRECT_ERROR_MESSAGE);
     }
 
     try {
@@ -41,9 +44,7 @@ export async function fetchClaudeJsonFromPage(
         error.message.includes("Timeout") &&
         LOGIN_URL_PATTERN.test(page.url())
       ) {
-        throw new Error(
-          "Redirected to login page. Please run 'agent-usage auth setup claude' to re-authenticate.",
-        );
+        throw new Error(LOGIN_REDIRECT_ERROR_MESSAGE);
       }
       throw error;
     }
