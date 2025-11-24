@@ -18,13 +18,18 @@ export async function fetchClaudeJsonFromPage(
 ): Promise<string> {
   const page = await context.newPage();
   try {
-    const waitForJson = page.waitForResponse(
-      (response) => USAGE_API.test(response.url()) && isJsonResponse(response),
-      { timeout: 60_000 },
-    );
-    waitForJson.catch(() => {
-      // Avoid unhandled rejection if we bail early on login redirect
-    });
+    const waitForJson = page
+      .waitForResponse(
+        (response) =>
+          USAGE_API.test(response.url()) && isJsonResponse(response),
+        { timeout: 60_000 },
+      )
+      .catch((error) => {
+        // Avoid unhandled rejection if we bail early on login redirect; rethrow otherwise
+        if (!LOGIN_URL_PATTERN.test(page.url())) {
+          throw error;
+        }
+      });
 
     const response = await page.goto(USAGE_PAGE, {
       waitUntil: "domcontentloaded",
@@ -37,6 +42,9 @@ export async function fetchClaudeJsonFromPage(
 
     try {
       const apiResponse = await waitForJson;
+      if (!apiResponse) {
+        throw new Error(LOGIN_REDIRECT_ERROR_MESSAGE);
+      }
       return await apiResponse.text();
     } catch (error) {
       if (
