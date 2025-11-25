@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { parseSetCookie } from "./parse-set-cookie.js";
 
 export interface Cookie {
   readonly name: string;
@@ -29,7 +30,7 @@ export async function loadClaudeCookies(
     (c) =>
       c.domain === ".claude.ai" ||
       c.domain === "claude.ai" ||
-      c.domain?.endsWith("claude.ai"),
+      c.domain?.endsWith(".claude.ai"),
   );
 }
 
@@ -68,22 +69,10 @@ export function mergeCookies(
   }
 
   for (const header of setCookieHeaders) {
-    const parts = header.split(";")[0];
-    if (!parts) continue;
-    const equalsIndex = parts.indexOf("=");
-    if (equalsIndex === -1) continue;
-
-    const name = parts.slice(0, equalsIndex).trim();
-    const value = parts.slice(equalsIndex + 1).trim();
-
-    cookieMap.set(name, {
-      name,
-      value,
-      domain: ".claude.ai",
-      path: "/",
-      secure: true,
-      sameSite: "Lax",
-    });
+    const cookie = parseSetCookie(header);
+    if (cookie) {
+      cookieMap.set(cookie.name, cookie);
+    }
   }
 
   return [...cookieMap.values()];

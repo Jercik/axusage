@@ -6,11 +6,6 @@ import {
   mergeCookies,
 } from "./cookie-storage.js";
 
-interface Organization {
-  readonly uuid: string;
-  readonly name?: string;
-}
-
 /**
  * Make an HTTP request to Claude's API with session cookies.
  */
@@ -56,9 +51,14 @@ async function fetchOrganizationId(
     throw new Error("No organizations found");
   }
 
-  const org = data[0] as Organization;
-  if (!org.uuid) {
-    throw new Error("Organization UUID not found");
+  const org: unknown = data[0];
+  if (
+    typeof org !== "object" ||
+    org === null ||
+    !("uuid" in org) ||
+    typeof org.uuid !== "string"
+  ) {
+    throw new Error("Invalid organization response format");
   }
 
   return { orgId: org.uuid, setCookies };
@@ -86,11 +86,9 @@ export async function fetchClaudeUsage(cookiePath: string): Promise<string> {
     await fetchOrganizationId(cookies);
   allSetCookies.push(...orgSetCookies);
 
-  const updatedCookies = mergeCookies(cookies, allSetCookies);
-
   const { data, setCookies: usageSetCookies } = await fetchWithCookies(
     `https://claude.ai/api/organizations/${orgId}/usage`,
-    updatedCookies,
+    cookies,
   );
   allSetCookies.push(...usageSetCookies);
 
