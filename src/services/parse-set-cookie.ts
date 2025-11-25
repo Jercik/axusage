@@ -12,6 +12,7 @@ export function parseSetCookie(header: string): Cookie | undefined {
   if (equalsIndex === -1) return undefined;
 
   const name = nameValue.slice(0, equalsIndex).trim();
+  if (name.length === 0) return undefined;
   const value = nameValue.slice(equalsIndex + 1).trim();
 
   const cookie: {
