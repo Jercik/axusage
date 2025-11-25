@@ -27,7 +27,7 @@ describe("coalesceClaudeUsageResponse", () => {
     expect(result?.five_hour.utilization).toBe(10);
     expect(result?.five_hour.resets_at).toBeNull();
     expect(result?.seven_day.resets_at).toBeNull();
-    expect(result?.seven_day_opus.resets_at).toBeNull();
+    expect(result?.seven_day_opus?.resets_at).toBeNull();
 
     const parseResult = UsageResponseSchema.safeParse(result);
     expect(parseResult.success).toBe(true);
@@ -37,7 +37,7 @@ describe("coalesceClaudeUsageResponse", () => {
     const parsed = parseResult.data;
     expect(parsed.five_hour.resets_at).toBeUndefined();
     expect(parsed.seven_day.resets_at).toBeUndefined();
-    expect(parsed.seven_day_opus.resets_at).toBeUndefined();
+    expect(parsed.seven_day_opus?.resets_at).toBeUndefined();
   });
 
   it("derives utilization from alternative percentage fields", () => {
@@ -49,6 +49,6 @@ describe("coalesceClaudeUsageResponse", () => {
 
     expect(result?.five_hour.utilization).toBe(25);
     expect(result?.seven_day.utilization).toBe(55);
-    expect(result?.seven_day_opus.utilization).toBe(65);
+    expect(result?.seven_day_opus?.utilization).toBe(65);
   });
 });

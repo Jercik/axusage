@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type {
   ServiceAdapter,
   ServiceUsageData,
@@ -7,35 +8,38 @@ import { ApiError } from "../types/domain.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 import { toServiceUsageData } from "./parse-claude-usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
-import {
-  acquireAuthManager,
-  releaseAuthManager,
-} from "../services/shared-browser-auth-manager.js";
+import { fetchClaudeUsage } from "../services/fetch-claude-usage.js";
+import { getBrowserContextsDirectory } from "../services/app-paths.js";
+import { getStorageStatePathFor } from "../services/auth-storage-path.js";
 import { z } from "zod";
-
-const API_URL = "https://api.anthropic.com/api/oauth/usage";
 
 /** Functional core is extracted to ./parse-claude-usage.ts */
 
 /**
- * Claude service adapter
+ * Claude service adapter using HTTP requests with session cookies.
+ *
+ * This adapter uses Playwright-stored cookies to make direct HTTP requests
+ * to Claude's API for fetching usage data.
  */
 export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const manager = acquireAuthManager();
+    const dataDirectory = getBrowserContextsDirectory();
+    const cookiePath = getStorageStatePathFor(dataDirectory, "claude");
+
+    if (!existsSync(cookiePath)) {
+      return {
+        ok: false,
+        error: new ApiError(
+          "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
+        ),
+      };
+    }
+
     try {
-      if (!manager.hasAuth("claude")) {
-        return {
-          ok: false,
-          error: new ApiError(
-            "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
-          ),
-        };
-      }
-      const body = await manager.makeAuthenticatedRequest("claude", API_URL);
-      const data = JSON.parse(body);
+      const body = await fetchClaudeUsage(cookiePath);
+      const data: unknown = JSON.parse(body);
       const parseResult = UsageResponseSchema.safeParse(
         coalesceClaudeUsageResponse(data) ?? data,
       );
@@ -82,13 +86,9 @@ export const claudeAdapter: ServiceAdapter = {
       return {
         ok: false,
         error: new ApiError(
-          hint
-            ? `${message}. ${hint}`
-            : `Browser authentication failed: ${message}`,
+          hint ? `${message}. ${hint}` : `HTTP fetch failed: ${message}`,
         ),
       };
-    } finally {
-      await releaseAuthManager();
     }
   },
 };
