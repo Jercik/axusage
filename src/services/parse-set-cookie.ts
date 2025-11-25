@@ -46,7 +46,7 @@ export function parseSetCookie(header: string): Cookie | undefined {
         cookie.expires = date.getTime() / 1000;
       }
     } else if (attribute.startsWith("max-age=")) {
-      const maxAge = Number.parseInt(attribute.slice(8));
+      const maxAge = Number.parseInt(parts[index]?.trim().slice(8) ?? "");
       if (!Number.isNaN(maxAge)) {
         cookie.expires = Date.now() / 1000 + maxAge;
       }

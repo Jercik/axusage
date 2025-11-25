@@ -25,12 +25,20 @@ export async function loadClaudeCookies(
   cookiePath: string,
 ): Promise<readonly Cookie[]> {
   const content = await readFile(cookiePath, "utf8");
-  const state = JSON.parse(content) as StorageState;
-  return state.cookies.filter(
-    (c) =>
-      c.domain === ".claude.ai" ||
-      c.domain === "claude.ai" ||
-      c.domain?.endsWith(".claude.ai"),
+  const state: unknown = JSON.parse(content);
+  if (
+    typeof state !== "object" ||
+    state === null ||
+    !("cookies" in state) ||
+    !Array.isArray(state.cookies)
+  ) {
+    throw new Error(`Invalid storage state format in ${cookiePath}`);
+  }
+  // Match ".claude.ai", "claude.ai", and legitimate subdomains like ".api.claude.ai"
+  // The regex ensures we don't match domains like ".fake-claude.ai"
+  const claudeDomainPattern = /^\.?([\w-]+\.)*claude\.ai$/iu;
+  return (state.cookies as readonly Cookie[]).filter(
+    (c) => c.domain !== undefined && claudeDomainPattern.test(c.domain),
   );
 }
 
