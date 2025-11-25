@@ -89,9 +89,11 @@ export async function fetchClaudeUsage(cookiePath: string): Promise<string> {
     await fetchOrganizationId(cookies);
   allSetCookies.push(...orgSetCookies);
 
+  // Use merged cookies in case the org endpoint refreshed session tokens
+  const cookiesForUsage = mergeCookies(cookies, orgSetCookies);
   const { data, setCookies: usageSetCookies } = await fetchWithCookies(
     `https://claude.ai/api/organizations/${orgId}/usage`,
-    cookies,
+    cookiesForUsage,
   );
   allSetCookies.push(...usageSetCookies);
 
