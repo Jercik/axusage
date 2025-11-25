@@ -39,7 +39,7 @@ export function parseSetCookie(header: string): Cookie | undefined {
     } else if (attribute === "secure") {
       cookie.secure = true;
     } else if (attribute.startsWith("samesite=")) {
-      cookie.sameSite = attribute.slice(9);
+      cookie.sameSite = parts[index]?.trim().slice(9) ?? "";
     } else if (attribute.startsWith("expires=")) {
       const date = new Date(parts[index]?.trim().slice(8) ?? "");
       if (!Number.isNaN(date.getTime())) {
@@ -51,9 +51,9 @@ export function parseSetCookie(header: string): Cookie | undefined {
         cookie.expires = Date.now() / 1000 + maxAge;
       }
     } else if (attribute.startsWith("domain=")) {
-      cookie.domain = attribute.slice(7);
+      cookie.domain = parts[index]?.trim().slice(7) ?? "";
     } else if (attribute.startsWith("path=")) {
-      cookie.path = attribute.slice(5);
+      cookie.path = parts[index]?.trim().slice(5) ?? "";
     }
   }
 

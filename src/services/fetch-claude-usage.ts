@@ -17,9 +17,12 @@ async function fetchWithCookies(
     headers: {
       Accept: "application/json",
       Cookie: formatCookieHeader(cookies),
+      // Intentionally truncated User-Agent to avoid Cloudflare bot detection.
+      // Full Chrome UA triggers 403 errors; this minimal version works reliably.
       "User-Agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
     },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
