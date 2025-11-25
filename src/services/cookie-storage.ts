@@ -34,8 +34,8 @@ export async function loadClaudeCookies(
   ) {
     throw new Error(`Invalid storage state format in ${cookiePath}`);
   }
-  // Match ".claude.ai", "claude.ai", and legitimate subdomains like ".api.claude.ai"
-  // The regex ensures we don't match domains like ".fake-claude.ai"
+  // Match ".claude.ai", "claude.ai", and legitimate subdomains like "api.claude.ai"
+  // The regex ensures we only match domains ending with "claude.ai"
   const claudeDomainPattern = /^\.?([\w-]+\.)*claude\.ai$/iu;
   return (state.cookies as readonly Cookie[]).filter(
     (c) => c.domain !== undefined && claudeDomainPattern.test(c.domain),
@@ -65,6 +65,10 @@ export function formatCookieHeader(cookies: readonly Cookie[]): string {
 
 /**
  * Parse Set-Cookie headers and merge with existing cookies.
+ *
+ * Note: Cookies are keyed by name only, not by the full (name, domain, path) tuple
+ * per RFC 6265. This is acceptable for Claude.ai authentication where all cookies
+ * share the same domain.
  */
 export function mergeCookies(
   existing: readonly Cookie[],
