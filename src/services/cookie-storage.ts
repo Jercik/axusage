@@ -66,11 +66,9 @@ export function formatCookieHeader(cookies: readonly Cookie[]): string {
 /**
  * Parse Set-Cookie headers and merge with existing cookies.
  *
- * Note: Cookies are keyed by name only, not by the full (name, domain, path) tuple
- * per RFC 6265. This intentionally accepts subdomains (see claudeDomainPattern) and
- * relies on tested behavior that Claude's API never issues the same cookie name for
- * different domains/paths. If that changes, switch to compound keying to avoid
- * collisions.
+ * Note: Cookies are keyed by (name, domain, path) to match RFC 6265. We intentionally
+ * accept subdomains (see claudeDomainPattern) while keeping tuple-based keys to avoid
+ * collisions if Claude ever issues the same cookie name across different scopes.
  */
 export function mergeCookies(
   existing: readonly Cookie[],
@@ -79,13 +77,15 @@ export function mergeCookies(
   const cookieMap = new Map<string, Cookie>();
 
   for (const cookie of existing) {
-    cookieMap.set(cookie.name, cookie);
+    const key = `${cookie.name}:${cookie.domain ?? ""}:${cookie.path ?? ""}`;
+    cookieMap.set(key, cookie);
   }
 
   for (const header of setCookieHeaders) {
     const cookie = parseSetCookie(header);
     if (cookie) {
-      cookieMap.set(cookie.name, cookie);
+      const key = `${cookie.name}:${cookie.domain ?? ""}:${cookie.path ?? ""}`;
+      cookieMap.set(key, cookie);
     }
   }
 

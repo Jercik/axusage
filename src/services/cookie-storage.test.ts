@@ -56,7 +56,7 @@ describe("formatCookieHeader", () => {
 });
 
 describe("mergeCookies", () => {
-  it("merges existing cookies with Set-Cookie headers by name", () => {
+  it("merges existing cookies with Set-Cookie headers by tuple key", () => {
     const existing: Cookie[] = [
       { name: "session_id", value: "abc", domain: ".claude.ai", path: "/" },
     ];
@@ -68,6 +68,12 @@ describe("mergeCookies", () => {
     ]);
 
     expect(merged).toEqual([
+      {
+        name: "session_id",
+        value: "abc",
+        domain: ".claude.ai",
+        path: "/",
+      },
       {
         name: "session_id",
         value: "refreshed",
