@@ -25,6 +25,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       ? chalk.green("✓ Authenticated")
       : chalk.gray("✗ Not authenticated");
     console.log(`${chalk.bold(service)}: ${status}`);
+    console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
   }
 
   const allAuthenticated = servicesToCheck.every((s) =>

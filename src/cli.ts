@@ -8,6 +8,7 @@ import { authStatusCommand } from "./commands/auth-status-command.js";
 import { authClearCommand } from "./commands/auth-clear-command.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
 import { installAuthManagerCleanup } from "./services/shared-browser-auth-manager.js";
+import { getBrowserContextsDirectory } from "./services/app-paths.js";
 
 const program = new Command()
   .name(packageJson.name)
@@ -44,7 +45,8 @@ program
 // Auth command group
 const auth = program
   .command("auth")
-  .description("Manage authentication for services");
+  .description("Manage authentication for services")
+  .addHelpText("after", `\nStorage: ${getBrowserContextsDirectory()}`);
 
 auth
   .command("setup")
