@@ -1,14 +1,20 @@
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
-import { mkdir, chmod } from "node:fs/promises";
+import { chmod } from "node:fs/promises";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
 import { requestService } from "./request-service.js";
 import { doSetupAuth } from "./do-setup-auth.js";
 import { getStorageStatePathFor } from "./auth-storage-path.js";
-import { createAuthContext } from "./create-auth-context.js";
-import { getBrowserContextsDirectory } from "./app-paths.js";
+import {
+  createAuthContext,
+  loadStoredUserAgent,
+} from "./create-auth-context.js";
+import {
+  getBrowserContextsDirectory,
+  ensureSecureDirectory,
+} from "./app-paths.js";
 
 /**
  * Configuration for browser authentication manager
@@ -70,29 +76,19 @@ export class BrowserAuthManager {
    */
   async setupAuth(service: SupportedService): Promise<void> {
     const config = getServiceAuthConfig(service);
-
-    // Ensure data directory exists (restrict permissions to owner)
-    await mkdir(this.dataDir, { recursive: true, mode: 0o700 }).catch(
-      (error: unknown) => {
-        // mkdir may ignore mode due to umask; enforce via chmod
-        if (
-          !error ||
-          typeof error !== "object" ||
-          !("code" in error) ||
-          (error as { code?: unknown }).code !== "EEXIST"
-        ) {
-          throw error;
-        }
-      },
-    );
-    try {
-      await chmod(this.dataDir, 0o700);
-    } catch {
-      // best effort
-    }
+    await ensureSecureDirectory(this.dataDir);
 
     const browser = await this.ensureBrowser();
-    const context = await browser.newContext();
+    const storagePath = this.getStorageStatePath(service);
+
+    // Load existing storage state if available - this gives the browser a chance
+    // to refresh expired cookies/tokens during the login flow
+    const storageState = existsSync(storagePath) ? storagePath : undefined;
+    const userAgent = storageState
+      ? await loadStoredUserAgent(this.dataDir, service)
+      : undefined;
+
+    const context = await browser.newContext({ storageState, userAgent });
     try {
       await doSetupAuth(
         service,
