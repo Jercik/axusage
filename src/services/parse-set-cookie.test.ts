@@ -51,11 +51,7 @@ describe("parseSetCookie", () => {
     const spacedValue = parseSetCookie("token= spaced value ; Path=/; Secure");
 
     expect(emptyValue).toMatchObject({ name: "empty", value: "" });
-    expect(spacedValue).toMatchObject({
-      name: "token",
-      value: "spaced value",
-      secure: true,
-    });
+    expect(spacedValue).toMatchObject({ name: "token", value: "spaced value" });
   });
 
   it("supports uppercase attributes and canonicalizes SameSite", () => {
@@ -71,6 +67,19 @@ describe("parseSetCookie", () => {
       httpOnly: true,
       secure: true,
       sameSite: "None",
+    });
+  });
+
+  it("trims domain and path values", () => {
+    const result = parseSetCookie(
+      "SID=1; Domain= .claude.ai ; Path= /api ; Secure",
+    );
+
+    expect(result).toMatchObject({
+      domain: ".claude.ai",
+      path: "/api",
+      secure: true,
+      sameSite: "Lax",
     });
   });
 

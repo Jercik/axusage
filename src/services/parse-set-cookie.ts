@@ -65,9 +65,9 @@ export function parseSetCookie(header: string): Cookie | undefined {
         expiresFromMaxAge = Date.now() / 1000 + maxAge;
       }
     } else if (attribute.startsWith("domain=")) {
-      cookie.domain = rawAttribute.slice(7);
+      cookie.domain = rawAttribute.slice(7).trim();
     } else if (attribute.startsWith("path=")) {
-      cookie.path = rawAttribute.slice(5);
+      cookie.path = rawAttribute.slice(5).trim();
     }
   }
 

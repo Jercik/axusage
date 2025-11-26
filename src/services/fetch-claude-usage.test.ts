@@ -35,8 +35,17 @@ const mockResponse = (
     },
   }) as unknown as Response;
 
+function assertFetchCall(call: unknown): asserts call is [string, RequestInit] {
+  if (!Array.isArray(call) || typeof call[0] !== "string") {
+    throw new TypeError("fetch call missing url");
+  }
+  if (call.length < 2 || typeof call[1] !== "object" || call[1] === null) {
+    throw new TypeError("fetch call missing init");
+  }
+}
+
 describe("fetchClaudeUsage", () => {
-  const fetchSpy = vi.spyOn(globalThis, "fetch");
+  const fetchSpy = vi.spyOn<typeof globalThis, "fetch">(globalThis, "fetch");
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,14 +69,25 @@ describe("fetchClaudeUsage", () => {
       { name: "session", value: "abc" },
     ]);
     vi.mocked(formatCookieHeader).mockReturnValue("session=abc");
-    fetchSpy.mockResolvedValue(
-      mockResponse(undefined, {
-        ok: false,
-        status: 401,
-        statusText: "Unauthorized",
-      }),
-    );
+    fetchSpy
+      .mockResolvedValueOnce(
+        mockResponse(undefined, {
+          ok: false,
+          status: 401,
+          statusText: "Unauthorized",
+        }),
+      )
+      .mockResolvedValueOnce(
+        mockResponse(undefined, {
+          ok: false,
+          status: 403,
+          statusText: "Forbidden",
+        }),
+      );
 
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /Authentication failed/u,
+    );
     await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
       /Authentication failed/u,
     );
@@ -144,19 +164,21 @@ describe("fetchClaudeUsage", () => {
     const result = await fetchClaudeUsage("/tmp/state.json");
 
     expect(result).toEqual({ usage: 42 });
-    const firstCall = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const firstCall = fetchSpy.mock.calls[0];
+    assertFetchCall(firstCall);
     expect(firstCall[0]).toBe("https://claude.ai/api/organizations");
     expect(firstCall[1].headers).toEqual(
       expect.objectContaining({ Cookie: "session=abc" }),
     );
 
-    const secondCall = fetchSpy.mock.calls[1] as [string, RequestInit];
+    const secondCall = fetchSpy.mock.calls[1];
+    assertFetchCall(secondCall);
     expect(secondCall[0]).toBe(
       "https://claude.ai/api/organizations/org-123/usage",
     );
-    expect(secondCall[1].headers).toEqual(
-      expect.objectContaining({ Cookie: "session=refreshed" }),
-    );
+    const headers = new Headers(secondCall[1].headers);
+    expect(headers.get("Cookie")).toBe("session=refreshed");
+    expect(headers.get("User-Agent")).toContain("AppleWebKit/537.36");
     expect(mergeCookies).toHaveBeenNthCalledWith(1, initialCookies, [
       "org=1; Path=/",
     ]);
