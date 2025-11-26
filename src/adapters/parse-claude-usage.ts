@@ -9,6 +9,7 @@ export const CLAUDE_PERIOD_DURATIONS = {
   seven_day: 7 * 24 * 60 * 60 * 1000,
   seven_day_oauth_apps: 7 * 24 * 60 * 60 * 1000,
   seven_day_opus: 7 * 24 * 60 * 60 * 1000,
+  seven_day_sonnet: 7 * 24 * 60 * 60 * 1000,
 } as const;
 
 /**
@@ -58,12 +59,28 @@ export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
             },
           ]
         : []),
-      {
-        name: "7-Day Opus Usage",
-        utilization: response.seven_day_opus.utilization,
-        resetsAt: parseResetTimestamp(response.seven_day_opus.resets_at),
-        periodDurationMs: CLAUDE_PERIOD_DURATIONS.seven_day_opus,
-      },
+      ...(response.seven_day_opus
+        ? [
+            {
+              name: "7-Day Opus Usage",
+              utilization: response.seven_day_opus.utilization,
+              resetsAt: parseResetTimestamp(response.seven_day_opus.resets_at),
+              periodDurationMs: CLAUDE_PERIOD_DURATIONS.seven_day_opus,
+            },
+          ]
+        : []),
+      ...(response.seven_day_sonnet
+        ? [
+            {
+              name: "7-Day Sonnet Usage",
+              utilization: response.seven_day_sonnet.utilization,
+              resetsAt: parseResetTimestamp(
+                response.seven_day_sonnet.resets_at,
+              ),
+              periodDurationMs: CLAUDE_PERIOD_DURATIONS.seven_day_sonnet,
+            },
+          ]
+        : []),
     ],
   };
 }

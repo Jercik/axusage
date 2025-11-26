@@ -87,10 +87,10 @@ const selectMetric = (
  * Best-effort coalescing for array-shaped Claude usage responses.
  *
  * Notes:
- * - Requires 5-hour, 7-day, and 7-day Opus windows; otherwise returns undefined.
+ * - Requires 5-hour and 7-day windows; otherwise returns undefined.
  * - Windows with missing reset timestamps are retained with `resets_at: null`,
  *   which the schema transforms to undefined for consumers.
- * - OAuth apps window is optional in the schema and will only be included
+ * - Opus, Sonnet, and OAuth apps windows are optional and will only be included
  *   when present in the source data.
  */
 export function coalesceClaudeUsageResponse(
@@ -114,18 +114,23 @@ export function coalesceClaudeUsageResponse(
     "week",
   ]);
   const sevenDayOpus = selectMetric(candidates, ["seven_day_opus", "opus"]);
+  const sevenDaySonnet = selectMetric(candidates, [
+    "seven_day_sonnet",
+    "sonnet",
+  ]);
   const sevenDayOauth = selectMetric(candidates, [
     "seven_day_oauth_apps",
     "oauth",
   ]);
 
-  if (!fiveHour || !sevenDay || !sevenDayOpus) return undefined;
+  if (!fiveHour || !sevenDay) return undefined;
 
   const result: UsageResponseInput = {
     five_hour: fiveHour,
     seven_day: sevenDay,
-    seven_day_opus: sevenDayOpus,
   };
+  if (sevenDayOpus) result.seven_day_opus = sevenDayOpus;
+  if (sevenDaySonnet) result.seven_day_sonnet = sevenDaySonnet;
   if (sevenDayOauth) result.seven_day_oauth_apps = sevenDayOauth;
 
   return result;

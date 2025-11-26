@@ -49,6 +49,29 @@ describe("claude parsing", () => {
     expect(data.windows[2]?.name).toBe("7-Day OAuth Apps");
   });
 
+  it("includes sonnet window when provided", () => {
+    const resp: UsageResponse = {
+      five_hour: { utilization: 1, resets_at: "2025-10-29T00:00:00Z" },
+      seven_day: { utilization: 2, resets_at: "2025-10-30T00:00:00Z" },
+      // eslint-disable-next-line unicorn/no-null -- API returns null
+      seven_day_oauth_apps: null,
+      // eslint-disable-next-line unicorn/no-null -- API returns null
+      seven_day_opus: null,
+      seven_day_sonnet: {
+        utilization: 6,
+        resets_at: "2025-11-02T00:00:00Z",
+      },
+    };
+
+    const data = toServiceUsageData(resp);
+    expect(data.windows).toHaveLength(3);
+    expect(data.windows[2]?.name).toBe("7-Day Sonnet Usage");
+    expect(data.windows[2]?.utilization).toBe(6);
+    expect(data.windows[2]?.periodDurationMs).toBe(
+      CLAUDE_PERIOD_DURATIONS.seven_day_sonnet,
+    );
+  });
+
   it("handles missing reset timestamp by propagating undefined", () => {
     const resp: UsageResponseInput = {
       five_hour: {
