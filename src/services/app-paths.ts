@@ -28,10 +28,9 @@ export async function ensureSecureDirectory(
   } catch (error) {
     // Only ignore EEXIST; re-throw everything else
     // mkdir may ignore mode due to umask; we'll enforce via chmod below
-    if (
-      !(error instanceof Error) ||
-      (error as NodeJS.ErrnoException).code !== "EEXIST"
-    ) {
+    const isEexist =
+      error instanceof Error && "code" in error && error.code === "EEXIST";
+    if (!isEexist) {
       throw error;
     }
   }
