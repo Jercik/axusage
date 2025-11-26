@@ -36,8 +36,9 @@ export const claudeAdapter: ServiceAdapter = {
           ),
         };
       }
-      // URL is ignored for Claude - requestService uses fetchClaudeJsonFromPage
-      // which navigates to the usage page and intercepts the API response
+      // For Claude, makeAuthenticatedRequest uses browser-based fetching which
+      // navigates to the usage page and intercepts the API response. The URL
+      // parameter is required by the interface but not used for Claude requests.
       const body = await manager.makeAuthenticatedRequest(
         "claude",
         "https://claude.ai/api/organizations",
@@ -72,9 +73,13 @@ export const claudeAdapter: ServiceAdapter = {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const is401 = /\b401\b/u.test(message);
+      const hint = is401
+        ? " Note: Claude usage data requires a browser session. The Admin Usage API (api.anthropic.com) requires an Admin API key for programmatic access."
+        : "";
       return {
         ok: false,
-        error: new ApiError(`Browser authentication failed: ${message}`),
+        error: new ApiError(`Browser authentication failed: ${message}${hint}`),
       };
     } finally {
       await releaseAuthManager();
