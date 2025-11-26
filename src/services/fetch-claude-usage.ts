@@ -71,11 +71,28 @@ async function fetchOrganizationId(
  * Fetch Claude usage data using saved session cookies.
  *
  * @param cookiePath - Path to the Playwright storage state file
- * @returns JSON string containing the usage data
+ * @returns Parsed JSON usage data
  * @throws Error if fetch fails or authentication is required
  */
-export async function fetchClaudeUsage(cookiePath: string): Promise<string> {
-  const cookies = await loadClaudeCookies(cookiePath);
+export async function fetchClaudeUsage(cookiePath: string): Promise<unknown> {
+  let cookies: readonly Cookie[];
+  try {
+    cookies = await loadClaudeCookies(cookiePath);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code === "ENOENT") {
+      throw new Error(
+        `Cookie file not found at '${cookiePath}'. Run 'agent-usage auth setup claude' first.`,
+      );
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(
+        `Cookie file at '${cookiePath}' is corrupted or contains invalid JSON. Please re-authenticate using 'agent-usage auth setup claude'.`,
+      );
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to load cookies from '${cookiePath}': ${message}`);
+  }
 
   if (cookies.length === 0) {
     throw new Error(
@@ -100,5 +117,5 @@ export async function fetchClaudeUsage(cookiePath: string): Promise<string> {
   const finalCookies = mergeCookies(cookies, allSetCookies);
   await saveCookies(finalCookies, cookiePath);
 
-  return JSON.stringify(data);
+  return data;
 }

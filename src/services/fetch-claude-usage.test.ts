@@ -74,6 +74,48 @@ describe("fetchClaudeUsage", () => {
     expect(saveCookies).not.toHaveBeenCalled();
   });
 
+  it("throws when the cookie file is missing", async () => {
+    const error = new Error("not found") as NodeJS.ErrnoException;
+    error.code = "ENOENT";
+    vi.mocked(loadClaudeCookies).mockRejectedValue(error);
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /Cookie file not found/u,
+    );
+  });
+
+  it("throws when the cookie file contains invalid JSON", async () => {
+    vi.mocked(loadClaudeCookies).mockRejectedValue(new SyntaxError("bad json"));
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /corrupted or contains invalid JSON/u,
+    );
+  });
+
+  it("throws when organizations endpoint returns an empty array", async () => {
+    vi.mocked(loadClaudeCookies).mockResolvedValue([
+      { name: "session", value: "abc" },
+    ]);
+    fetchSpy
+      .mockResolvedValueOnce(mockResponse([]))
+      .mockResolvedValueOnce(mockResponse({ usage: 1 }));
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /No organizations found/u,
+    );
+  });
+
+  it("throws when organization response is malformed", async () => {
+    vi.mocked(loadClaudeCookies).mockResolvedValue([
+      { name: "session", value: "abc" },
+    ]);
+    fetchSpy.mockResolvedValueOnce(mockResponse([{ uuid: 123 }]));
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /Invalid organization response/u,
+    );
+  });
+
   it("fetches org and usage, merges cookies, and saves state", async () => {
     const initialCookies: Cookie[] = [{ name: "session", value: "abc" }];
     const cookiesForUsage: Cookie[] = [{ name: "session", value: "refreshed" }];
@@ -101,7 +143,7 @@ describe("fetchClaudeUsage", () => {
 
     const result = await fetchClaudeUsage("/tmp/state.json");
 
-    expect(result).toBe(JSON.stringify({ usage: 42 }));
+    expect(result).toEqual({ usage: 42 });
     const firstCall = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(firstCall[0]).toBe("https://claude.ai/api/organizations");
     expect(firstCall[1].headers).toEqual(

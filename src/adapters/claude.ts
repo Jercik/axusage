@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import type {
   ServiceAdapter,
   ServiceUsageData,
@@ -28,18 +27,8 @@ export const claudeAdapter: ServiceAdapter = {
     const dataDirectory = getBrowserContextsDirectory();
     const cookiePath = getStorageStatePathFor(dataDirectory, "claude");
 
-    if (!existsSync(cookiePath)) {
-      return {
-        ok: false,
-        error: new ApiError(
-          "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
-        ),
-      };
-    }
-
     try {
-      const body = await fetchClaudeUsage(cookiePath);
-      const data: unknown = JSON.parse(body);
+      const data = await fetchClaudeUsage(cookiePath);
       const parseResult = UsageResponseSchema.safeParse(
         coalesceClaudeUsageResponse(data) ?? data,
       );
@@ -80,13 +69,21 @@ export const claudeAdapter: ServiceAdapter = {
       // Be precise: avoid brittle substring matching for status codes
       // Match standalone 401 or 401 followed by a non-digit/end (handles "HTTP 401", "status:401", etc.)
       const is401 = status === 401 || /(?:\b401\b|401(?=\D|$))/u.test(message);
+      const isCookieLoadError =
+        message.startsWith("Cookie file not found") ||
+        message.startsWith("Cookie file at") ||
+        message.startsWith("Failed to load cookies from");
       const hint = is401
         ? "Claude usage is not exposed via Console session. The only documented programmatic access is the Admin Usage API, which requires an Admin API key."
         : undefined;
       return {
         ok: false,
         error: new ApiError(
-          hint ? `${message}. ${hint}` : `HTTP fetch failed: ${message}`,
+          isCookieLoadError
+            ? message
+            : hint
+              ? `${message}. ${hint}`
+              : `HTTP fetch failed: ${message}`,
         ),
       };
     }

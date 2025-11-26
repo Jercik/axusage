@@ -33,29 +33,41 @@ export function parseSetCookie(header: string): Cookie | undefined {
     sameSite: "Lax",
   };
 
+  let expiresFromExpires: number | undefined;
+  let expiresFromMaxAge: number | undefined;
+
   for (let index = 1; index < parts.length; index++) {
-    const attribute = parts[index]?.trim().toLowerCase() ?? "";
+    const rawAttribute = parts[index]?.trim() ?? "";
+    const attribute = rawAttribute.toLowerCase();
     if (attribute === "httponly") {
       cookie.httpOnly = true;
     } else if (attribute === "secure") {
       cookie.secure = true;
     } else if (attribute.startsWith("samesite=")) {
-      cookie.sameSite = parts[index]?.trim().slice(9) ?? "";
+      cookie.sameSite = rawAttribute.slice(9);
     } else if (attribute.startsWith("expires=")) {
-      const date = new Date(parts[index]?.trim().slice(8) ?? "");
+      const date = new Date(rawAttribute.slice(8));
       if (!Number.isNaN(date.getTime())) {
-        cookie.expires = date.getTime() / 1000;
+        expiresFromExpires = date.getTime() / 1000;
       }
     } else if (attribute.startsWith("max-age=")) {
-      const maxAge = Number.parseInt(parts[index]?.trim().slice(8) ?? "");
+      // Explicit base 10 avoids ambiguity if the value is prefixed with a zero.
+      // eslint-disable-next-line radix
+      const maxAge = Number.parseInt(rawAttribute.slice(8), 10);
       if (!Number.isNaN(maxAge)) {
-        cookie.expires = Date.now() / 1000 + maxAge;
+        expiresFromMaxAge = Date.now() / 1000 + maxAge;
       }
     } else if (attribute.startsWith("domain=")) {
-      cookie.domain = parts[index]?.trim().slice(7) ?? "";
+      cookie.domain = rawAttribute.slice(7);
     } else if (attribute.startsWith("path=")) {
-      cookie.path = parts[index]?.trim().slice(5) ?? "";
+      cookie.path = rawAttribute.slice(5);
     }
+  }
+
+  if (expiresFromMaxAge !== undefined) {
+    cookie.expires = expiresFromMaxAge;
+  } else if (expiresFromExpires !== undefined) {
+    cookie.expires = expiresFromExpires;
   }
 
   return cookie;

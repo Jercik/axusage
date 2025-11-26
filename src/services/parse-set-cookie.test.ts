@@ -23,15 +23,20 @@ describe("parseSetCookie", () => {
     });
   });
 
-  it("prefers max-age over expires when both are present", () => {
+  it("prefers max-age over expires regardless of order", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2024-01-01T00:00:00Z"));
 
-    const result = parseSetCookie(
+    const expiresFirst = parseSetCookie(
       "token=xyz; Expires=Sun, 06 Nov 1994 08:49:37 GMT; Max-Age=60",
     );
 
-    expect(result?.expires).toBeCloseTo(Date.now() / 1000 + 60, 5);
+    const maxAgeFirst = parseSetCookie(
+      "token=xyz; Max-Age=120; Expires=Sun, 06 Nov 1994 08:49:37 GMT",
+    );
+
+    expect(expiresFirst?.expires).toBeCloseTo(Date.now() / 1000 + 60, 5);
+    expect(maxAgeFirst?.expires).toBeCloseTo(Date.now() / 1000 + 120, 5);
   });
 
   it("returns undefined for malformed headers", () => {
@@ -39,5 +44,33 @@ describe("parseSetCookie", () => {
     expect(parseSetCookie("novalue")).toBeUndefined();
     expect(parseSetCookie("=missingname")).toBeUndefined();
     expect(parseSetCookie("; Secure")).toBeUndefined();
+  });
+
+  it("handles empty values and preserves whitespace in values", () => {
+    const emptyValue = parseSetCookie("empty=; Path=/");
+    const spacedValue = parseSetCookie("token= spaced value ; Path=/; Secure");
+
+    expect(emptyValue).toMatchObject({ name: "empty", value: "" });
+    expect(spacedValue).toMatchObject({
+      name: "token",
+      value: "spaced value",
+      secure: true,
+    });
+  });
+
+  it("supports uppercase attributes and preserves attribute values", () => {
+    const result = parseSetCookie(
+      "ID=123; DOMAIN=CLAUDE.AI; PATH=/API; HTTPONLY; SECURE; SAMESITE=NONE",
+    );
+
+    expect(result).toMatchObject({
+      name: "ID",
+      value: "123",
+      domain: "CLAUDE.AI",
+      path: "/API",
+      httpOnly: true,
+      secure: true,
+      sameSite: "NONE",
+    });
   });
 });

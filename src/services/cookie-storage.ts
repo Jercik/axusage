@@ -66,9 +66,10 @@ export function formatCookieHeader(cookies: readonly Cookie[]): string {
 /**
  * Parse Set-Cookie headers and merge with existing cookies.
  *
- * Note: Cookies are keyed by (name, domain, path) to match RFC 6265. We intentionally
- * accept subdomains (see claudeDomainPattern) while keeping tuple-based keys to avoid
- * collisions if Claude ever issues the same cookie name across different scopes.
+ * Note: Cookies are keyed by (name, domain, path) to match RFC 6265. mergeCookies accepts
+ * cookies from any domain; loadClaudeCookies handles the claude.ai filtering. Tuple keys
+ * avoid collisions if Claude issues the same cookie name across different scopes (for
+ * example, session_id on both .claude.ai and api.claude.ai).
  */
 export function mergeCookies(
   existing: readonly Cookie[],
