@@ -91,4 +91,18 @@ describe("parseSetCookie", () => {
       sameSite: "Lax",
     });
   });
+
+  it("ignores negative Max-Age values", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-01-01T00:00:00Z"));
+
+    const result = parseSetCookie(
+      "token=abc; Max-Age=-10; Expires=Fri, 01 Jan 2100 00:00:00 GMT",
+    );
+
+    expect(result?.expires).toBeCloseTo(
+      new Date("Fri, 01 Jan 2100 00:00:00 GMT").getTime() / 1000,
+      5,
+    );
+  });
 });

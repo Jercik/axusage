@@ -136,6 +136,47 @@ describe("fetchClaudeUsage", () => {
     );
   });
 
+  it("throws when organization id contains unexpected characters", async () => {
+    vi.mocked(loadClaudeCookies).mockResolvedValue([
+      { name: "session", value: "abc" },
+    ]);
+    fetchSpy
+      .mockResolvedValueOnce(mockResponse([{ uuid: "org 123" }]))
+      .mockResolvedValueOnce(mockResponse({ usage: 1 }));
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /Invalid organization ID/u,
+    );
+  });
+
+  it("propagates non-auth HTTP errors", async () => {
+    vi.mocked(loadClaudeCookies).mockResolvedValue([
+      { name: "session", value: "abc" },
+    ]);
+    fetchSpy.mockResolvedValue(
+      mockResponse(undefined, {
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      }),
+    );
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /HTTP 500/u,
+    );
+  });
+
+  it("bubbles abort/timeout errors", async () => {
+    vi.mocked(loadClaudeCookies).mockResolvedValue([
+      { name: "session", value: "abc" },
+    ]);
+    fetchSpy.mockRejectedValue(new DOMException("The operation was aborted."));
+
+    await expect(fetchClaudeUsage("/tmp/state.json")).rejects.toThrow(
+      /aborted|timeout/iu,
+    );
+  });
+
   it("fetches org and usage, merges cookies, and saves state", async () => {
     const initialCookies: Cookie[] = [{ name: "session", value: "abc" }];
     const cookiesForUsage: Cookie[] = [{ name: "session", value: "refreshed" }];
@@ -150,10 +191,11 @@ describe("fetchClaudeUsage", () => {
     vi.mocked(mergeCookies)
       .mockReturnValueOnce(cookiesForUsage)
       .mockReturnValueOnce(finalCookies);
+    const orgUuid = "01234567-89ab-cdef-0123-456789abcdef";
 
     fetchSpy
       .mockResolvedValueOnce(
-        mockResponse([{ uuid: "org-123" }], {
+        mockResponse([{ uuid: orgUuid }], {
           setCookies: ["org=1; Path=/"],
         }),
       )
@@ -174,7 +216,7 @@ describe("fetchClaudeUsage", () => {
     const secondCall = fetchSpy.mock.calls[1];
     assertFetchCall(secondCall);
     expect(secondCall[0]).toBe(
-      "https://claude.ai/api/organizations/org-123/usage",
+      `https://claude.ai/api/organizations/${orgUuid}/usage`,
     );
     const headers = new Headers(secondCall[1].headers);
     expect(headers.get("Cookie")).toBe("session=refreshed");

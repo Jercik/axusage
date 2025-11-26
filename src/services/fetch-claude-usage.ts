@@ -108,10 +108,16 @@ export async function fetchClaudeUsage(cookiePath: string): Promise<unknown> {
     await fetchOrganizationId(cookies);
   allSetCookies.push(...orgSetCookies);
 
+  const uuidRegex = /^[\da-f-]+$/iu;
+  if (!uuidRegex.test(orgId)) {
+    throw new Error(`Invalid organization ID: '${orgId}'`);
+  }
+  const encodedOrgId = encodeURIComponent(orgId);
+
   // Use merged cookies in case the org endpoint refreshed session tokens
   const cookiesForUsage = mergeCookies(cookies, orgSetCookies);
   const { data, setCookies: usageSetCookies } = await fetchWithCookies(
-    `https://claude.ai/api/organizations/${orgId}/usage`,
+    `https://claude.ai/api/organizations/${encodedOrgId}/usage`,
     cookiesForUsage,
   );
   allSetCookies.push(...usageSetCookies);

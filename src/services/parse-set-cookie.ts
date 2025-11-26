@@ -61,7 +61,7 @@ export function parseSetCookie(header: string): Cookie | undefined {
     } else if (attribute.startsWith("max-age=")) {
       // Max-Age is defined as a decimal non-negative integer (RFC 6265 section 4.1.2.2).
       const maxAge = Number.parseInt(rawAttribute.slice(8));
-      if (!Number.isNaN(maxAge)) {
+      if (!Number.isNaN(maxAge) && maxAge >= 0) {
         expiresFromMaxAge = Date.now() / 1000 + maxAge;
       }
     } else if (attribute.startsWith("domain=")) {
