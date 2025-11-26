@@ -46,7 +46,10 @@ program
 const auth = program
   .command("auth")
   .description("Manage authentication for services")
-  .addHelpText("after", `\nStorage: ${getBrowserContextsDirectory()}`);
+  .addHelpText(
+    "after",
+    `\nStorage: ${getBrowserContextsDirectory()}\n(respects XDG_DATA_HOME and platform defaults)`,
+  );
 
 auth
   .command("setup")
