@@ -44,7 +44,15 @@ export function parseSetCookie(header: string): Cookie | undefined {
     } else if (attribute === "secure") {
       cookie.secure = true;
     } else if (attribute.startsWith("samesite=")) {
-      cookie.sameSite = rawAttribute.slice(9);
+      const sameSiteValue = rawAttribute.slice(9).trim().toLowerCase();
+      if (sameSiteValue === "strict") {
+        cookie.sameSite = "Strict";
+      } else if (sameSiteValue === "none") {
+        cookie.sameSite = "None";
+      } else {
+        // Default to Lax per RFC 6265bis when missing or invalid.
+        cookie.sameSite = "Lax";
+      }
     } else if (attribute.startsWith("expires=")) {
       const date = new Date(rawAttribute.slice(8));
       if (!Number.isNaN(date.getTime())) {

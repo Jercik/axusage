@@ -6,6 +6,9 @@ import {
   mergeCookies,
 } from "./cookie-storage.js";
 
+const MINIMAL_USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+
 /**
  * Make an HTTP request to Claude's API with session cookies.
  */
@@ -19,8 +22,7 @@ async function fetchWithCookies(
       Cookie: formatCookieHeader(cookies),
       // Intentionally truncated User-Agent to avoid Cloudflare bot detection.
       // Full Chrome UA triggers 403 errors; this minimal version works reliably.
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      "User-Agent": MINIMAL_USER_AGENT,
     },
     signal: AbortSignal.timeout(30_000),
   });

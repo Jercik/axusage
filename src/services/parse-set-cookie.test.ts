@@ -58,7 +58,7 @@ describe("parseSetCookie", () => {
     });
   });
 
-  it("supports uppercase attributes and preserves attribute values", () => {
+  it("supports uppercase attributes and canonicalizes SameSite", () => {
     const result = parseSetCookie(
       "ID=123; DOMAIN=CLAUDE.AI; PATH=/API; HTTPONLY; SECURE; SAMESITE=NONE",
     );
@@ -70,7 +70,16 @@ describe("parseSetCookie", () => {
       path: "/API",
       httpOnly: true,
       secure: true,
-      sameSite: "NONE",
+      sameSite: "None",
+    });
+  });
+
+  it("defaults SameSite to Lax when invalid", () => {
+    const result = parseSetCookie("sid=abc; SameSite=InvalidValue");
+
+    expect(result).toMatchObject({
+      name: "sid",
+      sameSite: "Lax",
     });
   });
 });

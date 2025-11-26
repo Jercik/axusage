@@ -34,8 +34,9 @@ export async function loadClaudeCookies(
   ) {
     throw new Error(`Invalid storage state format in ${cookiePath}`);
   }
-  // Match ".claude.ai", "claude.ai", and legitimate subdomains like "api.claude.ai"
-  // The regex ensures we only match domains ending with "claude.ai"
+  // Match ".claude.ai", "claude.ai", and any claude.ai subdomain. We intentionally keep
+  // this open to all claude.ai hosts because the service may introduce new subdomains,
+  // and the regex still prevents lookalike domains that do not end with "claude.ai".
   const claudeDomainPattern = /^\.?([\w-]+\.)*claude\.ai$/iu;
   return (state.cookies as readonly Cookie[]).filter(
     (c) => c.domain !== undefined && claudeDomainPattern.test(c.domain),
