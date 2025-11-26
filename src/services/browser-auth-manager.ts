@@ -1,14 +1,20 @@
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
-import { mkdir, chmod } from "node:fs/promises";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
 import { requestService } from "./request-service.js";
 import { doSetupAuth } from "./do-setup-auth.js";
 import { getStorageStatePathFor } from "./auth-storage-path.js";
-import { createAuthContext } from "./create-auth-context.js";
-import { getBrowserContextsDirectory } from "./app-paths.js";
+import {
+  createAuthContext,
+  loadStoredUserAgent,
+} from "./create-auth-context.js";
+import {
+  getBrowserContextsDirectory,
+  ensureSecureDirectory,
+} from "./app-paths.js";
+import { persistStorageState } from "./persist-storage-state.js";
 
 /**
  * Configuration for browser authentication manager
@@ -52,17 +58,21 @@ export class BrowserAuthManager {
    */
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browserPromise) {
-      this.browserPromise = (async () => {
-        const b = await launchChromium(this.headless);
-        this.browser = b;
-        return b;
-      })().catch((error) => {
-        // Allow retries on subsequent calls if the launch fails
-        this.browserPromise = undefined;
-        throw error;
-      });
+      this.browserPromise = this.launchAndStoreBrowser();
     }
     return this.browserPromise;
+  }
+
+  private async launchAndStoreBrowser(): Promise<Browser> {
+    try {
+      const browser = await launchChromium(this.headless);
+      this.browser = browser;
+      return browser;
+    } catch (error) {
+      // Allow retries on subsequent calls if the launch fails
+      this.browserPromise = undefined;
+      throw error;
+    }
   }
 
   /**
@@ -70,29 +80,23 @@ export class BrowserAuthManager {
    */
   async setupAuth(service: SupportedService): Promise<void> {
     const config = getServiceAuthConfig(service);
-
-    // Ensure data directory exists (restrict permissions to owner)
-    await mkdir(this.dataDir, { recursive: true, mode: 0o700 }).catch(
-      (error: unknown) => {
-        // mkdir may ignore mode due to umask; enforce via chmod
-        if (
-          !error ||
-          typeof error !== "object" ||
-          !("code" in error) ||
-          (error as { code?: unknown }).code !== "EEXIST"
-        ) {
-          throw error;
-        }
-      },
-    );
-    try {
-      await chmod(this.dataDir, 0o700);
-    } catch {
-      // best effort
-    }
+    await ensureSecureDirectory(this.dataDir);
 
     const browser = await this.ensureBrowser();
-    const context = await browser.newContext();
+    const storagePath = this.getStorageStatePath(service);
+
+    // Load existing storage state if available - this gives the browser a chance
+    // to refresh expired cookies/tokens during the login flow
+    const storageState = existsSync(storagePath) ? storagePath : undefined;
+    const userAgent = await loadStoredUserAgent(this.dataDir, service);
+
+    let context: BrowserContext;
+    try {
+      context = await browser.newContext({ storageState, userAgent });
+    } catch {
+      // Corrupted storage state - fall back to fresh context
+      context = await browser.newContext({ userAgent });
+    }
     try {
       await doSetupAuth(
         service,
@@ -124,17 +128,7 @@ export class BrowserAuthManager {
     try {
       return await requestService(service, url, () => Promise.resolve(context));
     } finally {
-      // Persist any refreshed cookies/tokens back to disk so sessions extend naturally
-      try {
-        await context.storageState({ path: this.getStorageStatePath(service) });
-        try {
-          await chmod(this.getStorageStatePath(service), 0o600);
-        } catch {
-          // best effort: permissions may already be correct or OS may ignore
-        }
-      } catch {
-        // ignore persistence errors; do not block request completion
-      }
+      await persistStorageState(context, this.getStorageStatePath(service));
       await context.close();
     }
   }
