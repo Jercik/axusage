@@ -51,9 +51,8 @@ export function parseSetCookie(header: string): Cookie | undefined {
         expiresFromExpires = date.getTime() / 1000;
       }
     } else if (attribute.startsWith("max-age=")) {
-      // Explicit base 10 avoids ambiguity if the value is prefixed with a zero.
-      // eslint-disable-next-line radix
-      const maxAge = Number.parseInt(rawAttribute.slice(8), 10);
+      // Max-Age is defined as a decimal non-negative integer (RFC 6265 section 4.1.2.2).
+      const maxAge = Number.parseInt(rawAttribute.slice(8));
       if (!Number.isNaN(maxAge)) {
         expiresFromMaxAge = Date.now() / 1000 + maxAge;
       }
