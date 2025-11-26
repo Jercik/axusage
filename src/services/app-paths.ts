@@ -23,22 +23,22 @@ export function getBrowserContextsDirectory(): string {
 export async function ensureSecureDirectory(
   directoryPath: string,
 ): Promise<void> {
-  await mkdir(directoryPath, { recursive: true, mode: 0o700 }).catch(
-    (error: unknown) => {
-      // mkdir may ignore mode due to umask; we'll enforce via chmod below
-      if (
-        !error ||
-        typeof error !== "object" ||
-        !("code" in error) ||
-        (error as { code?: unknown }).code !== "EEXIST"
-      ) {
-        throw error;
-      }
-    },
-  );
+  try {
+    await mkdir(directoryPath, { recursive: true, mode: 0o700 });
+  } catch (error) {
+    // Only ignore EEXIST; re-throw everything else
+    // mkdir may ignore mode due to umask; we'll enforce via chmod below
+    if (
+      !(error instanceof Error) ||
+      (error as NodeJS.ErrnoException).code !== "EEXIST"
+    ) {
+      throw error;
+    }
+  }
   try {
     await chmod(directoryPath, 0o700);
   } catch {
-    // best effort
+    // Best effort: some filesystems (network mounts, containers) may not
+    // support chmod or have different permission models
   }
 }

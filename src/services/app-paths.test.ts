@@ -1,5 +1,7 @@
 import path from "node:path";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { mkdtempSync, existsSync, statSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const environmentPathsMock = vi.fn(() => ({ data: "/tmp/agent-usage" }));
 
@@ -40,5 +42,44 @@ describe("getBrowserContextsDirectory", () => {
     expect(environmentPathsMock).toHaveBeenCalledWith("agent-usage", {
       suffix: "",
     });
+  });
+});
+
+describe("ensureSecureDirectory", () => {
+  it("creates directory with correct permissions when it does not exist", async () => {
+    const { ensureSecureDirectory } = await loadModule();
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const targetDirectory = path.join(temporaryBase, "new-dir");
+
+    await ensureSecureDirectory(targetDirectory);
+
+    expect(existsSync(targetDirectory)).toBe(true);
+    const stats = statSync(targetDirectory);
+    // Check owner-only permissions (0o700 = rwx------)
+    expect(stats.mode & 0o777).toBe(0o700);
+
+    rmSync(temporaryBase, { recursive: true });
+  });
+
+  it("handles EEXIST errors when directory already exists", async () => {
+    const { ensureSecureDirectory } = await loadModule();
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+
+    // Should not throw when called on existing directory
+    await expect(ensureSecureDirectory(temporaryBase)).resolves.toBeUndefined();
+
+    rmSync(temporaryBase, { recursive: true });
+  });
+
+  it("creates nested directories recursively", async () => {
+    const { ensureSecureDirectory } = await loadModule();
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const nestedDirectory = path.join(temporaryBase, "a", "b", "c");
+
+    await ensureSecureDirectory(nestedDirectory);
+
+    expect(existsSync(nestedDirectory)).toBe(true);
+
+    rmSync(temporaryBase, { recursive: true });
   });
 });

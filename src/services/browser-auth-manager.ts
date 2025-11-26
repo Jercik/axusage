@@ -1,6 +1,5 @@
 import type { Browser, BrowserContext } from "playwright";
 import { existsSync } from "node:fs";
-import { chmod } from "node:fs/promises";
 import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { launchChromium } from "./launch-chromium.js";
@@ -15,6 +14,7 @@ import {
   getBrowserContextsDirectory,
   ensureSecureDirectory,
 } from "./app-paths.js";
+import { persistStorageState } from "./persist-storage-state.js";
 
 /**
  * Configuration for browser authentication manager
@@ -58,17 +58,21 @@ export class BrowserAuthManager {
    */
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browserPromise) {
-      this.browserPromise = (async () => {
-        const b = await launchChromium(this.headless);
-        this.browser = b;
-        return b;
-      })().catch((error) => {
-        // Allow retries on subsequent calls if the launch fails
-        this.browserPromise = undefined;
-        throw error;
-      });
+      this.browserPromise = this.launchAndStoreBrowser();
     }
     return this.browserPromise;
+  }
+
+  private async launchAndStoreBrowser(): Promise<Browser> {
+    try {
+      const browser = await launchChromium(this.headless);
+      this.browser = browser;
+      return browser;
+    } catch (error) {
+      // Allow retries on subsequent calls if the launch fails
+      this.browserPromise = undefined;
+      throw error;
+    }
   }
 
   /**
@@ -84,11 +88,15 @@ export class BrowserAuthManager {
     // Load existing storage state if available - this gives the browser a chance
     // to refresh expired cookies/tokens during the login flow
     const storageState = existsSync(storagePath) ? storagePath : undefined;
-    const userAgent = storageState
-      ? await loadStoredUserAgent(this.dataDir, service)
-      : undefined;
+    const userAgent = await loadStoredUserAgent(this.dataDir, service);
 
-    const context = await browser.newContext({ storageState, userAgent });
+    let context: BrowserContext;
+    try {
+      context = await browser.newContext({ storageState, userAgent });
+    } catch {
+      // Corrupted storage state - fall back to fresh context
+      context = await browser.newContext({ userAgent });
+    }
     try {
       await doSetupAuth(
         service,
@@ -120,17 +128,7 @@ export class BrowserAuthManager {
     try {
       return await requestService(service, url, () => Promise.resolve(context));
     } finally {
-      // Persist any refreshed cookies/tokens back to disk so sessions extend naturally
-      try {
-        await context.storageState({ path: this.getStorageStatePath(service) });
-        try {
-          await chmod(this.getStorageStatePath(service), 0o600);
-        } catch {
-          // best effort: permissions may already be correct or OS may ignore
-        }
-      } catch {
-        // ignore persistence errors; do not block request completion
-      }
+      await persistStorageState(context, this.getStorageStatePath(service));
       await context.close();
     }
   }

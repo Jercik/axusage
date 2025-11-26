@@ -18,10 +18,20 @@ export async function loadStoredUserAgent(
   try {
     const metaPath = getAuthMetaPathFor(dataDirectory, service);
     const metaRaw = await readFile(metaPath, "utf8");
-    const meta = JSON.parse(metaRaw) as { userAgent?: string };
-    return typeof meta.userAgent === "string" ? meta.userAgent : undefined;
+    const meta: unknown = JSON.parse(metaRaw);
+
+    // Validate the parsed structure at runtime
+    if (
+      meta &&
+      typeof meta === "object" &&
+      "userAgent" in meta &&
+      typeof (meta as { userAgent: unknown }).userAgent === "string"
+    ) {
+      return (meta as { userAgent: string }).userAgent;
+    }
+    return undefined;
   } catch {
-    // no meta found; proceed without a custom user agent
+    // Meta file missing, unreadable, or contains invalid JSON
     return undefined;
   }
 }
