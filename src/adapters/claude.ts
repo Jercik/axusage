@@ -7,28 +7,43 @@ import { ApiError } from "../types/domain.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 import { toServiceUsageData } from "./parse-claude-usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
-import { fetchClaudeUsage } from "../services/fetch-claude-usage.js";
-import { getBrowserContextsDirectory } from "../services/app-paths.js";
-import { getStorageStatePathFor } from "../services/auth-storage-path.js";
+import {
+  acquireAuthManager,
+  releaseAuthManager,
+} from "../services/shared-browser-auth-manager.js";
 import { z } from "zod";
 
 /** Functional core is extracted to ./parse-claude-usage.ts */
 
 /**
- * Claude service adapter using HTTP requests with session cookies.
+ * Claude service adapter using browser-based fetching.
  *
- * This adapter uses Playwright-stored cookies to make direct HTTP requests
- * to Claude's API for fetching usage data.
+ * This adapter uses Playwright to navigate to the Claude usage page and
+ * intercept the API response. Direct HTTP requests don't work reliably
+ * because Cloudflare's bot protection requires a real browser context.
  */
 export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const dataDirectory = getBrowserContextsDirectory();
-    const cookiePath = getStorageStatePathFor(dataDirectory, "claude");
-
+    const manager = acquireAuthManager();
     try {
-      const data = await fetchClaudeUsage(cookiePath);
+      if (!manager.hasAuth("claude")) {
+        return {
+          ok: false,
+          error: new ApiError(
+            "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
+          ),
+        };
+      }
+      // For Claude, makeAuthenticatedRequest uses browser-based fetching which
+      // navigates to the usage page and intercepts the API response. The URL
+      // parameter is required by the interface but not used for Claude requests.
+      const body = await manager.makeAuthenticatedRequest(
+        "claude",
+        "https://claude.ai/api/organizations",
+      );
+      const data: unknown = JSON.parse(body);
       const parseResult = UsageResponseSchema.safeParse(
         coalesceClaudeUsageResponse(data) ?? data,
       );
@@ -58,34 +73,16 @@ export const claudeAdapter: ServiceAdapter = {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      let status: number | undefined;
-      if (typeof error === "object" && error !== null) {
-        const errorObject = error as Record<string, unknown>;
-        const s = errorObject.status;
-        const sc = errorObject.statusCode;
-        if (typeof s === "number") status = s;
-        else if (typeof sc === "number") status = sc;
-      }
-      // Be precise: avoid brittle substring matching for status codes
-      // Match standalone 401 or 401 followed by a non-digit/end (handles "HTTP 401", "status:401", etc.)
-      const is401 = status === 401 || /(?:\b401\b|401(?=\D|$))/u.test(message);
-      const isCookieLoadError =
-        message.startsWith("Cookie file not found") ||
-        message.startsWith("Cookie file at") ||
-        message.startsWith("Failed to load cookies from");
+      const is401 = /\b401\b/u.test(message);
       const hint = is401
-        ? "Claude usage is not exposed via Console session. The only documented programmatic access is the Admin Usage API, which requires an Admin API key."
-        : undefined;
+        ? " Note: Claude usage data requires a browser session. The Admin Usage API (api.anthropic.com) requires an Admin API key for programmatic access."
+        : "";
       return {
         ok: false,
-        error: new ApiError(
-          isCookieLoadError
-            ? message
-            : hint
-              ? `${message}. ${hint}`
-              : `HTTP fetch failed: ${message}`,
-        ),
+        error: new ApiError(`Browser authentication failed: ${message}${hint}`),
       };
+    } finally {
+      await releaseAuthManager();
     }
   },
 };
