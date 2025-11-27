@@ -2,17 +2,22 @@ import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
 
+/** Timeout for authentication setup (5 minutes) */
+const AUTH_SETUP_TIMEOUT_MS = 300_000;
+
 /**
  * Check if an error message indicates an authentication issue.
+ * Matches common authentication error patterns like "unauthorized", "401",
+ * "authentication failed", etc. with word boundaries to avoid false positives.
  */
 export function isAuthError(message: string): boolean {
   const authPatterns = [
-    /authentication failed/iu,
-    /no saved authentication/iu,
+    /\bauthentication\s+failed\b/iu,
+    /\bno\s+saved\s+authentication\b/iu,
     /\b401\b/u,
-    /unauthorized/iu,
-    /session expired/iu,
-    /login required/iu,
+    /\bunauthorized\b/iu,
+    /\bsession\s+expired\b/iu,
+    /\blogin\s+required\b/iu,
   ];
   return authPatterns.some((pattern) => pattern.test(message));
 }
@@ -20,6 +25,7 @@ export function isAuthError(message: string): boolean {
 /**
  * Run auth setup for a service programmatically.
  * Returns true if auth setup completed successfully.
+ * Times out after 5 minutes to prevent indefinite hangs.
  */
 export async function runAuthSetup(
   service: SupportedService,
@@ -30,7 +36,16 @@ export async function runAuthSetup(
     console.log(
       chalk.blue(`\nOpening browser for ${service} authentication...\n`),
     );
-    await manager.setupAuth(service);
+
+    const setupPromise = manager.setupAuth(service);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Authentication setup timed out after 5 minutes"));
+      }, AUTH_SETUP_TIMEOUT_MS);
+    });
+
+    await Promise.race([setupPromise, timeoutPromise]);
+
     console.log(
       chalk.green(`\n✓ Authentication for ${service} is complete!\n`),
     );
