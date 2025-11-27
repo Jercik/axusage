@@ -61,8 +61,8 @@ importers:
         specifier: ^62.0.0
         version: 62.0.0(eslint@9.39.1(jiti@2.6.1))
       fta-check:
-        specifier: ^1.1.0
-        version: 1.1.0(fta-cli@3.0.0)
+        specifier: ^1.2.0
+        version: 1.2.0(fta-cli@3.0.0)
       fta-cli:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1505,8 +1505,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  fta-check@1.1.0:
-    resolution: {integrity: sha512-6T2klU0kZ1ik+rULATI6r7HGb9+v1yqzx5dIEjOUITuBGBVixhC7lg5Rxu8ipXmHDckET75IaIfGuhojp1J8Gw==}
+  fta-check@1.2.0:
+    resolution: {integrity: sha512-UixPoslJhCp1bBlloHwKsm2YizIXDOx3t/j6KMPOdwe+vL3wEKaIdQO0fdyLyXAjmdkxFuuvXpalCBrcRFAasQ==}
     engines: {node: '>=22.14.0'}
     hasBin: true
     peerDependencies:
@@ -4336,7 +4336,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  fta-check@1.1.0(fta-cli@3.0.0):
+  fta-check@1.2.0(fta-cli@3.0.0):
     dependencies:
       commander: 14.0.2
       fta-cli: 3.0.0

@@ -11,6 +11,7 @@ import {
   fetchServiceUsage,
   selectServicesToQuery,
 } from "./fetch-service-usage.js";
+import { fetchWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
 
 /**
  * Executes the usage command
@@ -20,13 +21,14 @@ export async function usageCommand(
 ): Promise<void> {
   const servicesToQuery = selectServicesToQuery(options.service);
 
-  // Fetch usage data from all services in parallel
-  const results = await Promise.all(
-    servicesToQuery.map(async (serviceName) => ({
-      service: serviceName,
-      result: await fetchServiceUsage(serviceName),
-    })),
-  );
+  // Fetch usage data from all services (sequentially to handle auth prompts)
+  const results: Array<{
+    service: string;
+    result: Awaited<ReturnType<typeof fetchServiceUsage>>;
+  }> = [];
+  for (const serviceName of servicesToQuery) {
+    results.push(await fetchWithAutoReauth(serviceName));
+  }
 
   // Collect successful results and errors
   const successes: ServiceUsageData[] = [];
