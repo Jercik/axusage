@@ -5,7 +5,11 @@ import {
   toJsonObject,
 } from "../utils/format-service-usage.js";
 import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
-import type { ServiceUsageData, ApiError, Result } from "../types/domain.js";
+import type {
+  ApiError,
+  ServiceResult,
+  ServiceUsageData,
+} from "../types/domain.js";
 import type { UsageCommandOptions } from "./fetch-service-usage.js";
 import {
   fetchServiceUsage,
@@ -13,11 +17,6 @@ import {
 } from "./fetch-service-usage.js";
 import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
 import { isAuthError } from "./run-auth-setup.js";
-
-type ServiceResult = {
-  service: string;
-  result: Result<ServiceUsageData, ApiError>;
-};
 
 /**
  * Fetches usage for services using hybrid strategy:
