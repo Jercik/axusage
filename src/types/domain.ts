@@ -54,3 +54,12 @@ export interface ServiceAdapter {
   readonly name: string;
   fetchUsage(): Promise<Result<ServiceUsageData, ApiError>>;
 }
+
+/**
+ * Result of fetching usage for a single service.
+ * Wraps the service name with its usage data result or error.
+ */
+export type ServiceResult = {
+  readonly service: string;
+  readonly result: Result<ServiceUsageData, ApiError>;
+};

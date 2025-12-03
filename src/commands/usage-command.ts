@@ -5,12 +5,73 @@ import {
   toJsonObject,
 } from "../utils/format-service-usage.js";
 import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
-import type { ServiceUsageData, ApiError } from "../types/domain.js";
+import type {
+  ApiError,
+  ServiceResult,
+  ServiceUsageData,
+} from "../types/domain.js";
 import type { UsageCommandOptions } from "./fetch-service-usage.js";
 import {
   fetchServiceUsage,
   selectServicesToQuery,
 } from "./fetch-service-usage.js";
+import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
+import { isAuthFailure } from "./run-auth-setup.js";
+
+/**
+ * Fetches usage for services using hybrid strategy:
+ * 1. Try all services in parallel first (fast path for valid credentials)
+ * 2. If any service fails with auth error, retry those sequentially with re-auth
+ *
+ * This maintains ~2s response time when credentials are valid while gracefully
+ * handling authentication failures that require interactive prompts.
+ */
+export async function fetchServicesWithHybridStrategy(
+  servicesToQuery: string[],
+): Promise<ServiceResult[]> {
+  // First attempt: fetch all services in parallel
+  const parallelResults = await Promise.all(
+    servicesToQuery.map(async (serviceName): Promise<ServiceResult> => {
+      const result = await fetchServiceUsage(serviceName);
+      return { service: serviceName, result };
+    }),
+  );
+
+  // Check for auth errors
+  const authFailures = parallelResults.filter(({ result }) =>
+    isAuthFailure(result),
+  );
+
+  // If no auth failures, return parallel results
+  if (authFailures.length === 0) {
+    return parallelResults;
+  }
+
+  // Retry auth failures sequentially with re-authentication
+  const retryResults: ServiceResult[] = [];
+  for (const [index, { service }] of authFailures.entries()) {
+    console.log(
+      chalk.dim(
+        `[${String(index + 1)}/${String(authFailures.length)}] Re-authenticating ${service}...`,
+      ),
+    );
+    const result = await fetchServiceUsageWithAutoReauth(service);
+    retryResults.push(result);
+  }
+
+  console.log(
+    chalk.green(
+      `✓ Completed ${String(retryResults.length)} re-authentication${retryResults.length === 1 ? "" : "s"}\n`,
+    ),
+  );
+
+  // Merge results: keep successful parallel results, replace auth failures with retries
+  // Build a map for O(1) lookups instead of O(n²) find() calls
+  const retryMap = new Map(retryResults.map((r) => [r.service, r]));
+  return parallelResults.map(
+    (parallelResult) => retryMap.get(parallelResult.service) ?? parallelResult,
+  );
+}
 
 /**
  * Executes the usage command
@@ -20,13 +81,8 @@ export async function usageCommand(
 ): Promise<void> {
   const servicesToQuery = selectServicesToQuery(options.service);
 
-  // Fetch usage data from all services in parallel
-  const results = await Promise.all(
-    servicesToQuery.map(async (serviceName) => ({
-      service: serviceName,
-      result: await fetchServiceUsage(serviceName),
-    })),
-  );
+  // Fetch usage data using hybrid parallel/sequential strategy
+  const results = await fetchServicesWithHybridStrategy(servicesToQuery);
 
   // Collect successful results and errors
   const successes: ServiceUsageData[] = [];
