@@ -108,57 +108,6 @@ Use `package.json` "imports" field with `#` prefixes to create stable internal m
 
 ---
 
-# Rule: GitHub PR Review Comments
-
-Use `pr-review-post` to create line-specific review comments, `pr-review-reply` to respond to existing comments, and `pr-comments` to list comment IDs. These tools handle authentication, provide clear errors, and accept messages via argument, stdin, or file.
-
-Post a new review comment on a specific line:
-
-```bash
-pr-review-post 123 src/component.tsx 42 "Consider using twMerge here"
-pr-review-post 123 src/app.ts 100 -f comment.txt          # Read from file
-pr-review-post 123 src/old.ts 50 "Why removed?" --side LEFT  # Comment on deletions
-```
-
-For code suggestions GitHub can apply inline, wrap code in triple backticks with `suggestion`:
-
-```bash
-pr-review-post 123 src/component.tsx 42 "Use twMerge:
-\`\`\`suggestion
-className={twMerge('flex gap-3', className)}
-\`\`\`"
-```
-
-Reply to an existing top-level comment (cannot reply to replies):
-
-```bash
-pr-review-reply 456789 'Good catch, I'\''ll fix this'  # Escape apostrophe in single quotes
-pr-review-reply 456789 'Good catch, I will fix this'   # Or avoid contractions
-pr-review-reply 456789 -f reply.txt
-pr-review-reply 456789 'Thanks!' --pr 123  # Specify PR number to speed up search
-```
-
-**Important**: Always use **single quotes** around Markdown content to preserve backticks and code fences. Double quotes trigger shell command substitution (`$(...)` and backticks), which will break backticked text and can execute unintended commands. For multiline replies with code blocks:
-
-````bash
-pr-review-reply 123 'Fixed in commit abc123.
-
-Code:
-```ts
-if (x) { }
-```' --pr 2 --yes
-````
-
-List comment IDs for a PR:
-
-```bash
-pr-comments 123
-pr-comments 123 --json  # For parsing
-```
-
-
----
-
 # Rule: Any in Generics
 
 When building generic functions, you may need to use any inside the function body.
