@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
+import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
 
 /** Timeout for authentication setup (5 minutes) */
 const AUTH_SETUP_TIMEOUT_MS = 300_000;
@@ -9,6 +10,13 @@ const AUTH_SETUP_TIMEOUT_MS = 300_000;
  * Check if an error message indicates an authentication issue.
  * Matches common authentication error patterns like "unauthorized", "401",
  * "authentication failed", etc. with word boundaries to avoid false positives.
+ *
+ * @param message - The error message to check
+ * @returns true if the message indicates an authentication error
+ *
+ * @example
+ * isAuthError("401 Unauthorized") // true
+ * isAuthError("Network timeout") // false
  */
 export function isAuthError(message: string): boolean {
   const authPatterns = [
@@ -24,6 +32,20 @@ export function isAuthError(message: string): boolean {
 }
 
 /**
+ * Check if a fetch result indicates an authentication failure.
+ * Combines the result error check with auth error pattern matching.
+ */
+export function isAuthFailure(
+  result: Result<ServiceUsageData, ApiError>,
+): boolean {
+  return (
+    !result.ok &&
+    Boolean(result.error.message) &&
+    isAuthError(result.error.message)
+  );
+}
+
+/**
  * Run auth setup for a service programmatically.
  * Returns true if auth setup completed successfully.
  * Times out after 5 minutes to prevent indefinite hangs.
@@ -33,6 +55,8 @@ export async function runAuthSetup(
 ): Promise<boolean> {
   const manager = new BrowserAuthManager({ headless: false });
 
+  let timeoutId: NodeJS.Timeout | undefined;
+
   try {
     console.log(
       chalk.blue(`\nOpening browser for ${service} authentication...\n`),
@@ -40,7 +64,7 @@ export async function runAuthSetup(
 
     const setupPromise = manager.setupAuth(service);
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(new Error("Authentication setup timed out after 5 minutes"));
       }, AUTH_SETUP_TIMEOUT_MS);
     });
@@ -59,6 +83,7 @@ export async function runAuthSetup(
     );
     return false;
   } finally {
+    clearTimeout(timeoutId);
     await manager.close();
   }
 }

@@ -57,8 +57,17 @@ describe("isAuthError", () => {
     it("does not match partial words", () => {
       // "unauthorized" should not match "unauthorizeduser" (no word boundary)
       expect(isAuthError("unauthorizeduser")).toBe(false);
-      // "401" should be a word boundary (numbers are word boundaries)
+    });
+
+    it("detects 401 with word boundaries correctly", () => {
+      // Should match "401" as a standalone word
+      expect(isAuthError("error 401")).toBe(true);
+      expect(isAuthError("401 error")).toBe(true);
+      expect(isAuthError("status: 401")).toBe(true);
+      // Should not match "401" embedded in larger numbers
       expect(isAuthError("error4012")).toBe(false);
+      expect(isAuthError("4012error")).toBe(false);
+      expect(isAuthError("14012")).toBe(false);
     });
 
     it("does not match unrelated errors", () => {

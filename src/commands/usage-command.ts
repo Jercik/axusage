@@ -16,7 +16,7 @@ import {
   selectServicesToQuery,
 } from "./fetch-service-usage.js";
 import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
-import { isAuthError } from "./run-auth-setup.js";
+import { isAuthFailure } from "./run-auth-setup.js";
 
 /**
  * Fetches usage for services using hybrid strategy:
@@ -38,8 +38,8 @@ async function fetchServicesWithHybridStrategy(
   );
 
   // Check for auth errors
-  const authFailures = parallelResults.filter(
-    ({ result }) => !result.ok && isAuthError(result.error.message),
+  const authFailures = parallelResults.filter(({ result }) =>
+    isAuthFailure(result),
   );
 
   // If no auth failures, return parallel results
@@ -49,7 +49,12 @@ async function fetchServicesWithHybridStrategy(
 
   // Retry auth failures sequentially with re-authentication
   const retryResults: ServiceResult[] = [];
-  for (const { service } of authFailures) {
+  for (const [index, { service }] of authFailures.entries()) {
+    console.log(
+      chalk.dim(
+        `[${String(index + 1)}/${String(authFailures.length)}] Re-authenticating ${service}...`,
+      ),
+    );
     const result = await fetchServiceUsageWithAutoReauth(service);
     retryResults.push(result);
   }

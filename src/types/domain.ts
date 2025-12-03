@@ -56,7 +56,8 @@ export interface ServiceAdapter {
 }
 
 /**
- * Result of fetching usage for a single service
+ * Result of fetching usage for a single service.
+ * Wraps the service name with its usage data result or error.
  */
 export type ServiceResult = {
   readonly service: string;

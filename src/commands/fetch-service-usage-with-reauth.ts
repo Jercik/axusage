@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { fetchServiceUsage } from "./fetch-service-usage.js";
-import { isAuthError, runAuthSetup } from "./run-auth-setup.js";
+import { isAuthFailure, runAuthSetup } from "./run-auth-setup.js";
 import { validateService } from "../services/supported-service.js";
 import type { ServiceResult } from "../types/domain.js";
 
@@ -15,7 +15,7 @@ export async function fetchServiceUsageWithAutoReauth(
   const result = await fetchServiceUsage(serviceName);
 
   // If auth error, try to re-authenticate and retry
-  if (!result.ok && isAuthError(result.error.message)) {
+  if (isAuthFailure(result)) {
     console.error(
       chalk.yellow(
         `⚠ Authentication failed for ${serviceName}. Opening browser to re-authenticate...`,
@@ -36,11 +36,16 @@ export async function fetchServiceUsageWithAutoReauth(
         );
       }
     } catch (error) {
-      console.error(
-        chalk.red(
-          `Failed to re-authenticate: ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      // Distinguish validation errors from auth setup errors
+      const isValidationError =
+        errorMessage.includes("Unsupported service") ||
+        errorMessage.includes("Service is required");
+      const prefix = isValidationError
+        ? "Invalid service"
+        : "Failed to re-authenticate";
+      console.error(chalk.red(`${prefix}: ${errorMessage}`));
     }
   }
 
