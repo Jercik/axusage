@@ -59,6 +59,6 @@ export interface ServiceAdapter {
  * Result of fetching usage for a single service
  */
 export type ServiceResult = {
-  service: string;
-  result: Result<ServiceUsageData, ApiError>;
+  readonly service: string;
+  readonly result: Result<ServiceUsageData, ApiError>;
 };

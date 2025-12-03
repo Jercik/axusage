@@ -18,6 +18,7 @@ export function isAuthError(message: string): boolean {
     /\bunauthorized\b/iu,
     /\bsession\s+expired\b/iu,
     /\blogin\s+required\b/iu,
+    /\bcredentials?\s+(expired|invalid)\b/iu,
   ];
   return authPatterns.some((pattern) => pattern.test(message));
 }

@@ -41,6 +41,16 @@ describe("isAuthError", () => {
       expect(isAuthError("Login required")).toBe(true);
       expect(isAuthError("Error: login required to continue")).toBe(true);
     });
+
+    it("detects 'credentials expired/invalid' message", () => {
+      expect(isAuthError("Credentials expired")).toBe(true);
+      expect(isAuthError("credential expired")).toBe(true);
+      expect(isAuthError("Credentials invalid")).toBe(true);
+      expect(isAuthError("credential invalid")).toBe(true);
+      expect(
+        isAuthError("Your credentials expired, please re-authenticate"),
+      ).toBe(true);
+    });
   });
 
   describe("should not detect false positives", () => {

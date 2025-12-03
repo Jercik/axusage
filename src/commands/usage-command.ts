@@ -20,8 +20,11 @@ import { isAuthError } from "./run-auth-setup.js";
 
 /**
  * Fetches usage for services using hybrid strategy:
- * 1. Try all services in parallel first
+ * 1. Try all services in parallel first (fast path for valid credentials)
  * 2. If any service fails with auth error, retry those sequentially with re-auth
+ *
+ * This maintains ~2s response time when credentials are valid while gracefully
+ * handling authentication failures that require interactive prompts.
  */
 async function fetchServicesWithHybridStrategy(
   servicesToQuery: string[],
@@ -52,12 +55,10 @@ async function fetchServicesWithHybridStrategy(
   }
 
   // Merge results: keep successful parallel results, replace auth failures with retries
-  const authFailureServices = new Set(authFailures.map((f) => f.service));
-  return parallelResults.map((parallelResult) =>
-    authFailureServices.has(parallelResult.service)
-      ? (retryResults.find((r) => r.service === parallelResult.service) ??
-        parallelResult)
-      : parallelResult,
+  // Build a map for O(1) lookups instead of O(n²) find() calls
+  const retryMap = new Map(retryResults.map((r) => [r.service, r]));
+  return parallelResults.map(
+    (parallelResult) => retryMap.get(parallelResult.service) ?? parallelResult,
   );
 }
 

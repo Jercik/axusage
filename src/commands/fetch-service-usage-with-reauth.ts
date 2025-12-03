@@ -44,5 +44,6 @@ export async function fetchServiceUsageWithAutoReauth(
     }
   }
 
+  // Return original result if re-authentication failed or was not attempted
   return { service: serviceName, result };
 }
