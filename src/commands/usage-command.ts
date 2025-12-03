@@ -26,7 +26,7 @@ import { isAuthFailure } from "./run-auth-setup.js";
  * This maintains ~2s response time when credentials are valid while gracefully
  * handling authentication failures that require interactive prompts.
  */
-async function fetchServicesWithHybridStrategy(
+export async function fetchServicesWithHybridStrategy(
   servicesToQuery: string[],
 ): Promise<ServiceResult[]> {
   // First attempt: fetch all services in parallel
@@ -58,6 +58,12 @@ async function fetchServicesWithHybridStrategy(
     const result = await fetchServiceUsageWithAutoReauth(service);
     retryResults.push(result);
   }
+
+  console.log(
+    chalk.green(
+      `✓ Completed ${String(retryResults.length)} re-authentication${retryResults.length === 1 ? "" : "s"}\n`,
+    ),
+  );
 
   // Merge results: keep successful parallel results, replace auth failures with retries
   // Build a map for O(1) lookups instead of O(n²) find() calls
