@@ -108,6 +108,21 @@ Use `package.json` "imports" field with `#` prefixes to create stable internal m
 
 ---
 
+# Rule: Run TypeScript Natively
+
+Run TypeScript files directly with `node`. Do not use `tsx`, `ts-node`, or other external runners.
+
+```bash
+node script.ts           # ✅ Correct
+tsx script.ts            # ❌ Unnecessary
+pnpm exec tsx script.ts  # ❌ Unnecessary
+```
+
+Node.js v24 LTS (current) and later run `.ts` files natively without flags. External TypeScript runners add unnecessary dependencies and complexity.
+
+
+---
+
 # Rule: Any in Generics
 
 When building generic functions, you may need to use any inside the function body.
@@ -351,6 +366,21 @@ if (result.ok) {
   console.error(result.error);
 }
 ```
+
+
+---
+
+# Rule: ESLint Print Config
+
+Use `eslint --print-config` to check if a rule is enabled in the resolved configuration. This queries ESLint's actual computed config rather than searching config files for text strings.
+
+```bash
+pnpm exec eslint --print-config src/index.ts | jq -e '.rules["@typescript-eslint/no-unnecessary-type-parameters"][0]'
+# Returns: 2 (error), 1 (warn), 0 (off)
+# Exit code 1 if rule not found
+```
+
+The `-e` flag makes jq exit with code 1 when the result is null, useful for scripting.
 
 
 ---
