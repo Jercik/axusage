@@ -69,7 +69,7 @@ pnpm exec playwright install chromium --with-deps
 
 **Global installation with pnpm:**
 
-pnpm blocks postinstall scripts for global packages by default. After installing globally, approve and run the build script:
+pnpm blocks postinstall scripts for global packages by default (npm runs them automatically). After installing globally, approve and run the build script:
 
 ```bash
 pnpm add -g agent-usage
