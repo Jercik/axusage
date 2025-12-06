@@ -77,11 +77,12 @@ pnpm approve-builds -g          # Select agent-usage when prompted
 pnpm add -g agent-usage         # Reinstall to run postinstall
 ```
 
-Alternatively, install the browser manually after global installation:
+Alternatively, install the browser manually after global installation. Use the Playwright binary that ships with the global package so the browser is installed in the right location:
 
 ```bash
 pnpm add -g agent-usage
-npx playwright install chromium
+PLAYWRIGHT_BIN="$(pnpm root -g)/agent-usage/node_modules/.bin/playwright"
+"$PLAYWRIGHT_BIN" install chromium --with-deps
 ```
 
 ## Usage
