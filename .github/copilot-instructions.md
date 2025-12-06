@@ -1,8 +1,10 @@
 # Project Context
 
-This project requires Node.js >=22.14.0 (see `engines` in package.json). Node.js v22.18+ and v24+ run TypeScript files natively without `--experimental-strip-types` - type stripping is enabled by default.
+This project requires Node.js >=22.14.0 (see `engines` in package.json). Type stripping is built in for Node.js 22.18+ and 24+; 22.14.0–22.17.x still need `--experimental-strip-types` when running `.ts` directly.
 
-When reviewing code that runs `.ts` files directly with `node`, this is correct and intentional. Do not suggest adding experimental flags or using external runners like `tsx` or `ts-node`.
+Use native execution for development scripts and ad-hoc utilities. Node.js only removes types (no type checking or transformation of enums, namespaces, or legacy decorators), so the published CLI continues to ship compiled JS (`bin/agent-usage` points to `dist/cli.js`).
+
+When reviewing `.ts` files run directly with `node`, assume the runtime is 22.18+ and do not suggest adding experimental flags or external runners (`tsx`, `ts-node`). If a change must support 22.14.0–22.17.x, call out the flag requirement explicitly.
 
 # Code Style
 

@@ -110,7 +110,7 @@ Use `package.json` "imports" field with `#` prefixes to create stable internal m
 
 # Rule: Run TypeScript Natively
 
-Run TypeScript files directly with `node`. Do not use `tsx`, `ts-node`, or other external runners.
+Run TypeScript files directly with `node` for development scripts and ad-hoc utilities. Do not use `tsx`, `ts-node`, or other external runners.
 
 ```bash
 node script.ts           # ✅ Correct
@@ -118,7 +118,7 @@ tsx script.ts            # ❌ Unnecessary
 pnpm exec tsx script.ts  # ❌ Unnecessary
 ```
 
-Node.js v24 LTS (current) and later run `.ts` files natively without flags. External TypeScript runners add unnecessary dependencies and complexity.
+Node.js 22.18+ and 24+ strip TypeScript types by default; 22.14–22.17 require `--experimental-strip-types` when running `.ts` directly. Native execution only removes types (no type checking; limited support for enums, namespaces, and legacy decorators), and the published CLI still compiles to JS under `dist/`, so use `tsc` when you need type checking or advanced TS features.
 
 
 ---
