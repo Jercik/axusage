@@ -5,19 +5,19 @@ Monitor AI usage across Claude, ChatGPT, and GitHub Copilot from a single comman
 ## Quick Start
 
 ```bash
-pnpm install  # Downloads Playwright Chromium (~300MB) automatically
-pnpm run build
+# Install globally
+npm install -g agent-usage
 
 # Set up authentication (one-time setup per service)
-node bin/agent-usage auth setup claude
-node bin/agent-usage auth setup chatgpt
-node bin/agent-usage auth setup github-copilot
+agent-usage auth setup claude
+agent-usage auth setup chatgpt
+agent-usage auth setup github-copilot
 
 # Check authentication status
-node bin/agent-usage auth status
+agent-usage auth status
 
 # Fetch usage
-node bin/agent-usage
+agent-usage
 ```
 
 ## Authentication
@@ -28,12 +28,12 @@ This tool uses browser-based authentication for persistent, long-lived sessions.
 
 ```bash
 # Set up authentication for each service
-node bin/agent-usage auth setup claude
-node bin/agent-usage auth setup chatgpt
-node bin/agent-usage auth setup github-copilot
+agent-usage auth setup claude
+agent-usage auth setup chatgpt
+agent-usage auth setup github-copilot
 
 # Check authentication status
-node bin/agent-usage auth status
+agent-usage auth status
 ```
 
 When you run `auth setup`, a browser window will open. Simply log in to the service as you normally would. Your authentication will be saved and automatically used for future requests.
@@ -46,7 +46,7 @@ When you run `auth setup`, a browser window will open. Simply log in to the serv
 
 You can override the location by providing `BrowserAuthConfig.dataDir`, but the CLI defaults to these platform-appropriate directories.
 
-> **Migration note:** Releases before env-paths support stored sessions under `~/.agent-usage/browser-contexts/`. Upgrade by either rerunning `node bin/agent-usage auth setup <service>` or moving the old directory into the platform-specific path above (for example, `mv ~/.agent-usage/browser-contexts ~/.local/share/agent-usage/browser-contexts` on Linux).
+> **Migration note:** Releases before env-paths support stored sessions under `~/.agent-usage/browser-contexts/`. Upgrade by either rerunning `agent-usage auth setup <service>` or moving the old directory into the platform-specific path above (for example, `mv ~/.agent-usage/browser-contexts ~/.local/share/agent-usage/browser-contexts` on Linux).
 
 Security notes:
 
@@ -54,9 +54,9 @@ Security notes:
 - To revoke access, clear saved auth per service:
 
 ```bash
-node bin/agent-usage auth clear claude
-node bin/agent-usage auth clear chatgpt
-node bin/agent-usage auth clear github-copilot
+agent-usage auth clear claude
+agent-usage auth clear chatgpt
+agent-usage auth clear github-copilot
 ```
 
 Browser installation:
@@ -67,23 +67,40 @@ Browser installation:
 pnpm exec playwright install chromium --with-deps
 ```
 
+**Global installation with pnpm:**
+
+pnpm blocks postinstall scripts for global packages by default. After installing globally, approve and run the build script:
+
+```bash
+pnpm add -g agent-usage
+pnpm approve-builds -g          # Select agent-usage when prompted
+pnpm add -g agent-usage         # Reinstall to run postinstall
+```
+
+Alternatively, install the browser manually after global installation:
+
+```bash
+pnpm add -g agent-usage
+npx playwright install chromium
+```
+
 ## Usage
 
 ```bash
 # Query all services
-node bin/agent-usage
+agent-usage
 
 # Single service
-node bin/agent-usage --service claude
-node bin/agent-usage --service chatgpt
-node bin/agent-usage --service github-copilot
+agent-usage --service claude
+agent-usage --service chatgpt
+agent-usage --service github-copilot
 
 # JSON output
-node bin/agent-usage --format=json
-node bin/agent-usage --service claude --format=json
+agent-usage --format=json
+agent-usage --service claude --format=json
 
 # Prometheus text output
-node bin/agent-usage --format=prometheus
+agent-usage --format=prometheus
 ```
 
 > ℹ️ `pnpm run start` triggers a clean rebuild before executing the CLI. The shorter `pnpm run usage` script skips the rebuild step and is intended only when `dist/` is already up to date.
@@ -105,12 +122,12 @@ JSON format returns structured data for programmatic use.
 
 - The CLI shows a countdown while waiting for login.
 - If you have completed login, press Enter in the terminal to continue.
-- If it still fails, run `node bin/agent-usage auth clear <service>` and retry.
+- If it still fails, run `agent-usage auth clear <service>` and retry.
 
 ### "No saved authentication" error
 
-- Check which services are authenticated: `node bin/agent-usage auth status`.
-- Set up the missing service: `node bin/agent-usage auth setup <service>`.
+- Check which services are authenticated: `agent-usage auth status`.
+- Set up the missing service: `agent-usage auth setup <service>`.
 
 ### Sessions expire
 
@@ -122,21 +139,20 @@ You can perform the interactive login flow on a workstation (for example, a loca
 
 ### 1. Authenticate on a workstation
 
-1. Install dependencies and run the normal `auth setup` flow for every service you need:
+1. Install globally and run the `auth setup` flow for every service you need:
 
    ```bash
-   pnpm install
-   pnpm run build
+   npm install -g agent-usage
 
-   node bin/agent-usage auth setup claude
-   node bin/agent-usage auth setup chatgpt
-   node bin/agent-usage auth setup github-copilot
+   agent-usage auth setup claude
+   agent-usage auth setup chatgpt
+   agent-usage auth setup github-copilot
    ```
 
 2. Confirm the workstation has valid sessions:
 
    ```bash
-   node bin/agent-usage auth status
+   agent-usage auth status
    ```
 
 3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
@@ -172,10 +188,10 @@ You can perform the interactive login flow on a workstation (for example, a loca
 3. Verify that the sessions are available on the server:
 
    ```bash
-   node bin/agent-usage auth status
+   agent-usage auth status
    ```
 
-   If the server does not yet have the project installed, clone or deploy the same commit as the workstation and run `pnpm install` followed by `pnpm run build` before checking the status.
+   If the server does not yet have the tool installed, run `npm install -g agent-usage` before checking the status.
 
 ### 3. Export metrics for Prometheus
 
@@ -187,16 +203,13 @@ The CLI can emit Prometheus text directly using `--format=prometheus`, producing
    #!/usr/bin/env bash
    set -euo pipefail
 
-   REPO_DIR="/opt/agent-usage"
    TEXTFILE_DIR="/var/lib/node_exporter/textfile_collector"
-
-   cd "$REPO_DIR"
 
    # Capture usage as Prometheus text.
    # CLI exits with code 2 on partial failures; set -e stops the script before overwrite.
    # On error, the previous .prom remains so Prometheus continues scraping the last valid data.
    tmp_file=$(mktemp)
-   node bin/agent-usage --format=prometheus >"$tmp_file"
+   agent-usage --format=prometheus >"$tmp_file"
 
    mv "$tmp_file" "$TEXTFILE_DIR/agent_usage.prom"
    ```
