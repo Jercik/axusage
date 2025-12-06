@@ -118,7 +118,7 @@ tsx script.ts            # ❌ Unnecessary
 pnpm exec tsx script.ts  # ❌ Unnecessary
 ```
 
-Node.js v24 LTS (current) and later run `.ts` files natively without flags. External TypeScript runners add unnecessary dependencies and complexity.
+Node.js 22.18+ and 24+ run `.ts` files natively without flags. External TypeScript runners add unnecessary dependencies and complexity.
 
 
 ---
