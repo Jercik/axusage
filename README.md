@@ -103,8 +103,6 @@ agent-usage --service claude --format=json
 agent-usage --format=prometheus
 ```
 
-> ℹ️ `pnpm run start` triggers a clean rebuild before executing the CLI. The shorter `pnpm run usage` script skips the rebuild step and is intended only when `dist/` is already up to date.
-
 ## Output
 
 Human-readable format shows:
@@ -269,3 +267,7 @@ Notes:
 - Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `auth setup` as needed.
 - If you transfer browser contexts between machines, ensure the target system is secure and permissions are restricted to the intended user.
 - The CLI stores authentication data in the platform-specific directories listed above; protect that directory to prevent unauthorized access.
+
+## Development
+
+For local development in this repository, `pnpm run start` triggers a clean rebuild before executing the CLI. Use `pnpm run usage` only when `dist/` is already up to date. End users installing globally should run the `agent-usage` binary directly.
