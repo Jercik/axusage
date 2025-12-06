@@ -22,7 +22,10 @@ export async function fetchClaudeJsonFromPage(
       .waitForResponse(
         (response) =>
           USAGE_API.test(response.url()) && isJsonResponse(response),
-        { timeout: 60_000 },
+        {
+          // Fail faster on auth/network issues while leaving a 30s buffer for slow responses
+          timeout: 30_000,
+        },
       )
       .catch((error) => {
         // Avoid unhandled rejection if we bail early on login redirect; rethrow otherwise
