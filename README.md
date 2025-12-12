@@ -128,7 +128,7 @@ agent-usage --format=json \
 
 ```bash
 agent-usage --format=prometheus \
-  | grep 'agent_usage_utilization_percent{service="claude"' \
+  | grep 'agent_usage_utilization_percent{service="claude",' \
   | sort -t' ' -k2 -rn
 ```
 
