@@ -47,7 +47,7 @@ program
   )
   .addHelpText(
     "after",
-    `\nExamples:\n  # Query all services\n  ${packageJson.name} usage\n\n  # Query a single service\n  ${packageJson.name} usage --service claude\n\n  # Pipe Prometheus output into grep\n  ${packageJson.name} usage --format=prometheus | grep claude\n`,
+    `\nExamples:\n  # Query all services (default)\n  ${packageJson.name}\n\n  # Query a single service\n  ${packageJson.name} --service claude\n\n  # Pipe Prometheus output into grep\n  ${packageJson.name} --format=prometheus | grep claude\n`,
   )
   .action(async (options: UsageCommandOptions) => {
     await usageCommand(options);
