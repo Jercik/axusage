@@ -25,24 +25,28 @@ export async function waitForLogin(
       // Intentionally ignored: the page may navigate/close before selector resolves
     }),
   );
-  const interval = setInterval(() => {
-    const remaining = deadline - Date.now();
-    if (remaining <= 0) {
-      // Stop logging once timeout elapses to avoid confusing "0 minute(s)" spam
-      clearInterval(interval);
-      console.log("Login wait timed out; finishing up...");
-      return;
-    }
-    // Round up to the next minute for clearer UX, ensure at least 1
-    const minutes = Math.max(1, Math.ceil(remaining / 60_000));
-    console.log(
-      `Still waiting for login... ${String(minutes)} minute(s) remaining`,
-    );
-  }, 60_000);
+  const shouldShowCountdown = process.stderr.isTTY;
+  let interval: NodeJS.Timeout | undefined;
+  if (shouldShowCountdown) {
+    interval = setInterval(() => {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        // Stop logging once timeout elapses to avoid confusing "0 minute(s)" spam
+        if (interval) clearInterval(interval);
+        console.error("Login wait timed out; finishing up...");
+        return;
+      }
+      // Round up to the next minute for clearer UX, ensure at least 1
+      const minutes = Math.max(1, Math.ceil(remaining / 60_000));
+      console.error(
+        `Still waiting for login... ${String(minutes)} minute(s) remaining`,
+      );
+    }, 60_000);
+  }
   try {
     await Promise.race([manualSilenced, ...waiters]);
   } finally {
-    clearInterval(interval);
+    if (interval) clearInterval(interval);
     reader.close();
   }
 }

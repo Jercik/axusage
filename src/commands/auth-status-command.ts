@@ -32,7 +32,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     existsSync(getStorageStatePathFor(dataDirectory, s)),
   );
   if (!allAuthenticated) {
-    console.log(
+    console.error(
       chalk.gray(
         `\nTo set up authentication, run: ${chalk.cyan("agent-usage auth setup <service>")}`,
       ),

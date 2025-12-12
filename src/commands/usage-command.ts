@@ -28,6 +28,7 @@ import { isAuthFailure } from "./run-auth-setup.js";
  */
 export async function fetchServicesWithHybridStrategy(
   servicesToQuery: string[],
+  interactive: boolean,
 ): Promise<ServiceResult[]> {
   // First attempt: fetch all services in parallel
   const parallelResults = await Promise.all(
@@ -43,27 +44,33 @@ export async function fetchServicesWithHybridStrategy(
   );
 
   // If no auth failures, return parallel results
-  if (authFailures.length === 0) {
+  if (authFailures.length === 0 || !interactive) {
     return parallelResults;
   }
+
+  const shouldShowProgress = process.stderr.isTTY;
 
   // Retry auth failures sequentially with re-authentication
   const retryResults: ServiceResult[] = [];
   for (const [index, { service }] of authFailures.entries()) {
-    console.log(
-      chalk.dim(
-        `[${String(index + 1)}/${String(authFailures.length)}] Re-authenticating ${service}...`,
-      ),
-    );
-    const result = await fetchServiceUsageWithAutoReauth(service);
+    if (shouldShowProgress) {
+      console.error(
+        chalk.dim(
+          `[${String(index + 1)}/${String(authFailures.length)}] Re-authenticating ${service}...`,
+        ),
+      );
+    }
+    const result = await fetchServiceUsageWithAutoReauth(service, interactive);
     retryResults.push(result);
   }
 
-  console.log(
-    chalk.green(
-      `✓ Completed ${String(retryResults.length)} re-authentication${retryResults.length === 1 ? "" : "s"}\n`,
-    ),
-  );
+  if (shouldShowProgress) {
+    console.error(
+      chalk.green(
+        `✓ Completed ${String(retryResults.length)} re-authentication${retryResults.length === 1 ? "" : "s"}\n`,
+      ),
+    );
+  }
 
   // Merge results: keep successful parallel results, replace auth failures with retries
   // Build a map for O(1) lookups instead of O(n²) find() calls
@@ -80,19 +87,25 @@ export async function usageCommand(
   options: UsageCommandOptions,
 ): Promise<void> {
   const servicesToQuery = selectServicesToQuery(options.service);
+  const interactive = options.interactive ?? false;
 
   // Fetch usage data using hybrid parallel/sequential strategy
-  const results = await fetchServicesWithHybridStrategy(servicesToQuery);
+  const results = await fetchServicesWithHybridStrategy(
+    servicesToQuery,
+    interactive,
+  );
 
   // Collect successful results and errors
   const successes: ServiceUsageData[] = [];
   const errors: { service: string; error: ApiError }[] = [];
+  const authFailureServices = new Set<string>();
 
   for (const { service, result } of results) {
     if (result.ok) {
       successes.push(result.value);
     } else {
       errors.push({ service, error: result.error });
+      if (isAuthFailure(result)) authFailureServices.add(service);
     }
   }
 
@@ -112,10 +125,23 @@ export async function usageCommand(
     }
   }
 
+  if (!interactive && authFailureServices.size > 0) {
+    const list = [...authFailureServices].join(", ");
+    console.error(
+      chalk.gray(
+        `Authentication required for: ${list}. Run 'agent-usage auth setup <service>' or re-run with '--interactive' to re-authenticate during fetch.`,
+      ),
+    );
+    if (successes.length > 0) {
+      console.error();
+    }
+  }
+
   // Exit if no services succeeded
   if (successes.length === 0) {
     console.error(chalk.red("\nNo services could be queried successfully."));
-    throw new Error("No services could be queried successfully.");
+    process.exitCode = 1;
+    return;
   }
 
   // Display results

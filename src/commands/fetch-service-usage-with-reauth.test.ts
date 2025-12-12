@@ -84,7 +84,7 @@ describe("fetchServiceUsageWithAutoReauth", () => {
         value: mockUsageData,
       });
 
-      const result = await fetchServiceUsageWithAutoReauth("claude");
+      const result = await fetchServiceUsageWithAutoReauth("claude", true);
 
       expect(result).toEqual({
         service: "claude",
@@ -101,7 +101,7 @@ describe("fetchServiceUsageWithAutoReauth", () => {
         error: networkError,
       });
 
-      const result = await fetchServiceUsageWithAutoReauth("claude");
+      const result = await fetchServiceUsageWithAutoReauth("claude", true);
 
       expect(result).toEqual({
         service: "claude",
@@ -119,7 +119,7 @@ describe("fetchServiceUsageWithAutoReauth", () => {
         .mockResolvedValueOnce({ ok: true, value: mockUsageData });
       mockRunAuthSetup.mockResolvedValueOnce(true);
 
-      const result = await fetchServiceUsageWithAutoReauth("claude");
+      const result = await fetchServiceUsageWithAutoReauth("claude", true);
 
       expect(result).toEqual({
         service: "claude",
@@ -127,6 +127,23 @@ describe("fetchServiceUsageWithAutoReauth", () => {
       });
       expect(mockFetchServiceUsage).toHaveBeenCalledTimes(2);
       expect(mockRunAuthSetup).toHaveBeenCalledWith("claude");
+    });
+
+    it("does not attempt re-authentication when interactive is false", async () => {
+      const authError = new ApiError("401 Unauthorized", 401);
+      mockFetchServiceUsage.mockResolvedValueOnce({
+        ok: false,
+        error: authError,
+      });
+
+      const result = await fetchServiceUsageWithAutoReauth("claude", false);
+
+      expect(result).toEqual({
+        service: "claude",
+        result: { ok: false, error: authError },
+      });
+      expect(mockFetchServiceUsage).toHaveBeenCalledTimes(1);
+      expect(mockRunAuthSetup).not.toHaveBeenCalled();
     });
 
     it("returns original error when re-authentication fails", async () => {
@@ -137,7 +154,7 @@ describe("fetchServiceUsageWithAutoReauth", () => {
       });
       mockRunAuthSetup.mockResolvedValueOnce(false);
 
-      const result = await fetchServiceUsageWithAutoReauth("claude");
+      const result = await fetchServiceUsageWithAutoReauth("claude", true);
 
       expect(result).toEqual({
         service: "claude",
@@ -158,7 +175,10 @@ describe("fetchServiceUsageWithAutoReauth", () => {
         throw new Error("Unsupported service: invalid-service");
       });
 
-      const result = await fetchServiceUsageWithAutoReauth("invalid-service");
+      const result = await fetchServiceUsageWithAutoReauth(
+        "invalid-service",
+        true,
+      );
 
       expect(result).toEqual({
         service: "invalid-service",
@@ -176,7 +196,7 @@ describe("fetchServiceUsageWithAutoReauth", () => {
         new Error("Browser launch failed"),
       );
 
-      const result = await fetchServiceUsageWithAutoReauth("claude");
+      const result = await fetchServiceUsageWithAutoReauth("claude", true);
 
       expect(result).toEqual({
         service: "claude",

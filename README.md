@@ -91,6 +91,9 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/agent-usage/node_modules/.bin/playwright"
 # Query all services
 agent-usage
 
+# Allow interactive re-authentication during usage fetch
+agent-usage --interactive
+
 # Single service
 agent-usage --service claude
 agent-usage --service chatgpt
@@ -104,6 +107,31 @@ agent-usage --service claude --format=json
 agent-usage --format=prometheus
 ```
 
+## Examples
+
+### Count services by availability (JSON + sort/uniq)
+
+```bash
+agent-usage --format=json \
+  | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .service' \
+  | sort | uniq -c
+```
+
+### Extract utilization windows as TSV (JSON + jq)
+
+```bash
+agent-usage --format=json \
+  | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .windows[] | [.name, (.utilization|tostring)] | @tsv'
+```
+
+### Filter Prometheus metrics for a single service (Prometheus + grep)
+
+```bash
+agent-usage --format=prometheus \
+  | grep 'agent_usage_utilization_percent{service="claude",' \
+  | sort -t' ' -k2 -rn
+```
+
 ## Output
 
 Human-readable format shows:
@@ -114,6 +142,18 @@ Human-readable format shows:
 - Color coding: 🟢 on track | 🟡 over budget | 🔴 significantly over
 
 JSON format returns structured data for programmatic use.
+
+## Agent Rule
+
+Add to your `CLAUDE.md` or `AGENTS.md`:
+
+```markdown
+# Rule: `agent-usage` Usage
+
+Run `npx -y agent-usage --help` to learn available options.
+
+Use `agent-usage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, and GitHub Copilot. It standardizes output (text, JSON, Prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
+```
 
 ## Troubleshooting
 

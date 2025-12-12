@@ -58,7 +58,7 @@ export async function runAuthSetup(
   let timeoutId: NodeJS.Timeout | undefined;
 
   try {
-    console.log(
+    console.error(
       chalk.blue(`\nOpening browser for ${service} authentication...\n`),
     );
 
@@ -71,7 +71,7 @@ export async function runAuthSetup(
 
     await Promise.race([setupPromise, timeoutPromise]);
 
-    console.log(
+    console.error(
       chalk.green(`\n✓ Authentication for ${service} is complete!\n`),
     );
     return true;
