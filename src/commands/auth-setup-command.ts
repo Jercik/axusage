@@ -19,12 +19,16 @@ export async function authSetupCommand(
   const manager = new BrowserAuthManager({ headless: false });
 
   try {
-    console.log(chalk.blue(`\nSetting up authentication for ${service}...\n`));
+    console.error(
+      chalk.blue(`\nSetting up authentication for ${service}...\n`),
+    );
 
     await manager.setupAuth(service);
 
-    console.log(chalk.green(`\n✓ Authentication for ${service} is complete!`));
-    console.log(
+    console.error(
+      chalk.green(`\n✓ Authentication for ${service} is complete!`),
+    );
+    console.error(
       chalk.gray(
         `\nYou can now run: ${chalk.cyan(`agent-usage usage --service ${service}`)}`,
       ),

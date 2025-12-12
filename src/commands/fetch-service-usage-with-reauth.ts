@@ -11,8 +11,13 @@ import type { ServiceResult } from "../types/domain.js";
  */
 export async function fetchServiceUsageWithAutoReauth(
   serviceName: string,
+  interactive: boolean,
 ): Promise<ServiceResult> {
   const result = await fetchServiceUsage(serviceName);
+
+  if (!interactive) {
+    return { service: serviceName, result };
+  }
 
   // If auth error, try to re-authenticate and retry
   if (isAuthFailure(result)) {
@@ -27,7 +32,9 @@ export async function fetchServiceUsageWithAutoReauth(
       const authSuccess = await runAuthSetup(service);
 
       if (authSuccess) {
-        console.log(chalk.blue(`Retrying ${serviceName} usage fetch...\n`));
+        if (process.stderr.isTTY) {
+          console.error(chalk.blue(`Retrying ${serviceName} usage fetch...\n`));
+        }
         const retryResult = await fetchServiceUsage(serviceName);
         return { service: serviceName, result: retryResult };
       } else {

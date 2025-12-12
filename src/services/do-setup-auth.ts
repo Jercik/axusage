@@ -11,8 +11,8 @@ export async function doSetupAuth(
   storagePath: string,
   instructions: string,
 ): Promise<void> {
-  console.log(`\n${instructions}`);
-  console.log("Waiting for login to complete (or press Enter to continue)\n");
+  console.error(`\n${instructions}`);
+  console.error("Waiting for login to complete (or press Enter to continue)\n");
   const userAgent = await setupAuthInContext(service, context, storagePath);
   try {
     if (userAgent) {
@@ -27,7 +27,7 @@ export async function doSetupAuth(
   } catch {
     // ignore errors when writing meta; not critical
   }
-  console.log(
+  console.error(
     `\n✓ Authentication saved for ${service}. You can now close the browser.`,
   );
 }

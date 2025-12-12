@@ -76,10 +76,10 @@ describe("fetchServicesWithHybridStrategy", () => {
           value: createMockUsageData("chatgpt"),
         });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt"],
+        true,
+      );
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual({
@@ -102,10 +102,10 @@ describe("fetchServicesWithHybridStrategy", () => {
         })
         .mockResolvedValueOnce({ ok: false, error: networkError });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt"],
+        true,
+      );
 
       expect(results).toHaveLength(2);
       expect(results[0]?.result.ok).toBe(true);
@@ -128,10 +128,10 @@ describe("fetchServicesWithHybridStrategy", () => {
         result: { ok: true, value: createMockUsageData("chatgpt") },
       });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt"],
+        true,
+      );
 
       expect(results).toHaveLength(2);
       expect(results[0]?.result.ok).toBe(true);
@@ -139,7 +139,22 @@ describe("fetchServicesWithHybridStrategy", () => {
       expect(mockFetchServiceUsageWithAutoReauth).toHaveBeenCalledTimes(1);
       expect(mockFetchServiceUsageWithAutoReauth).toHaveBeenCalledWith(
         "chatgpt",
+        true,
       );
+    });
+
+    it("does not retry auth failures when interactive is false", async () => {
+      const authError = new ApiError("401 Unauthorized", 401);
+      mockFetchServiceUsage.mockResolvedValueOnce({
+        ok: false,
+        error: authError,
+      });
+
+      const results = await fetchServicesWithHybridStrategy(["claude"], false);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]?.result.ok).toBe(false);
+      expect(mockFetchServiceUsageWithAutoReauth).not.toHaveBeenCalled();
     });
 
     it("retries multiple auth failures sequentially", async () => {
@@ -161,11 +176,10 @@ describe("fetchServicesWithHybridStrategy", () => {
           result: { ok: true, value: createMockUsageData("chatgpt") },
         });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-        "github-copilot",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt", "github-copilot"],
+        true,
+      );
 
       expect(results).toHaveLength(3);
       expect(results.every((r) => r.result.ok)).toBe(true);
@@ -197,11 +211,10 @@ describe("fetchServicesWithHybridStrategy", () => {
         result: { ok: true, value: retryData },
       });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-        "github-copilot",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt", "github-copilot"],
+        true,
+      );
 
       expect(results).toHaveLength(3);
       expect(results[0]?.service).toBe("claude");
@@ -230,11 +243,10 @@ describe("fetchServicesWithHybridStrategy", () => {
           result: { ok: true, value: createMockUsageData("github-copilot") },
         });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-        "github-copilot",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt", "github-copilot"],
+        true,
+      );
 
       expect(results.map((r) => r.service)).toEqual([
         "claude",
@@ -258,10 +270,10 @@ describe("fetchServicesWithHybridStrategy", () => {
           result: { ok: false, error: authError },
         });
 
-      const results = await fetchServicesWithHybridStrategy([
-        "claude",
-        "chatgpt",
-      ]);
+      const results = await fetchServicesWithHybridStrategy(
+        ["claude", "chatgpt"],
+        true,
+      );
 
       expect(results).toHaveLength(2);
       expect(results.every((r) => !r.result.ok)).toBe(true);
@@ -269,7 +281,7 @@ describe("fetchServicesWithHybridStrategy", () => {
     });
 
     it("handles empty services list", async () => {
-      const results = await fetchServicesWithHybridStrategy([]);
+      const results = await fetchServicesWithHybridStrategy([], true);
 
       expect(results).toHaveLength(0);
       expect(mockFetchServiceUsage).not.toHaveBeenCalled();
@@ -281,7 +293,7 @@ describe("fetchServicesWithHybridStrategy", () => {
         value: createMockUsageData("claude"),
       });
 
-      const results = await fetchServicesWithHybridStrategy(["claude"]);
+      const results = await fetchServicesWithHybridStrategy(["claude"], true);
 
       expect(results).toHaveLength(1);
       expect(results[0]?.service).toBe("claude");

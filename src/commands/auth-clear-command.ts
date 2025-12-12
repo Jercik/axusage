@@ -1,5 +1,6 @@
 import chalk from "chalk";
-import { rm } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import trash from "trash";
 import { validateService } from "../services/supported-service.js";
 import {
   getAuthMetaPathFor,
@@ -17,9 +18,15 @@ export async function authClearCommand(
   const storage = getStorageStatePathFor(dataDirectory, service);
   const meta = getAuthMetaPathFor(dataDirectory, service);
   try {
-    await rm(storage, { force: true });
-    await rm(meta, { force: true });
-    console.log(chalk.green(`\n✓ Cleared authentication for ${service}`));
+    const targets = [storage, meta].filter((p) => existsSync(p));
+    if (targets.length === 0) {
+      console.error(
+        chalk.gray(`\nNo saved authentication found for ${service}.`),
+      );
+      return;
+    }
+    await trash(targets, { glob: false });
+    console.error(chalk.green(`\n✓ Cleared authentication for ${service}`));
   } catch (error) {
     console.error(
       chalk.red(
