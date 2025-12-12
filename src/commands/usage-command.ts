@@ -141,7 +141,7 @@ export async function usageCommand(
   if (successes.length === 0) {
     console.error(chalk.red("\nNo services could be queried successfully."));
     process.exitCode = 1;
-    throw new Error("No services could be queried successfully.");
+    return;
   }
 
   // Display results

@@ -16,7 +16,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
 
   const dataDirectory = getBrowserContextsDirectory();
 
-  console.error(chalk.blue("\nAuthentication Status:\n"));
+  console.log(chalk.blue("\nAuthentication Status:\n"));
 
   for (const service of servicesToCheck) {
     const storagePath = getStorageStatePathFor(dataDirectory, service);
@@ -24,8 +24,8 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     const status = hasAuth
       ? chalk.green("✓ Authenticated")
       : chalk.gray("✗ Not authenticated");
-    console.error(`${chalk.bold(service)}: ${status}`);
-    console.error(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
+    console.log(`${chalk.bold(service)}: ${status}`);
+    console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
   }
 
   const allAuthenticated = servicesToCheck.every((s) =>

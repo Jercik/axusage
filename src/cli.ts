@@ -6,6 +6,7 @@ import { usageCommand } from "./commands/usage-command.js";
 import { authSetupCommand } from "./commands/auth-setup-command.js";
 import { authStatusCommand } from "./commands/auth-status-command.js";
 import { authClearCommand } from "./commands/auth-clear-command.js";
+import type { UsageCommandOptions } from "./commands/fetch-service-usage.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
 import { installAuthManagerCleanup } from "./services/shared-browser-auth-manager.js";
 import { getBrowserContextsDirectory } from "./services/app-paths.js";
@@ -24,12 +25,6 @@ const program = new Command()
 
 // Ensure browser resources are cleaned when process exits
 installAuthManagerCleanup();
-
-interface UsageCliOptions {
-  readonly service?: string;
-  readonly format?: "text" | "json" | "prometheus";
-  readonly interactive?: boolean;
-}
 
 // Usage command (default)
 program
@@ -54,7 +49,7 @@ program
     "after",
     `\nExamples:\n  # Query all services\n  ${packageJson.name} usage\n\n  # Query a single service\n  ${packageJson.name} usage --service claude\n\n  # Pipe Prometheus output into grep\n  ${packageJson.name} usage --format=prometheus | grep claude\n`,
   )
-  .action(async (options: UsageCliOptions) => {
+  .action(async (options: UsageCommandOptions) => {
     await usageCommand(options);
   });
 
