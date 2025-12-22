@@ -1,6 +1,5 @@
 import type { SupportedService } from "./supported-service.js";
 import type { BrowserContext } from "playwright";
-import { fetchChatGPTJson } from "./fetch-chatgpt-json.js";
 
 /**
  * Service-specific configuration for authentication
@@ -18,34 +17,17 @@ type ServiceAuthConfig = {
 };
 
 const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
+  // Claude uses CLI-based auth via Claude Code credentials
   claude: {
-    url: "https://claude.ai/settings/usage",
-    waitForSelectors: [
-      'a[href^="/settings"]',
-      'button[aria-label*="Account" i]',
-    ],
+    url: "",
     instructions:
-      "Please log in to your Anthropic account in the browser window.",
+      "Claude uses Claude Code authentication. Run 'claude' in your terminal to authenticate.",
   },
+  // ChatGPT uses CLI-based auth via Codex credentials
   chatgpt: {
-    url: "https://chatgpt.com/codex/settings/usage",
-    waitForSelectors: [
-      'button[aria-label="User menu"]',
-      'a[href="/settings"]',
-      'a[href^="/settings"]',
-      'a[href^="/account"]',
-    ],
-    verifyUrl: "https://chatgpt.com/backend-api/wham/usage",
-    verifyFunction: async (context, url) => {
-      try {
-        await fetchChatGPTJson(context, url);
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    url: "",
     instructions:
-      "Please log in to your ChatGPT account in the browser window.",
+      "ChatGPT uses Codex CLI authentication. Run 'codex' in your terminal to authenticate.",
   },
   "github-copilot": {
     url: "https://github.com/login",
