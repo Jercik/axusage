@@ -33,7 +33,7 @@ async function ensureFreshCredentials(
   const refreshResult = await refreshGeminiToken(credentials);
   if (!refreshResult.ok) {
     throw new ApiError(
-      `Token refresh failed: ${refreshResult.error.message}. Run 'agent-usage auth setup gemini' to re-authenticate.`,
+      `Token refresh failed: ${refreshResult.error.message}. Run 'gemini' to re-authenticate.`,
     );
   }
   return refreshResult.value;
@@ -55,7 +55,7 @@ export const geminiAdapter: ServiceAdapter = {
         return {
           ok: false,
           error: new ApiError(
-            "No saved authentication for gemini. Run 'agent-usage auth setup gemini' first.",
+            "No saved authentication for gemini. Run 'gemini' to authenticate.",
           ),
         };
       }

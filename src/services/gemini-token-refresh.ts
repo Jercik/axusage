@@ -1,7 +1,7 @@
 import { readFile, writeFile, realpath } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import type { Result } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import type { GeminiCredentials } from "../types/gemini.js";
@@ -11,7 +11,15 @@ import { getCredentialsPath } from "./gemini-credentials.js";
 const TOKEN_REFRESH_URL = "https://oauth2.googleapis.com/token";
 
 /**
- * Paths to search for OAuth config relative to gemini binary
+ * Paths to search for OAuth config relative to gemini binary.
+ *
+ * FRAGILE: These paths depend on the internal directory structure of the
+ * @google/gemini-cli package, which may change in future versions. If the
+ * CLI updates and breaks this, users should report the issue.
+ *
+ * NOTE: On Windows, global npm binaries (gemini.cmd) behave differently.
+ * The realpath resolution may not work as expected on Windows. This is a
+ * known limitation of CLI-based auth integration.
  */
 const OAUTH_CONFIG_PATHS = [
   // Homebrew nested structure
@@ -30,12 +38,19 @@ type OAuthConfig = {
 };
 
 /**
- * Find the gemini binary path using which command
+ * Find the gemini binary path using platform-appropriate command.
+ * Uses 'where' on Windows, 'which' on Unix-like systems.
  */
 function findGeminiBinary(): string | undefined {
   try {
-    const result = execSync("which gemini", { encoding: "utf8" });
-    return result.trim() || undefined;
+    const isWindows = process.platform === "win32";
+    const command = isWindows ? "where" : "which";
+    const result = execFileSync(command, ["gemini"], {
+      encoding: "utf8",
+      timeout: 5000,
+    });
+    // Handle potential multiple lines (Windows 'where' can return multiple paths)
+    return result.split(/\r?\n/u)[0]?.trim() || undefined;
   } catch {
     return undefined;
   }
@@ -72,7 +87,10 @@ async function extractOAuthConfig(): Promise<Result<OAuthConfig, ApiError>> {
       try {
         const content = await readFile(oauth2Path, "utf8");
 
-        // Extract client ID and secret using regex
+        // FRAGILE: Extract client ID and secret using regex.
+        // This parsing will break if the Gemini CLI changes how constants are
+        // declared (e.g., template literals, different spacing, exports).
+        // If this breaks after a Gemini CLI update, please report the issue.
         const clientIdMatch = /OAUTH_CLIENT_ID\s*=\s*['"]([^'"]+)['"]/u.exec(
           content,
         );

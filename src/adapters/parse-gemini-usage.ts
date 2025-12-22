@@ -28,18 +28,8 @@ export function parseResetTime(resetTimeString?: string): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-/**
- * Calculate period duration from reset time
- * Since Gemini quotas reset at the same time each day, assume 24-hour periods
- */
-function calculatePeriodDuration(resetTime: Date | undefined): number {
-  if (!resetTime) {
-    return DEFAULT_PERIOD_MS;
-  }
-
-  // Gemini quotas reset daily, so period is 24 hours
-  return DEFAULT_PERIOD_MS;
-}
+// Gemini quotas reset daily, so period is always 24 hours
+const PERIOD_DURATION_MS = DEFAULT_PERIOD_MS;
 
 /**
  * Format model ID for display
@@ -97,7 +87,7 @@ export function toUsageWindow(quota: ModelQuota): UsageWindow {
     name: formatModelName(quota.modelId),
     utilization: Math.round(utilization * 100) / 100, // Round to 2 decimal places
     resetsAt: quota.resetTime,
-    periodDurationMs: calculatePeriodDuration(quota.resetTime),
+    periodDurationMs: PERIOD_DURATION_MS,
   };
 }
 

@@ -6,6 +6,8 @@ import {
   GeminiProjectsResponse as GeminiProjectsResponseSchema,
 } from "../types/gemini.js";
 
+// NOTE: This is an undocumented internal Google API used by Gemini CLI.
+// It may change without notice. Last verified: December 2024.
 const QUOTA_API_URL =
   "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota";
 const PROJECTS_API_URL =
@@ -93,7 +95,7 @@ export async function fetchGeminiQuota(
       return {
         ok: false,
         error: new ApiError(
-          "Gemini authentication expired. Run 'agent-usage auth setup gemini' to re-authenticate.",
+          "Gemini authentication expired. Run 'gemini' to re-authenticate.",
           401,
         ),
       };
