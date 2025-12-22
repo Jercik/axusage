@@ -1,4 +1,4 @@
-import { extractCredentials } from "axconfig";
+import { extractCredentials, getAccessToken } from "axconfig";
 import { z } from "zod";
 
 import type {
@@ -74,8 +74,8 @@ export const claudeAdapter: ServiceAdapter = {
       };
     }
 
-    const accessToken = credentials.data.accessToken;
-    if (typeof accessToken !== "string") {
+    const accessToken = getAccessToken(credentials);
+    if (!accessToken) {
       return {
         ok: false,
         error: new ApiError("Invalid OAuth credentials: missing access token."),
@@ -95,7 +95,7 @@ export const claudeAdapter: ServiceAdapter = {
         return {
           ok: false,
           error: new ApiError(
-            `Usage API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
+            `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
             response.status,
           ),
         };
@@ -136,7 +136,7 @@ export const claudeAdapter: ServiceAdapter = {
       const message = error instanceof Error ? error.message : String(error);
       return {
         ok: false,
-        error: new ApiError(`Failed to fetch usage: ${message}`),
+        error: new ApiError(`Failed to fetch Claude usage: ${message}`),
       };
     }
   },

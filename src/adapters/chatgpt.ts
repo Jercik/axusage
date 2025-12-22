@@ -1,4 +1,4 @@
-import { extractCredentials } from "axconfig";
+import { extractCredentials, getAccessToken } from "axconfig";
 
 import type {
   Result,
@@ -41,8 +41,8 @@ export const chatGPTAdapter: ServiceAdapter = {
       };
     }
 
-    const accessToken = credentials.data.access_token;
-    if (typeof accessToken !== "string") {
+    const accessToken = getAccessToken(credentials);
+    if (!accessToken) {
       return {
         ok: false,
         error: new ApiError("Invalid OAuth credentials: missing access token."),

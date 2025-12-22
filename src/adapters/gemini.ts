@@ -54,7 +54,7 @@ export const geminiAdapter: ServiceAdapter = {
           error instanceof ApiError
             ? error
             : new ApiError(
-                `Gemini fetch failed: ${error instanceof Error ? error.message : String(error)}`,
+                `Failed to fetch Gemini usage: ${error instanceof Error ? error.message : String(error)}`,
               ),
       };
     }
