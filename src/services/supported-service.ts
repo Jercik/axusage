@@ -1,12 +1,17 @@
 /**
- * Service names that support browser-based authentication
+ * Supported service names for usage tracking
  */
-export type SupportedService = "claude" | "chatgpt" | "github-copilot";
+export type SupportedService =
+  | "claude"
+  | "chatgpt"
+  | "github-copilot"
+  | "gemini";
 
 export const SUPPORTED_SERVICES: SupportedService[] = [
   "claude",
   "chatgpt",
   "github-copilot",
+  "gemini",
 ];
 
 export function validateService(service: string | undefined): SupportedService {

@@ -7,12 +7,15 @@ describe("fetch-service-usage helpers", () => {
       "claude",
       "chatgpt",
       "github-copilot",
+      "gemini",
     ]);
     expect(selectServicesToQuery("all")).toEqual([
       "claude",
       "chatgpt",
       "github-copilot",
+      "gemini",
     ]);
     expect(selectServicesToQuery("claude")).toEqual(["claude"]);
+    expect(selectServicesToQuery("gemini")).toEqual(["gemini"]);
   });
 });
