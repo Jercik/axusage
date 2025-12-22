@@ -2,7 +2,7 @@ import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
 import { ApiError as ApiErrorClass } from "../types/domain.js";
 import { getServiceAdapter } from "../services/service-adapter-registry.js";
 
-const ALL_SERVICES = ["claude", "chatgpt", "github-copilot"] as const;
+const ALL_SERVICES = ["claude", "chatgpt", "github-copilot", "gemini"] as const;
 
 export type UsageCommandOptions = {
   readonly service?: string;

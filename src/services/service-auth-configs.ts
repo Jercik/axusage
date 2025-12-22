@@ -53,6 +53,12 @@ const SERVICE_AUTH_CONFIGS: Record<SupportedService, ServiceAuthConfig> = {
     verifyUrl: "https://github.com/github-copilot/chat/entitlement",
     instructions: "Please log in to your GitHub account in the browser window.",
   },
+  // Gemini uses CLI-based auth, not browser auth. This entry exists only to satisfy the Record type.
+  gemini: {
+    url: "",
+    instructions:
+      "Gemini uses CLI-based authentication. Run 'gemini' in your terminal.",
+  },
 };
 
 export function getServiceAuthConfig(
