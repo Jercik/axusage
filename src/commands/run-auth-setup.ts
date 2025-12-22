@@ -49,10 +49,30 @@ export function isAuthFailure(
  * Run auth setup for a service programmatically.
  * Returns true if auth setup completed successfully.
  * Times out after 5 minutes to prevent indefinite hangs.
+ *
+ * Note: Gemini uses CLI-based auth and cannot use browser-based re-auth.
+ * This function prints instructions and returns false for Gemini.
  */
 export async function runAuthSetup(
   service: SupportedService,
 ): Promise<boolean> {
+  // Gemini uses CLI-based auth - cannot use browser auth flow
+  if (service === "gemini") {
+    console.error(
+      chalk.yellow(
+        "\nGemini uses CLI-based authentication managed by the Gemini CLI.",
+      ),
+    );
+    console.error(chalk.gray("\nTo re-authenticate, run:"));
+    console.error(chalk.cyan("  gemini"));
+    console.error(
+      chalk.gray(
+        "\nThe Gemini CLI will guide you through the OAuth login process.\n",
+      ),
+    );
+    return false;
+  }
+
   const manager = new BrowserAuthManager({ headless: false });
 
   let timeoutId: NodeJS.Timeout | undefined;
