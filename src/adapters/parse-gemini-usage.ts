@@ -68,6 +68,7 @@ export function formatPoolName(modelIds: string[]): string {
   }
 
   if (modelIds.length === 1) {
+    // Length check guarantees element exists, but noUncheckedIndexedAccess requires assertion
     return formatModelName(modelIds[0] as string);
   }
 
@@ -84,6 +85,12 @@ export function formatPoolName(modelIds: string[]): string {
     const suffixes = formattedNames.map((name) =>
       name.slice(firstPrefix.length + 1),
     );
+
+    // Fallback if any suffix is empty (e.g. ["Gemini", "Gemini Pro"] -> would be "Gemini , Pro")
+    if (suffixes.some((s) => !s)) {
+      return formattedNames.join(", ");
+    }
+
     return `${firstPrefix} ${suffixes.join(", ")}`;
   }
 

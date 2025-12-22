@@ -57,6 +57,10 @@ describe("gemini parsing", () => {
   });
 
   describe("formatPoolName", () => {
+    it("returns empty string for empty array", () => {
+      expect(formatPoolName([])).toBe("");
+    });
+
     it("returns single model name for single model", () => {
       expect(formatPoolName(["gemini-2.5-pro"])).toBe("Gemini 2.5 Pro");
     });
@@ -81,6 +85,13 @@ describe("gemini parsing", () => {
       // Unlikely case but should still work
       expect(formatPoolName(["alpha-model", "beta-model"])).toBe(
         "Alpha Model, Beta Model",
+      );
+    });
+
+    it("falls back when model name equals prefix", () => {
+      // Edge case: "Gemini" has no suffix after the prefix
+      expect(formatPoolName(["gemini", "gemini-pro"])).toBe(
+        "Gemini, Gemini Pro",
       );
     });
   });
@@ -259,6 +270,31 @@ describe("gemini parsing", () => {
       const result = groupByQuotaPool(modelQuotas);
       expect(result).toHaveLength(1);
       expect(result[0]?.modelIds).toHaveLength(2);
+    });
+
+    it("groups models with floating-point precision variations", () => {
+      // toFixed(6) handles floating-point variations by rounding
+      // 0.8000001 and 0.8000002 both become "0.800000"
+      const resetTime = new Date("2025-01-15T12:00:00Z");
+      const modelQuotas = [
+        {
+          modelId: "gemini-2.5-flash",
+          lowestRemainingFraction: 0.800_000_1,
+          resetTime,
+        },
+        {
+          modelId: "gemini-2.5-pro",
+          lowestRemainingFraction: 0.800_000_2,
+          resetTime,
+        },
+      ];
+
+      const result = groupByQuotaPool(modelQuotas);
+      expect(result).toHaveLength(1);
+      expect(result[0]?.modelIds).toEqual([
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+      ]);
     });
   });
 
