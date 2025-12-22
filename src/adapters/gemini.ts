@@ -1,19 +1,11 @@
+import { getAgentAccessToken } from "axconfig";
+
 import type {
+  Result,
   ServiceAdapter,
   ServiceUsageData,
-  Result,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
-import type { GeminiCredentials } from "../types/gemini.js";
-import {
-  hasGeminiCredentials,
-  readGeminiCredentials,
-  readGeminiSettings,
-  isTokenExpired,
-  getSelectedAuthType,
-  validateAuthType,
-} from "../services/gemini-credentials.js";
-import { refreshGeminiToken } from "../services/gemini-token-refresh.js";
 import {
   fetchGeminiQuota,
   fetchGeminiProject,
@@ -21,71 +13,32 @@ import {
 import { toServiceUsageData } from "./parse-gemini-usage.js";
 
 /**
- * Refresh token if expired, otherwise return as-is
- */
-async function ensureFreshCredentials(
-  credentials: GeminiCredentials,
-): Promise<GeminiCredentials> {
-  if (!isTokenExpired(credentials)) {
-    return credentials;
-  }
-
-  const refreshResult = await refreshGeminiToken(credentials);
-  if (!refreshResult.ok) {
-    throw new ApiError(
-      `Token refresh failed: ${refreshResult.error.message}. Run 'gemini' to re-authenticate.`,
-    );
-  }
-  return refreshResult.value;
-}
-
-/**
- * Gemini service adapter
+ * Gemini service adapter using direct API access.
  *
- * Uses CLI-based authentication rather than browser auth.
- * Reads credentials from ~/.gemini/oauth_creds.json (created by Gemini CLI).
+ * Uses the OAuth token from Gemini CLI's credential store (~/.gemini/oauth_creds.json)
+ * to make direct API calls to Google's quota endpoint.
  */
 export const geminiAdapter: ServiceAdapter = {
   name: "Gemini",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
+    const accessToken = getAgentAccessToken("gemini");
+
+    if (!accessToken) {
+      return {
+        ok: false,
+        error: new ApiError(
+          "No Gemini credentials found. Run 'gemini' to authenticate.",
+        ),
+      };
+    }
+
     try {
-      // Check if credentials exist
-      if (!hasGeminiCredentials()) {
-        return {
-          ok: false,
-          error: new ApiError(
-            "No saved authentication for gemini. Run 'gemini' to authenticate.",
-          ),
-        };
-      }
-
-      // Read settings to check auth type
-      const settingsResult = await readGeminiSettings();
-      if (settingsResult.ok) {
-        const authType = getSelectedAuthType(settingsResult.value);
-        const authTypeValidation = validateAuthType(authType);
-        if (!authTypeValidation.ok) {
-          return authTypeValidation;
-        }
-      }
-
-      // Read credentials and refresh if expired
-      const credentialsResult = await readGeminiCredentials();
-      if (!credentialsResult.ok) {
-        return credentialsResult;
-      }
-
-      const credentials = await ensureFreshCredentials(credentialsResult.value);
-
       // Discover project ID for more accurate quotas (best effort)
-      const projectId = await fetchGeminiProject(credentials.access_token);
+      const projectId = await fetchGeminiProject(accessToken);
 
       // Fetch quota data
-      const quotaResult = await fetchGeminiQuota(
-        credentials.access_token,
-        projectId,
-      );
+      const quotaResult = await fetchGeminiQuota(accessToken, projectId);
       if (!quotaResult.ok) {
         return quotaResult;
       }
