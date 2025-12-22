@@ -17,6 +17,15 @@ type ModelQuota = {
 };
 
 /**
+ * Quota pool containing models that share the same quota
+ */
+type QuotaPool = {
+  modelIds: string[];
+  remainingFraction: number;
+  resetTime: Date | undefined;
+};
+
+/**
  * Parse ISO8601 timestamp to Date
  */
 export function parseResetTime(resetTimeString?: string): Date | undefined {
@@ -49,6 +58,46 @@ export function formatModelName(modelId: string): string {
 }
 
 /**
+ * Format multiple model names for display
+ * Single model: "Gemini 2.5 Pro"
+ * Multiple models: "Gemini 2.0 Flash, 2.5 Flash, 2.5 Flash Lite"
+ */
+export function formatPoolName(modelIds: string[]): string {
+  if (modelIds.length === 0) {
+    return "";
+  }
+
+  if (modelIds.length === 1) {
+    // Length check guarantees element exists, but noUncheckedIndexedAccess requires assertion
+    return formatModelName(modelIds[0] as string);
+  }
+
+  // For multiple models, use shortened format: "Gemini 2.0 Flash, 2.5 Flash, 2.5 Flash Lite"
+  const formattedNames = modelIds.map((id) => formatModelName(id));
+
+  // Extract common prefix (e.g., "Gemini") if all names share it
+  const firstWords = formattedNames.map((name) => name.split(" ")[0] ?? "");
+  const firstPrefix = firstWords[0] ?? "";
+  const allSamePrefix =
+    firstPrefix !== "" && firstWords.every((word) => word === firstPrefix);
+
+  if (allSamePrefix) {
+    const suffixes = formattedNames.map((name) =>
+      name.slice(firstPrefix.length + 1),
+    );
+
+    // Fallback if any suffix is empty (e.g. ["Gemini", "Gemini Pro"] -> would be "Gemini , Pro")
+    if (suffixes.some((s) => !s)) {
+      return formattedNames.join(", ");
+    }
+
+    return `${firstPrefix} ${suffixes.join(", ")}`;
+  }
+
+  return formattedNames.join(", ");
+}
+
+/**
  * Group quota buckets by model, keeping lowest remaining fraction per model
  * (input tokens are usually more restrictive than output)
  */
@@ -76,6 +125,62 @@ export function groupBucketsByModel(
 }
 
 /**
+ * Create a unique key for a quota pool based on remaining fraction and reset time
+ */
+function createPoolKey(
+  remainingFraction: number,
+  resetTime: Date | undefined,
+): string {
+  const resetTimeKey = resetTime?.toISOString() ?? "none";
+  return `${remainingFraction.toFixed(6)}|${resetTimeKey}`;
+}
+
+/**
+ * Group models that share the same quota (same remainingFraction and resetTime)
+ */
+export function groupByQuotaPool(modelQuotas: ModelQuota[]): QuotaPool[] {
+  const poolMap = new Map<string, QuotaPool>();
+
+  for (const quota of modelQuotas) {
+    const key = createPoolKey(quota.lowestRemainingFraction, quota.resetTime);
+    const existing = poolMap.get(key);
+
+    if (existing) {
+      existing.modelIds.push(quota.modelId);
+    } else {
+      poolMap.set(key, {
+        modelIds: [quota.modelId],
+        remainingFraction: quota.lowestRemainingFraction,
+        resetTime: quota.resetTime,
+      });
+    }
+  }
+
+  // Sort model IDs within each pool for consistent ordering
+  for (const pool of poolMap.values()) {
+    pool.modelIds.sort();
+  }
+
+  return [...poolMap.values()];
+}
+
+/**
+ * Convert quota pool to usage window
+ */
+export function poolToUsageWindow(pool: QuotaPool): UsageWindow {
+  // Convert remaining fraction (0-1) to utilization percentage (0-100)
+  // remaining 0.6 means 40% utilized
+  const utilization = (1 - pool.remainingFraction) * 100;
+
+  return {
+    name: formatPoolName(pool.modelIds),
+    utilization: Math.round(utilization * 100) / 100, // Round to 2 decimal places
+    resetsAt: pool.resetTime,
+    periodDurationMs: PERIOD_DURATION_MS,
+  };
+}
+
+/**
  * Convert model quota to usage window
  */
 export function toUsageWindow(quota: ModelQuota): UsageWindow {
@@ -99,7 +204,8 @@ export function toServiceUsageData(
   planType?: string,
 ): ServiceUsageData {
   const modelQuotas = groupBucketsByModel(response.buckets);
-  const windows = modelQuotas.map((quota) => toUsageWindow(quota));
+  const quotaPools = groupByQuotaPool(modelQuotas);
+  const windows = quotaPools.map((pool) => poolToUsageWindow(pool));
 
   return {
     service: "Gemini",
