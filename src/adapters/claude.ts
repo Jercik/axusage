@@ -1,57 +1,114 @@
+import { extractCredentials, getAccessToken } from "axconfig";
+import { z } from "zod";
+
 import type {
+  Result,
   ServiceAdapter,
   ServiceUsageData,
-  Result,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
-import { toServiceUsageData } from "./parse-claude-usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
-import {
-  acquireAuthManager,
-  releaseAuthManager,
-} from "../services/shared-browser-auth-manager.js";
-import { z } from "zod";
+import { toServiceUsageData } from "./parse-claude-usage.js";
 
-/** Functional core is extracted to ./parse-claude-usage.ts */
+const USAGE_API_URL = "https://api.anthropic.com/api/oauth/usage";
+const PROFILE_API_URL = "https://api.anthropic.com/api/oauth/profile";
+const ANTHROPIC_BETA_HEADER = "oauth-2025-04-20";
+
+/** Map organization_type to display name */
+const PLAN_TYPE_MAP: Record<string, string> = {
+  claude_max: "Max",
+  claude_pro: "Pro",
+  claude_enterprise: "Enterprise",
+  claude_team: "Team",
+};
+
+/** Fetch plan type from profile endpoint (best effort) */
+async function fetchPlanType(accessToken: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(PROFILE_API_URL, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "anthropic-beta": ANTHROPIC_BETA_HEADER,
+      },
+    });
+    if (!response.ok) return undefined;
+    const data = (await response.json()) as {
+      organization?: { organization_type?: string };
+    };
+    const orgType = data.organization?.organization_type;
+    return orgType ? (PLAN_TYPE_MAP[orgType] ?? orgType) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
- * Claude service adapter using browser-based fetching.
+ * Claude service adapter using direct API access.
  *
- * This adapter uses Playwright to navigate to the Claude usage page and
- * intercept the API response. Direct HTTP requests don't work reliably
- * because Cloudflare's bot protection requires a real browser context.
+ * This adapter uses the OAuth token from Claude Code's credential store
+ * (Keychain on macOS, credentials file elsewhere) to make direct API calls
+ * to the Anthropic usage endpoint.
  */
 export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const manager = acquireAuthManager();
+    const credentials = extractCredentials("claude-code");
+
+    if (!credentials) {
+      return {
+        ok: false,
+        error: new ApiError(
+          "No Claude Code credentials found. Ensure Claude Code is installed and authenticated.",
+        ),
+      };
+    }
+
+    if (credentials.type !== "oauth") {
+      return {
+        ok: false,
+        error: new ApiError(
+          "Claude Code usage API requires OAuth authentication. API key authentication is not supported for usage data.",
+        ),
+      };
+    }
+
+    const accessToken = getAccessToken(credentials);
+    if (!accessToken) {
+      return {
+        ok: false,
+        error: new ApiError("Invalid OAuth credentials: missing access token."),
+      };
+    }
+
     try {
-      if (!manager.hasAuth("claude")) {
+      const response = await fetch(USAGE_API_URL, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "anthropic-beta": ANTHROPIC_BETA_HEADER,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
         return {
           ok: false,
           error: new ApiError(
-            "No saved authentication for claude. Run 'agent-usage auth setup claude' first.",
+            `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
+            response.status,
           ),
         };
       }
-      // For Claude, makeAuthenticatedRequest uses browser-based fetching which
-      // navigates to the usage page and intercepts the API response. The URL
-      // parameter is required by the interface but not used for Claude requests.
-      const body = await manager.makeAuthenticatedRequest(
-        "claude",
-        "https://claude.ai/api/organizations",
-      );
-      const data: unknown = JSON.parse(body);
+
+      const data: unknown = await response.json();
       const parseResult = UsageResponseSchema.safeParse(
         coalesceClaudeUsageResponse(data) ?? data,
       );
 
       if (!parseResult.success) {
-        // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
-        console.error("Raw API response:", JSON.stringify(data, null, 2));
         /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
+        console.error("Raw API response:", JSON.stringify(data, null, 2));
         console.error(
           "Validation errors:",
           JSON.stringify(z.treeifyError(parseResult.error), null, 2),
@@ -67,22 +124,20 @@ export const claudeAdapter: ServiceAdapter = {
         };
       }
 
+      // Fetch plan type (best effort, don't fail if unavailable)
+      const planType = await fetchPlanType(accessToken);
+
+      const usageData = toServiceUsageData(parseResult.data);
       return {
         ok: true,
-        value: toServiceUsageData(parseResult.data),
+        value: planType ? { ...usageData, planType } : usageData,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const is401 = /\b401\b/u.test(message);
-      const hint = is401
-        ? " Note: Claude usage data requires a browser session. The Admin Usage API (api.anthropic.com) requires an Admin API key for programmatic access."
-        : "";
       return {
         ok: false,
-        error: new ApiError(`Browser authentication failed: ${message}${hint}`),
+        error: new ApiError(`Failed to fetch Claude usage: ${message}`),
       };
-    } finally {
-      await releaseAuthManager();
     }
   },
 };
