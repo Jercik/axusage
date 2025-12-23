@@ -50,14 +50,12 @@ export async function authSetupCommand(
 
   if (service === "chatgpt") {
     console.error(
-      chalk.yellow(
-        "\nChatGPT uses CLI-based authentication managed by the Codex CLI.",
-      ),
+      chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
     );
     console.error(chalk.gray("\nTo authenticate, run:"));
     console.error(chalk.cyan("  codex"));
     console.error(
-      chalk.gray("\nThe Codex CLI will guide you through authentication.\n"),
+      chalk.gray("\nCodex will guide you through authentication.\n"),
     );
     return;
   }
