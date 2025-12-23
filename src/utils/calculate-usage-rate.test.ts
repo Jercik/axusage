@@ -6,7 +6,7 @@ describe("calculate-usage-rate", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns 0 when elapsed is zero or negative", () => {
+  it("returns undefined when elapsed is zero or negative", () => {
     // Construct a future reset and long period so periodStart is in the future
     const now = new Date("2025-01-01T00:00:00Z").getTime();
     vi.spyOn(Date, "now").mockReturnValue(now);
@@ -15,7 +15,7 @@ describe("calculate-usage-rate", () => {
     const periodMs = 3 * 24 * 60 * 60 * 1000; // 3 days -> periodStart = Jan 2
     // now (Jan 1) is before periodStart (Jan 2) => elapsedPercentage <= 0
     const rate = calculateUsageRate(50, resetAt, periodMs);
-    expect(rate).toBe(0);
+    expect(rate).toBeUndefined();
   });
 
   it("computes rate as utilization / elapsed%", () => {
@@ -89,6 +89,13 @@ describe("calculate-usage-rate", () => {
         calculateUsageRate(10, new Date(periodStart + periodMs), periodMs),
       ).toBeUndefined();
 
+      // At exactly 30 minutes (exactly 5%) - should return rate (uses < not <=)
+      const now30min = periodStart + 30 * 60 * 1000;
+      vi.spyOn(Date, "now").mockReturnValue(now30min);
+      expect(
+        calculateUsageRate(10, new Date(periodStart + periodMs), periodMs),
+      ).toBeDefined();
+
       // At 31 minutes (just over 5%) - should return rate
       const now31min = periodStart + 31 * 60 * 1000;
       vi.spyOn(Date, "now").mockReturnValue(now31min);
@@ -111,6 +118,13 @@ describe("calculate-usage-rate", () => {
       expect(
         calculateUsageRate(10, new Date(periodStart + periodMs), periodMs),
       ).toBeUndefined();
+
+      // At exactly 2h (120 min) - should return rate (uses < not <=)
+      const now120min = periodStart + 120 * 60 * 1000;
+      vi.spyOn(Date, "now").mockReturnValue(now120min);
+      expect(
+        calculateUsageRate(10, new Date(periodStart + periodMs), periodMs),
+      ).toBeDefined();
 
       // At 2h1min (just over 2h) - should return rate
       const now121min = periodStart + 121 * 60 * 1000;

@@ -24,7 +24,7 @@ export function calculateUsageRate(
   const periodStart = resetTime - periodDurationMs;
 
   const elapsedTime = now - periodStart;
-  if (elapsedTime <= 0) return 0;
+  if (elapsedTime <= 0) return undefined;
 
   // Avoid inaccurate rates early in the period
   // Show rate after 5% of period OR 2 hours elapsed (whichever first)
