@@ -9,8 +9,9 @@ Monitor AI usage across Claude, ChatGPT, and GitHub Copilot from a single comman
 npm install -g agent-usage
 
 # Set up authentication (one-time setup per service)
-agent-usage auth setup claude
-agent-usage auth setup chatgpt
+claude
+codex
+gemini
 agent-usage auth setup github-copilot
 
 # Check authentication status
@@ -22,21 +23,25 @@ agent-usage
 
 ## Authentication
 
-This tool uses browser-based authentication for persistent, long-lived sessions.
+Claude, ChatGPT, and Gemini use their respective CLI OAuth sessions. GitHub
+Copilot uses browser-based authentication for persistent, long-lived sessions.
 
 **Setup (one-time per service):**
 
 ```bash
 # Set up authentication for each service
-agent-usage auth setup claude
-agent-usage auth setup chatgpt
+claude
+codex
+gemini
 agent-usage auth setup github-copilot
 
 # Check authentication status
 agent-usage auth status
 ```
 
-When you run `auth setup`, a browser window will open. Simply log in to the service as you normally would. Your authentication will be saved and automatically used for future requests.
+When you run `auth setup` for GitHub Copilot, a browser window will open.
+Simply log in to GitHub as you normally would. Your authentication will be
+saved and automatically used for future requests.
 
 **Authenticated sessions directory (via [`env-paths`](https://github.com/sindresorhus/env-paths)):**
 
@@ -51,11 +56,9 @@ You can override the location by providing `BrowserAuthConfig.dataDir`, but the 
 Security notes:
 
 - Files in this directory contain sensitive session data. They are created with owner-only permissions (0600 for files, 0700 for the directory) where possible.
-- To revoke access, clear saved auth per service:
+- To revoke access for GitHub Copilot, clear saved browser auth:
 
 ```bash
-agent-usage auth clear claude
-agent-usage auth clear chatgpt
 agent-usage auth clear github-copilot
 ```
 
@@ -103,8 +106,6 @@ agent-usage --service github-copilot
 agent-usage --format=json
 agent-usage --service claude --format=json
 
-# Prometheus text output
-agent-usage --format=prometheus
 ```
 
 ## Examples
@@ -122,14 +123,6 @@ agent-usage --format=json \
 ```bash
 agent-usage --format=json \
   | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .windows[] | [.name, (.utilization|tostring)] | @tsv'
-```
-
-### Filter Prometheus metrics for a single service (Prometheus + grep)
-
-```bash
-agent-usage --format=prometheus \
-  | grep 'agent_usage_utilization_percent{service="claude",' \
-  | sort -t' ' -k2 -rn
 ```
 
 ## Output
@@ -152,7 +145,7 @@ Add to your `CLAUDE.md` or `AGENTS.md`:
 
 Run `npx -y agent-usage --help` to learn available options.
 
-Use `agent-usage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, and GitHub Copilot. It standardizes output (text, JSON, Prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
+Use `agent-usage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, and GitHub Copilot. It standardizes output (text, JSON) so you can alert, dashboard, or pipe it into other Unix tools.
 ```
 
 ## Troubleshooting
@@ -178,13 +171,15 @@ You can perform the interactive login flow on a workstation (for example, a loca
 
 ### 1. Authenticate on a workstation
 
-1. Install globally and run the `auth setup` flow for every service you need:
+1. Install globally and authenticate the CLIs you need, then set up browser
+   auth for GitHub Copilot:
 
    ```bash
    npm install -g agent-usage
 
-   agent-usage auth setup claude
-   agent-usage auth setup chatgpt
+   claude
+   codex
+   gemini
    agent-usage auth setup github-copilot
    ```
 
@@ -231,76 +226,6 @@ You can perform the interactive login flow on a workstation (for example, a loca
    ```
 
    If the server does not yet have the tool installed, run `npm install -g agent-usage` before checking the status.
-
-### 3. Export metrics for Prometheus
-
-The CLI can emit Prometheus text directly using `--format=prometheus`, producing metrics compatible with `node_exporter --collector.textfile.directory`. The example below runs the CLI, emits gauges per service/window, and writes them to `/var/lib/node_exporter/textfile_collector/agent_usage.prom`.
-
-1. Save the following script as `/opt/agent-usage/export-agent-usage-metrics.sh` (adjust paths as needed) and make it executable (`chmod +x`):
-
-   ```bash
-   #!/usr/bin/env bash
-   set -euo pipefail
-
-   TEXTFILE_DIR="/var/lib/node_exporter/textfile_collector"
-
-   # Capture usage as Prometheus text.
-   # CLI exits with code 2 on partial failures; set -e stops the script before overwrite.
-   # On error, the previous .prom remains so Prometheus continues scraping the last valid data.
-   tmp_file=$(mktemp)
-   agent-usage --format=prometheus >"$tmp_file"
-
-   mv "$tmp_file" "$TEXTFILE_DIR/agent_usage.prom"
-   ```
-
-   The script writes a complete file on every run so Prometheus never sees partial metrics. When any service fails, the CLI exits non-zero and the script stops before overwriting the previous metrics file.
-
-2. Schedule the exporter (cron example, runs every 15 minutes):
-
-   ```cron
-   # Run as the same user that owns the agent-usage browser contexts directory
-   */15 * * * * /opt/agent-usage/export-agent-usage-metrics.sh
-   ```
-
-   For systemd timers, point the service unit to the same script. Ensure the unit has the necessary permissions to read the contexts directory listed above and write to the textfile directory.
-
-   Example systemd units (adjust `User=` and paths):
-
-   `/etc/systemd/system/agent-usage-exporter.service`:
-
-   ```ini
-   [Unit]
-   Description=Export agent usage metrics
-
-   [Service]
-   Type=oneshot
-   User=agent
-   Environment=HOME=/home/agent
-   ExecStart=/opt/agent-usage/export-agent-usage-metrics.sh
-   ```
-
-   `/etc/systemd/system/agent-usage-exporter.timer`:
-
-   ```ini
-   [Unit]
-   Description=Run agent usage exporter every 15 minutes
-
-   [Timer]
-   OnCalendar=*:0/15
-   Persistent=true
-
-   [Install]
-   WantedBy=timers.target
-   ```
-
-   Enable and start the timer, then check status:
-
-   ```bash
-   sudo systemctl enable --now agent-usage-exporter.timer
-   sudo systemctl list-timers agent-usage-exporter.timer
-   ```
-
-3. Confirm that Prometheus is scraping the new metric name `agent_usage_utilization_percent` with the labels `service` and `window`.
 
 Notes:
 

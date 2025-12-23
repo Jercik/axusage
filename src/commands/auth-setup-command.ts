@@ -17,7 +17,7 @@ export async function authSetupCommand(
 ): Promise<void> {
   const service = validateService(options.service);
 
-  // Gemini uses CLI-based auth - users should run `gemini` directly
+  // CLI-based auth - users should run the native CLI directly
   if (service === "gemini") {
     console.error(
       chalk.yellow(
@@ -30,6 +30,32 @@ export async function authSetupCommand(
       chalk.gray(
         "\nThe Gemini CLI will guide you through the OAuth login process.\n",
       ),
+    );
+    return;
+  }
+
+  if (service === "claude") {
+    console.error(
+      chalk.yellow(
+        "\nClaude uses CLI-based authentication managed by Claude Code.",
+      ),
+    );
+    console.error(chalk.gray("\nTo authenticate, run:"));
+    console.error(chalk.cyan("  claude"));
+    console.error(
+      chalk.gray("\nClaude Code will guide you through authentication.\n"),
+    );
+    return;
+  }
+
+  if (service === "chatgpt") {
+    console.error(
+      chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
+    );
+    console.error(chalk.gray("\nTo authenticate, run:"));
+    console.error(chalk.cyan("  codex"));
+    console.error(
+      chalk.gray("\nCodex will guide you through authentication.\n"),
     );
     return;
   }

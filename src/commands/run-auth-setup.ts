@@ -56,7 +56,7 @@ export function isAuthFailure(
 export async function runAuthSetup(
   service: SupportedService,
 ): Promise<boolean> {
-  // Gemini uses CLI-based auth - cannot use browser auth flow
+  // CLI-based auth cannot use browser auth flow
   if (service === "gemini") {
     console.error(
       chalk.yellow(
@@ -69,6 +69,32 @@ export async function runAuthSetup(
       chalk.gray(
         "\nThe Gemini CLI will guide you through the OAuth login process.\n",
       ),
+    );
+    return false;
+  }
+
+  if (service === "claude") {
+    console.error(
+      chalk.yellow(
+        "\nClaude uses CLI-based authentication managed by Claude Code.",
+      ),
+    );
+    console.error(chalk.gray("\nTo re-authenticate, run:"));
+    console.error(chalk.cyan("  claude"));
+    console.error(
+      chalk.gray("\nClaude Code will guide you through authentication.\n"),
+    );
+    return false;
+  }
+
+  if (service === "chatgpt") {
+    console.error(
+      chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
+    );
+    console.error(chalk.gray("\nTo re-authenticate, run:"));
+    console.error(chalk.cyan("  codex"));
+    console.error(
+      chalk.gray("\nCodex will guide you through authentication.\n"),
     );
     return false;
   }
