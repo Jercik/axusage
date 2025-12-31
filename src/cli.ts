@@ -20,7 +20,7 @@ const program = new Command()
   .helpCommand(false)
   .addHelpText(
     "after",
-    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep axusage_utilization_percent\n`,
+    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # TSV output for piping to cut, awk, sort\n  ${packageJson.name} --format=tsv | tail -n +2 | awk -F'\\t' '{print $1, $4"%"}'\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep axusage_utilization_percent\n`,
   );
 
 // Ensure browser resources are cleaned when process exits
@@ -42,12 +42,12 @@ program
   )
   .addOption(
     new Option("-o, --format <format>", "Output format")
-      .choices(["text", "json", "prometheus"])
+      .choices(["text", "tsv", "json", "prometheus"])
       .default("text"),
   )
   .addHelpText(
     "after",
-    `\nExamples:\n  # Query all services (default)\n  ${packageJson.name}\n\n  # Query a single service\n  ${packageJson.name} --service claude\n\n  # Pipe Prometheus output into grep\n  ${packageJson.name} --format=prometheus | grep claude\n`,
+    `\nExamples:\n  # Query all services (default)\n  ${packageJson.name}\n\n  # Query a single service\n  ${packageJson.name} --service claude\n\n  # TSV output for piping to Unix tools\n  ${packageJson.name} --format=tsv | tail -n +2 | cut -f1,4\n\n  # Filter Prometheus metrics\n  ${packageJson.name} --format=prometheus | grep claude\n`,
   )
   .action(async (options: UsageCommandOptions) => {
     await usageCommand(options);

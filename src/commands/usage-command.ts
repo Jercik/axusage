@@ -2,6 +2,7 @@ import chalk from "chalk";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
+  formatServiceUsageAsTsv,
   toJsonObject,
 } from "../utils/format-service-usage.js";
 import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
@@ -147,43 +148,55 @@ export async function usageCommand(
   // Display results
   const hasPartialFailures = errors.length > 0;
 
-  const format: "text" | "json" | "prometheus" = options.format ?? "text";
+  const format: "text" | "tsv" | "json" | "prometheus" =
+    options.format ?? "text";
 
-  if (format === "json") {
-    const [singleSuccess] = successes;
-
-    if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
-      console.log(formatServiceUsageDataAsJson(singleSuccess));
-    } else {
-      const payload =
-        successes.length === 1 && singleSuccess
-          ? toJsonObject(singleSuccess)
-          : successes.map((data) => toJsonObject(data));
-      const output = hasPartialFailures
-        ? {
-            results: payload,
-            errors: errors.map(({ service, error }) => ({
-              service,
-              message: error.message,
-              status: error.status,
-            })),
-          }
-        : payload;
-      // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
-      console.log(JSON.stringify(output, null, 2));
+  switch (format) {
+    case "tsv": {
+      console.log(formatServiceUsageAsTsv(successes));
+      break;
     }
-  } else if (format === "prometheus") {
-    // Emit Prometheus text metrics using prom-client
-    const output = await formatPrometheusMetrics(successes);
-    process.stdout.write(output);
-  } else {
-    // For human-readable output, display each service's results
-    for (const data of successes) {
-      const index = successes.indexOf(data);
-      if (index > 0) {
-        console.log(); // Add spacing between services
+    case "json": {
+      const [singleSuccess] = successes;
+
+      if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
+        console.log(formatServiceUsageDataAsJson(singleSuccess));
+      } else {
+        const payload =
+          successes.length === 1 && singleSuccess
+            ? toJsonObject(singleSuccess)
+            : successes.map((data) => toJsonObject(data));
+        const output = hasPartialFailures
+          ? {
+              results: payload,
+              errors: errors.map(({ service, error }) => ({
+                service,
+                message: error.message,
+                status: error.status,
+              })),
+            }
+          : payload;
+        // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
+        console.log(JSON.stringify(output, null, 2));
       }
-      console.log(formatServiceUsageData(data));
+      break;
+    }
+    case "prometheus": {
+      // Emit Prometheus text metrics using prom-client
+      const output = await formatPrometheusMetrics(successes);
+      process.stdout.write(output);
+      break;
+    }
+    case "text": {
+      // For human-readable output, display each service's results
+      for (const data of successes) {
+        const index = successes.indexOf(data);
+        if (index > 0) {
+          console.log(); // Add spacing between services
+        }
+        console.log(formatServiceUsageData(data));
+      }
+      break;
     }
   }
 

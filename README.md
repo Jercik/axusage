@@ -109,19 +109,31 @@ axusage --service github-copilot
 axusage --format=json
 axusage --service claude --format=json
 
+# TSV output (parseable with cut, awk, sort)
+axusage --format=tsv
 ```
 
 ## Examples
 
-### Count services by availability (JSON + sort/uniq)
+### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format=json \
-  | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .service' \
-  | sort | uniq -c
+axusage --format=tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
 ```
 
-### Extract utilization windows as TSV (JSON + jq)
+### Count windows by service (TSV + cut/sort/uniq)
+
+```bash
+axusage --format=tsv | tail -n +2 | cut -f1 | sort | uniq -c
+```
+
+### Filter by utilization threshold (TSV + awk)
+
+```bash
+axusage --format=tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+```
+
+### Extract utilization as JSON (JSON + jq)
 
 ```bash
 axusage --format=json \

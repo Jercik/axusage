@@ -101,3 +101,36 @@ export function formatServiceUsageDataAsJson(data: ServiceUsageData): string {
   // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
   return JSON.stringify(toJsonObject(data), null, 2);
 }
+
+const TSV_HEADER = "SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT";
+
+/**
+ * Formats a single service's usage data as TSV rows (no header).
+ * One row per usage window.
+ */
+function formatServiceUsageRowsAsTsv(data: ServiceUsageData): string[] {
+  return data.windows.map((w) => {
+    const rate = calculateUsageRate(
+      w.utilization,
+      w.resetsAt,
+      w.periodDurationMs,
+    );
+    return [
+      data.service,
+      data.planType ?? "-",
+      w.name,
+      w.utilization.toFixed(2),
+      rate?.toFixed(2) ?? "-",
+      w.resetsAt?.toISOString() ?? "-",
+    ].join("\t");
+  });
+}
+
+/**
+ * Formats multiple services' usage data as TSV with header.
+ * One row per usage window, tab-delimited, UPPERCASE headers.
+ */
+export function formatServiceUsageAsTsv(data: ServiceUsageData[]): string {
+  const rows = data.flatMap((d) => formatServiceUsageRowsAsTsv(d));
+  return [TSV_HEADER, ...rows].join("\n");
+}
