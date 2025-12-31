@@ -107,7 +107,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     expect(fields?.[1]).toBe("-");
   });
 
-  it("uses dash for missing reset time", () => {
+  it("uses dash for missing reset time and rate", () => {
     const noReset: ServiceUsageData = {
       ...base,
       windows: [
@@ -122,6 +122,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const output = formatServiceUsageAsTsv([noReset]);
     const lines = output.split("\n");
     const fields = lines[1]?.split("\t");
+    expect(fields?.[4]).toBe("-"); // Rate is undefined when resetsAt is missing
     expect(fields?.[5]).toBe("-");
   });
 
@@ -157,5 +158,33 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     // Simulate `cut -f1` (first column)
     const services = lines.slice(1).map((line) => line.split("\t")[0]);
     expect(services).toEqual(["claude"]);
+  });
+
+  it("outputs only header for empty input", () => {
+    const output = formatServiceUsageAsTsv([]);
+    expect(output).toBe("SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT");
+  });
+
+  it("sanitizes tabs and newlines in string fields", () => {
+    const withSpecialChars: ServiceUsageData = {
+      service: "service\twith\ttabs",
+      planType: "plan\nwith\nnewlines",
+      windows: [
+        {
+          name: "window\r\nwith\tcombined",
+          utilization: 50,
+          resetsAt,
+          periodDurationMs,
+        },
+      ],
+    };
+    const output = formatServiceUsageAsTsv([withSpecialChars]);
+    const lines = output.split("\n");
+    expect(lines).toHaveLength(2);
+    const fields = lines[1]?.split("\t");
+    expect(fields).toHaveLength(6);
+    expect(fields?.[0]).toBe("service with tabs");
+    expect(fields?.[1]).toBe("plan with newlines");
+    expect(fields?.[2]).toBe("window  with combined");
   });
 });

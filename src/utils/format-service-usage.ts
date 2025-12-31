@@ -105,6 +105,13 @@ export function formatServiceUsageDataAsJson(data: ServiceUsageData): string {
 const TSV_HEADER = "SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT";
 
 /**
+ * Sanitizes a string for TSV output by replacing tabs and newlines with spaces.
+ */
+function sanitizeForTsv(value: string): string {
+  return value.replaceAll(/[\t\n\r]/gu, " ");
+}
+
+/**
  * Formats a single service's usage data as TSV rows (no header).
  * One row per usage window.
  */
@@ -116,9 +123,9 @@ function formatServiceUsageRowsAsTsv(data: ServiceUsageData): string[] {
       w.periodDurationMs,
     );
     return [
-      data.service,
-      data.planType ?? "-",
-      w.name,
+      sanitizeForTsv(data.service),
+      sanitizeForTsv(data.planType ?? "-"),
+      sanitizeForTsv(w.name),
       w.utilization.toFixed(2),
       rate?.toFixed(2) ?? "-",
       w.resetsAt?.toISOString() ?? "-",
