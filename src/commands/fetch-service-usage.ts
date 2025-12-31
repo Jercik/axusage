@@ -6,7 +6,7 @@ const ALL_SERVICES = ["claude", "chatgpt", "github-copilot", "gemini"] as const;
 
 export type UsageCommandOptions = {
   readonly service?: string;
-  readonly format?: "text" | "json" | "prometheus";
+  readonly format?: "text" | "tsv" | "json" | "prometheus";
   readonly interactive?: boolean;
 };
 
