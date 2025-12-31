@@ -34,7 +34,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
   if (!allAuthenticated) {
     console.error(
       chalk.gray(
-        `\nTo set up authentication, run: ${chalk.cyan("agent-usage auth setup <service>")}`,
+        `\nTo set up authentication, run: ${chalk.cyan("axusage auth setup <service>")}`,
       ),
     );
   }

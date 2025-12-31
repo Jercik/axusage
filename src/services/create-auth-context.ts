@@ -45,7 +45,7 @@ export async function createAuthContext(
 
   if (!existsSync(storageStatePath)) {
     throw new Error(
-      `No saved authentication for ${service}. Run 'agent-usage auth setup ${service}' first.`,
+      `No saved authentication for ${service}. Run 'axusage auth setup ${service}' first.`,
     );
   }
 

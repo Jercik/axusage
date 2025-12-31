@@ -25,13 +25,13 @@ describe("formatPrometheusMetrics", () => {
     ];
 
     const text = await formatPrometheusMetrics(data);
-    expect(text).toContain("# HELP agent_usage_utilization_percent");
-    expect(text).toContain("# TYPE agent_usage_utilization_percent gauge");
+    expect(text).toContain("# HELP axusage_utilization_percent");
+    expect(text).toContain("# TYPE axusage_utilization_percent gauge");
     expect(text).toContain(
-      'agent_usage_utilization_percent{service="claude",window="5-hour"} 12.34',
+      'axusage_utilization_percent{service="claude",window="5-hour"} 12.34',
     );
     expect(text).toContain(
-      'agent_usage_utilization_percent{service="claude",window="monthly"} 56.78',
+      'axusage_utilization_percent{service="claude",window="monthly"} 56.78',
     );
   });
 
@@ -62,19 +62,19 @@ describe("formatPrometheusMetrics", () => {
     ];
     const text = await formatPrometheusMetrics(data);
     expect(text).toContain(
-      'agent_usage_utilization_percent{service="claude",window="5-hour"} 12.34',
+      'axusage_utilization_percent{service="claude",window="5-hour"} 12.34',
     );
     expect(text).toContain(
-      'agent_usage_utilization_percent{service="chatgpt",window="3-hour"} 56.78',
+      'axusage_utilization_percent{service="chatgpt",window="3-hour"} 56.78',
     );
   });
 
   it("emits headers only for empty data", async () => {
     const text = await formatPrometheusMetrics([]);
-    expect(text).toContain("# HELP agent_usage_utilization_percent");
-    expect(text).toContain("# TYPE agent_usage_utilization_percent gauge");
+    expect(text).toContain("# HELP axusage_utilization_percent");
+    expect(text).toContain("# TYPE axusage_utilization_percent gauge");
     // No sample lines
-    expect(text).not.toMatch(/agent_usage_utilization_percent\{/u);
+    expect(text).not.toMatch(/axusage_utilization_percent\{/u);
   });
 
   it("handles zero utilization values", async () => {
@@ -93,7 +93,7 @@ describe("formatPrometheusMetrics", () => {
     ];
     const text = await formatPrometheusMetrics(data);
     expect(text).toContain(
-      'agent_usage_utilization_percent{service="claude",window="window"} 0',
+      'axusage_utilization_percent{service="claude",window="window"} 0',
     );
   });
 });

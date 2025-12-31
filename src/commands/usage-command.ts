@@ -129,7 +129,7 @@ export async function usageCommand(
     const list = [...authFailureServices].join(", ");
     console.error(
       chalk.gray(
-        `Authentication required for: ${list}. Run 'agent-usage auth setup <service>' or re-run with '--interactive' to re-authenticate during fetch.`,
+        `Authentication required for: ${list}. Run 'axusage auth setup <service>' or re-run with '--interactive' to re-authenticate during fetch.`,
       ),
     );
     if (successes.length > 0) {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { mkdtempSync, existsSync, statSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 
-const environmentPathsMock = vi.fn(() => ({ data: "/tmp/agent-usage" }));
+const environmentPathsMock = vi.fn(() => ({ data: "/tmp/axusage" }));
 
 vi.mock("env-paths", () => ({
   __esModule: true,
@@ -18,13 +18,13 @@ const loadModule = async (): Promise<typeof import("./app-paths.js")> => {
 describe("getBrowserContextsDirectory", () => {
   beforeEach(() => {
     environmentPathsMock.mockReset();
-    environmentPathsMock.mockReturnValue({ data: "/tmp/agent-usage" });
+    environmentPathsMock.mockReturnValue({ data: "/tmp/axusage" });
   });
 
   it("joins the env-paths data directory with browser-contexts", async () => {
     const { getBrowserContextsDirectory } = await loadModule();
     expect(getBrowserContextsDirectory()).toBe(
-      path.join("/tmp/agent-usage", "browser-contexts"),
+      path.join("/tmp/axusage", "browser-contexts"),
     );
   });
 
@@ -39,7 +39,7 @@ describe("getBrowserContextsDirectory", () => {
   it("initializes env-paths once with suffix disabled", async () => {
     await loadModule();
     expect(environmentPathsMock).toHaveBeenCalledTimes(1);
-    expect(environmentPathsMock).toHaveBeenCalledWith("agent-usage", {
+    expect(environmentPathsMock).toHaveBeenCalledWith("axusage", {
       suffix: "",
     });
   });
@@ -48,7 +48,7 @@ describe("getBrowserContextsDirectory", () => {
 describe("ensureSecureDirectory", () => {
   it("creates directory with correct permissions when it does not exist", async () => {
     const { ensureSecureDirectory } = await loadModule();
-    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     const targetDirectory = path.join(temporaryBase, "new-dir");
 
     await ensureSecureDirectory(targetDirectory);
@@ -63,7 +63,7 @@ describe("ensureSecureDirectory", () => {
 
   it("handles EEXIST errors when directory already exists", async () => {
     const { ensureSecureDirectory } = await loadModule();
-    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
 
     // Should not throw when called on existing directory
     await expect(ensureSecureDirectory(temporaryBase)).resolves.toBeUndefined();
@@ -73,7 +73,7 @@ describe("ensureSecureDirectory", () => {
 
   it("creates nested directories recursively", async () => {
     const { ensureSecureDirectory } = await loadModule();
-    const temporaryBase = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const temporaryBase = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     const nestedDirectory = path.join(temporaryBase, "a", "b", "c");
 
     await ensureSecureDirectory(nestedDirectory);

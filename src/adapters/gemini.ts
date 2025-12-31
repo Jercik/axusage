@@ -1,4 +1,4 @@
-import { getAgentAccessToken } from "axconfig";
+import { getAgentAccessToken } from "axauth";
 
 import type {
   Result,

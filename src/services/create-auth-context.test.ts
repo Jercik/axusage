@@ -13,7 +13,7 @@ import {
 
 describe("loadStoredUserAgent", () => {
   it("returns userAgent when meta file exists with valid data", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const metaPath = getAuthMetaPathFor(directory, "claude");
       writeFileSync(metaPath, JSON.stringify({ userAgent: "UA-Test" }), "utf8");
@@ -26,7 +26,7 @@ describe("loadStoredUserAgent", () => {
   });
 
   it("returns undefined when meta file does not exist", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const result = await loadStoredUserAgent(directory, "claude");
       expect(result).toBeUndefined();
@@ -36,7 +36,7 @@ describe("loadStoredUserAgent", () => {
   });
 
   it("returns undefined when meta file contains invalid JSON", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const metaPath = getAuthMetaPathFor(directory, "claude");
       writeFileSync(metaPath, "not valid json {{{", "utf8");
@@ -49,7 +49,7 @@ describe("loadStoredUserAgent", () => {
   });
 
   it("returns undefined when userAgent field is not a string", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const metaPath = getAuthMetaPathFor(directory, "claude");
       writeFileSync(metaPath, JSON.stringify({ userAgent: 12_345 }), "utf8");
@@ -62,7 +62,7 @@ describe("loadStoredUserAgent", () => {
   });
 
   it("returns undefined when userAgent field is missing", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const metaPath = getAuthMetaPathFor(directory, "claude");
       writeFileSync(metaPath, JSON.stringify({ other: "data" }), "utf8");
@@ -77,7 +77,7 @@ describe("loadStoredUserAgent", () => {
 
 describe("createAuthContext", () => {
   it("creates a context with storage state and user agent from meta", async () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "agent-usage-test-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "axusage-test-"));
     try {
       const storagePath = getStorageStatePathFor(directory, "claude");
       const metaPath = getAuthMetaPathFor(directory, "claude");

@@ -1,16 +1,16 @@
 {
-  "name": "agent-usage",
+  "name": "axusage",
   "author": "Łukasz Jerciński",
   "license": "MIT",
   "version": "1.0.0",
-  "description": "CLI tool to query API usage statistics for AI services (Claude, ChatGPT, GitHub Copilot)",
+  "description": "Monitor API usage across Claude, ChatGPT, GitHub Copilot, and Gemini from a single CLI",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jercik/agent-usage.git"
+    "url": "git+https://github.com/Jercik/axusage.git"
   },
   "type": "module",
   "bin": {
-    "agent-usage": "bin/agent-usage"
+    "axusage": "bin/axusage"
   },
   "files": [
     "bin/",
@@ -30,20 +30,31 @@
     "knip": "knip",
     "lint": "eslint",
     "rebuild": "pnpm run clean && pnpm run build",
-    "start": "pnpm run rebuild && node bin/agent-usage",
+    "start": "pnpm run rebuild && node bin/axusage",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit"
   },
-  "keywords": [],
+  "keywords": [
+    "ai",
+    "usage",
+    "analytics",
+    "cli",
+    "claude",
+    "chatgpt",
+    "gemini",
+    "copilot",
+    "llm",
+    "monitoring"
+  ],
   "packageManager": "pnpm@10.25.0",
   "engines": {
     "node": ">=22.14.0"
   },
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
-    "axconfig": "^1.0.0",
+    "axauth": "^1.0.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "env-paths": "^3.0.0",

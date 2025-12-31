@@ -20,7 +20,7 @@ const program = new Command()
   .helpCommand(false)
   .addHelpText(
     "after",
-    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep agent_usage_utilization_percent\n`,
+    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep axusage_utilization_percent\n`,
   );
 
 // Ensure browser resources are cleaned when process exits

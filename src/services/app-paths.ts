@@ -7,7 +7,7 @@ import { mkdir, chmod } from "node:fs/promises";
  * environment variables (like XDG_DATA_HOME) after the first import will not
  * be picked up without restarting the process.
  */
-const paths = envPaths("agent-usage", { suffix: "" });
+const paths = envPaths("axusage", { suffix: "" });
 
 /**
  * Directory for storing browser authentication contexts
