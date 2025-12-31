@@ -74,7 +74,7 @@ export async function authSetupCommand(
     );
     console.error(
       chalk.gray(
-        `\nYou can now run: ${chalk.cyan(`agent-usage usage --service ${service}`)}`,
+        `\nYou can now run: ${chalk.cyan(`axusage usage --service ${service}`)}`,
       ),
     );
   } catch (error) {

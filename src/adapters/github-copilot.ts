@@ -29,7 +29,7 @@ export const githubCopilotAdapter: ServiceAdapter = {
         return {
           ok: false,
           error: new ApiError(
-            "No saved authentication for github-copilot. Run 'agent-usage auth setup github-copilot' first.",
+            "No saved authentication for github-copilot. Run 'axusage auth setup github-copilot' first.",
           ),
         };
       }

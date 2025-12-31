@@ -1,24 +1,24 @@
-# Agent Usage CLI
+# axusage
 
-Monitor AI usage across Claude, ChatGPT, and GitHub Copilot from a single command.
+Monitor AI usage across Claude, ChatGPT, GitHub Copilot, and Gemini from a single command.
 
 ## Quick Start
 
 ```bash
 # Install globally
-npm install -g agent-usage
+npm install -g axusage
 
 # Set up authentication (one-time setup per service)
 claude
 codex
 gemini
-agent-usage auth setup github-copilot
+axusage auth setup github-copilot
 
 # Check authentication status
-agent-usage auth status
+axusage auth status
 
 # Fetch usage
-agent-usage
+axusage
 ```
 
 ## Authentication
@@ -33,10 +33,10 @@ Copilot uses browser-based authentication for persistent, long-lived sessions.
 claude
 codex
 gemini
-agent-usage auth setup github-copilot
+axusage auth setup github-copilot
 
 # Check authentication status
-agent-usage auth status
+axusage auth status
 ```
 
 When you run `auth setup` for GitHub Copilot, a browser window will open.
@@ -45,13 +45,16 @@ saved and automatically used for future requests.
 
 **Authenticated sessions directory (via [`env-paths`](https://github.com/sindresorhus/env-paths)):**
 
-- Linux: `~/.local/share/agent-usage/browser-contexts/` (or `$XDG_DATA_HOME/agent-usage/browser-contexts/`)
-- macOS: `~/Library/Application Support/agent-usage/browser-contexts/`
-- Windows: `%LOCALAPPDATA%\agent-usage\Data\browser-contexts\`
+- Linux: `~/.local/share/axusage/browser-contexts/` (or `$XDG_DATA_HOME/axusage/browser-contexts/`)
+- macOS: `~/Library/Application Support/axusage/browser-contexts/`
+- Windows: `%LOCALAPPDATA%\axusage\Data\browser-contexts\`
 
 You can override the location by providing `BrowserAuthConfig.dataDir`, but the CLI defaults to these platform-appropriate directories.
 
-> **Migration note:** Releases before env-paths support stored sessions under `~/.agent-usage/browser-contexts/`. Upgrade by either rerunning `agent-usage auth setup <service>` or moving the old directory into the platform-specific path above (for example, `mv ~/.agent-usage/browser-contexts ~/.local/share/agent-usage/browser-contexts` on Linux).
+> **Migration from `agent-usage`:** If upgrading from the old `agent-usage` package, copy your authentication contexts:
+>
+> - Linux/macOS: `cp -r ~/.local/share/agent-usage/* ~/.local/share/axusage/`
+> - Windows: Copy from `%LOCALAPPDATA%\agent-usage\` to `%LOCALAPPDATA%\axusage\`
 
 Security notes:
 
@@ -59,7 +62,7 @@ Security notes:
 - To revoke access for GitHub Copilot, clear saved browser auth:
 
 ```bash
-agent-usage auth clear github-copilot
+axusage auth clear github-copilot
 ```
 
 Browser installation:
@@ -75,16 +78,16 @@ pnpm exec playwright install chromium --with-deps
 pnpm blocks postinstall scripts for global packages by default (npm runs them automatically). After installing globally, approve and run the postinstall script:
 
 ```bash
-pnpm add -g agent-usage
-pnpm approve-builds -g          # Select agent-usage when prompted
-pnpm add -g agent-usage         # Reinstall to run postinstall
+pnpm add -g axusage
+pnpm approve-builds -g          # Select axusage when prompted
+pnpm add -g axusage             # Reinstall to run postinstall
 ```
 
 Alternatively, install the browser manually after global installation. Use the Playwright binary that ships with the global package so the browser is installed in the right location:
 
 ```bash
-pnpm add -g agent-usage
-PLAYWRIGHT_BIN="$(pnpm root -g)/agent-usage/node_modules/.bin/playwright"
+pnpm add -g axusage
+PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
 "$PLAYWRIGHT_BIN" install chromium --with-deps
 ```
 
@@ -92,19 +95,19 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/agent-usage/node_modules/.bin/playwright"
 
 ```bash
 # Query all services
-agent-usage
+axusage
 
 # Allow interactive re-authentication during usage fetch
-agent-usage --interactive
+axusage --interactive
 
 # Single service
-agent-usage --service claude
-agent-usage --service chatgpt
-agent-usage --service github-copilot
+axusage --service claude
+axusage --service chatgpt
+axusage --service github-copilot
 
 # JSON output
-agent-usage --format=json
-agent-usage --service claude --format=json
+axusage --format=json
+axusage --service claude --format=json
 
 ```
 
@@ -113,7 +116,7 @@ agent-usage --service claude --format=json
 ### Count services by availability (JSON + sort/uniq)
 
 ```bash
-agent-usage --format=json \
+axusage --format=json \
   | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .service' \
   | sort | uniq -c
 ```
@@ -121,7 +124,7 @@ agent-usage --format=json \
 ### Extract utilization windows as TSV (JSON + jq)
 
 ```bash
-agent-usage --format=json \
+axusage --format=json \
   | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .windows[] | [.name, (.utilization|tostring)] | @tsv'
 ```
 
@@ -141,11 +144,11 @@ JSON format returns structured data for programmatic use.
 Add to your `CLAUDE.md` or `AGENTS.md`:
 
 ```markdown
-# Rule: `agent-usage` Usage
+# Rule: `axusage` Usage
 
-Run `npx -y agent-usage --help` to learn available options.
+Run `npx -y axusage --help` to learn available options.
 
-Use `agent-usage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, and GitHub Copilot. It standardizes output (text, JSON) so you can alert, dashboard, or pipe it into other Unix tools.
+Use `axusage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, GitHub Copilot, and Gemini. It standardizes output (text, JSON, Prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
 ```
 
 ## Troubleshooting
@@ -154,12 +157,12 @@ Use `agent-usage` when you need a quick, scriptable snapshot of API usage across
 
 - The CLI shows a countdown while waiting for login.
 - If you have completed login, press Enter in the terminal to continue.
-- If it still fails, run `agent-usage auth clear <service>` and retry.
+- If it still fails, run `axusage auth clear <service>` and retry.
 
 ### "No saved authentication" error
 
-- Check which services are authenticated: `agent-usage auth status`.
-- Set up the missing service: `agent-usage auth setup <service>`.
+- Check which services are authenticated: `axusage auth status`.
+- Set up the missing service: `axusage auth setup <service>`.
 
 ### Sessions expire
 
@@ -175,25 +178,25 @@ You can perform the interactive login flow on a workstation (for example, a loca
    auth for GitHub Copilot:
 
    ```bash
-   npm install -g agent-usage
+   npm install -g axusage
 
    claude
    codex
    gemini
-   agent-usage auth setup github-copilot
+   axusage auth setup github-copilot
    ```
 
 2. Confirm the workstation has valid sessions:
 
    ```bash
-   agent-usage auth status
+   axusage auth status
    ```
 
 3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
 
    ```bash
-   CONTEXT_DIR="$HOME/.local/share/agent-usage/browser-contexts"  # Linux default; adjust on macOS/Windows
-   tar czf agent-usage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
+   CONTEXT_DIR="$HOME/.local/share/axusage/browser-contexts"  # Linux default; adjust on macOS/Windows
+   tar czf axusage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
    ```
 
    Archive structure: `browser-contexts/claude/`, `browser-contexts/chatgpt/`, etc.
@@ -203,29 +206,29 @@ You can perform the interactive login flow on a workstation (for example, a loca
 1. Copy the archive to the server with `scp` (replace `user@server` with your login):
 
    ```bash
-   scp agent-usage-contexts.tgz user@server:~/
+   scp axusage-contexts.tgz user@server:~/
    ```
 
 2. On the server, create the target directory if it does not already exist, unpack the archive, and lock down the permissions:
 
    ```bash
    ssh user@server
-   CONTEXT_DIR="$HOME/.local/share/agent-usage/browser-contexts"  # Linux default; adjust per platform
-   AGENT_USAGE_DIR="$(dirname "$CONTEXT_DIR")"
+   CONTEXT_DIR="$HOME/.local/share/axusage/browser-contexts"  # Linux default; adjust per platform
+   AXUSAGE_DIR="$(dirname "$CONTEXT_DIR")"
    mkdir -p "$CONTEXT_DIR"
-   tar xzf ~/agent-usage-contexts.tgz -C "$AGENT_USAGE_DIR"
+   tar xzf ~/axusage-contexts.tgz -C "$AXUSAGE_DIR"
    # Directories 700, files 600
-   find "$AGENT_USAGE_DIR" -type d -exec chmod 700 {} +
+   find "$AXUSAGE_DIR" -type d -exec chmod 700 {} +
    find "$CONTEXT_DIR" -type f -exec chmod 600 {} +
    ```
 
 3. Verify that the sessions are available on the server:
 
    ```bash
-   agent-usage auth status
+   axusage auth status
    ```
 
-   If the server does not yet have the tool installed, run `npm install -g agent-usage` before checking the status.
+   If the server does not yet have the tool installed, run `npm install -g axusage` before checking the status.
 
 Notes:
 
@@ -236,4 +239,4 @@ Notes:
 
 ## Development
 
-For local development in this repository, `pnpm run start` triggers a clean rebuild before executing the CLI. Use `pnpm run usage` only when `dist/` is already up to date. End users installing globally should run the `agent-usage` binary directly.
+For local development in this repository, `pnpm run start` triggers a clean rebuild before executing the CLI. Use `pnpm run usage` only when `dist/` is already up to date. End users installing globally should run the `axusage` binary directly.

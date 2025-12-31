@@ -11,7 +11,7 @@ importers:
       '@commander-js/extra-typings':
         specifier: ^14.0.0
         version: 14.0.0(commander@14.0.2)
-      axconfig:
+      axauth:
         specifier: ^1.0.0
         version: 1.0.0(@types/node@25.0.2)
       chalk:
@@ -382,6 +382,9 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@iarna/toml@2.2.5':
+    resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
 
   '@inquirer/ansi@2.0.2':
     resolution: {integrity: sha512-SYLX05PwJVnW+WVegZt1T4Ip1qba1ik+pNJPDiqvk6zS5Y/i8PhRzLpGEtVd7sW0G8cMtkD8t4AZYhQwm8vnww==}
@@ -1010,8 +1013,18 @@ packages:
   ast-v8-to-istanbul@0.3.8:
     resolution: {integrity: sha512-szgSZqUxI5T8mLKvS7WTjF9is+MVbOeLADU73IseOcrqhxr/VAvy6wfoVE39KnKzA7JRhjF5eUagNlHwvZPlKQ==}
 
-  axconfig@1.0.0:
-    resolution: {integrity: sha512-ohotyW/6VGzpjgFGM99KKe4vtGWEtVKKxNvgmKASNZcWKcYuEOHs4JLKgUIJiu796i/o72w50wyEaqWQPUtApA==}
+  axauth@1.0.0:
+    resolution: {integrity: sha512-ELSAuqQVKsx/gQ/p1XNZmQXuRP19sW51/wOOrzv4dJqjpJ9s9vqZA1PUWsSKYLozMJSHR+uzyw6Pdqx+zD6xJw==}
+    engines: {node: '>=22.14.0'}
+    hasBin: true
+
+  axconfig@2.0.0:
+    resolution: {integrity: sha512-QW4cxS1dn6HJgwMjrnTlGD5LWkUY1n9OwAlxAcmDztGQbVl7NE+X+rIve8hfBJBGJbKkAh/ImApCBY4OolNZ+Q==}
+    engines: {node: '>=22.14.0'}
+    hasBin: true
+
+  axshared@1.1.0:
+    resolution: {integrity: sha512-CJ8LdqKq8zgihPM0G/Ihv09OD6muJEA1PNEqDoQ+gd4veFCMX99uUbwMyYuMyDjY+wmV8qldqFjQZMfSKrRXSQ==}
     engines: {node: '>=22.14.0'}
     hasBin: true
 
@@ -2964,6 +2977,8 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
+  '@iarna/toml@2.2.5': {}
+
   '@inquirer/ansi@2.0.2': {}
 
   '@inquirer/core@11.1.0(@types/node@25.0.2)':
@@ -3601,13 +3616,27 @@ snapshots:
       estree-walker: 3.0.3
       js-tokens: 9.0.1
 
-  axconfig@1.0.0(@types/node@25.0.2):
+  axauth@1.0.0(@types/node@25.0.2):
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
       '@inquirer/password': 5.0.3(@types/node@25.0.2)
+      axconfig: 2.0.0
+      axshared: 1.1.0
       commander: 14.0.2
     transitivePeerDependencies:
       - '@types/node'
+
+  axconfig@2.0.0:
+    dependencies:
+      '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
+      '@iarna/toml': 2.2.5
+      axshared: 1.1.0
+      commander: 14.0.2
+
+  axshared@1.1.0:
+    dependencies:
+      '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
+      commander: 14.0.2
 
   balanced-match@1.0.2: {}
 

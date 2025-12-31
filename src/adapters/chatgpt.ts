@@ -1,4 +1,4 @@
-import { extractCredentials, getAccessToken } from "axconfig";
+import { extractRawCredentials, getAccessToken } from "axauth";
 
 import type {
   Result,
@@ -21,7 +21,7 @@ export const chatGPTAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const credentials = extractCredentials("codex");
+    const credentials = extractRawCredentials("codex");
 
     if (!credentials) {
       return {

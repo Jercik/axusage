@@ -1,4 +1,4 @@
-import { extractCredentials, getAccessToken } from "axconfig";
+import { extractRawCredentials, getAccessToken } from "axauth";
 import { z } from "zod";
 
 import type {
@@ -54,7 +54,7 @@ export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const credentials = extractCredentials("claude-code");
+    const credentials = extractRawCredentials("claude");
 
     if (!credentials) {
       return {
