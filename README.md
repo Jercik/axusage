@@ -53,7 +53,7 @@ You can override the location by providing `BrowserAuthConfig.dataDir`, but the 
 
 > **Migration from `agent-usage`:** If upgrading from the old `agent-usage` package, copy your authentication contexts:
 >
-> - Linux/macOS: `cp -r ~/.local/share/agent-usage/* ~/.local/share/axusage/`
+> - Linux/macOS: `mkdir -p ~/.local/share/axusage/ && cp -r ~/.local/share/agent-usage/* ~/.local/share/axusage/`
 > - Windows: Copy from `%LOCALAPPDATA%\agent-usage\` to `%LOCALAPPDATA%\axusage\`
 
 Security notes:
