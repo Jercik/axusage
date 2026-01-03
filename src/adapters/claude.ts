@@ -1,4 +1,4 @@
-import { extractRawCredentials, getAccessToken } from "axauth";
+import { getAgentAccessToken } from "axauth";
 import { z } from "zod";
 
 import type {
@@ -54,31 +54,14 @@ export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const credentials = extractRawCredentials("claude");
+    const accessToken = await getAgentAccessToken("claude");
 
-    if (!credentials) {
-      return {
-        ok: false,
-        error: new ApiError(
-          "No Claude Code credentials found. Ensure Claude Code is installed and authenticated.",
-        ),
-      };
-    }
-
-    if (credentials.type !== "oauth") {
-      return {
-        ok: false,
-        error: new ApiError(
-          "Claude Code usage API requires OAuth authentication. API key authentication is not supported for usage data.",
-        ),
-      };
-    }
-
-    const accessToken = getAccessToken(credentials);
     if (!accessToken) {
       return {
         ok: false,
-        error: new ApiError("Invalid OAuth credentials: missing access token."),
+        error: new ApiError(
+          "No Claude credentials found. Run 'claude' to authenticate.",
+        ),
       };
     }
 

@@ -22,7 +22,7 @@ export const geminiAdapter: ServiceAdapter = {
   name: "Gemini",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = getAgentAccessToken("gemini");
+    const accessToken = await getAgentAccessToken("gemini");
 
     if (!accessToken) {
       return {

@@ -65,6 +65,700 @@ Use concise prompts for quick facts and focused questions for deeper topics. If 
 
 ---
 
+# a╳point Branding
+
+## Etymology
+
+**ax** = **A**gent e**X**change
+
+A crossroads/switchboard where multiple AI agents connect through one interface.
+
+### What the X Implies
+
+- **Crossroads / crossbar / switchboard** — routing between agents
+- **Multiplication of capability** — composing tools and agents
+
+### One-liner
+
+> "ax is an agent exchange: one interface, many agents."
+
+---
+
+## Logo
+
+### Primary Mark
+
+The logo uses a rotated X (╳) to represent the exchange/crossroads concept:
+
+```
+a╳
+```
+
+### Full Name Treatment
+
+```
+a╳point
+```
+
+Use the rotated X character (╳, U+2573) in contexts that support Unicode. Fall back to lowercase `x` in ASCII-only environments.
+
+### Fallback Rules
+
+| Context                        | Use                       | Example                    |
+| ------------------------------ | ------------------------- | -------------------------- |
+| Display text, headings, docs   | `╳` (U+2573)              | a╳point                    |
+| Code, file paths, URLs         | lowercase `x`             | axpoint, axpoint.dev       |
+| Help header                    | tool first, brand in parens | axrun (a╳point) v1.2.3   |
+
+### Website
+
+```
+axpoint.dev
+```
+
+---
+
+## Naming Conventions
+
+### Executable Names
+
+All CLI tools in a╳point follow these rules:
+
+- **Lowercase ASCII only**: `run`, `auth`, `config`, `agent`, `doctor`
+- **3–10 characters**, obvious meaning
+- **No separators**: no `ax-run`, no `ax_run`, no unicode
+- **Prefix pattern**: `ax` + postfix (e.g., `axrun`, `axauth`)
+
+### Postfix Guidelines
+
+| Type   | Use For              | Examples                        |
+| ------ | -------------------- | ------------------------------- |
+| Verbs  | Actions              | `run`, `sync`, `test`           |
+| Nouns  | Areas/domains        | `auth`, `config`, `agents`      |
+
+### Reserved Words (Avoid as Postfix)
+
+These conflict with standard CLI conventions:
+
+- `help`
+- `version`
+- `completion`
+- `install`
+- `update`
+
+### Avoid Near-Duplicates
+
+Pick one and stay consistent:
+
+- `config` vs `cfg` → pick `config`
+- `auth` vs `authenticate` → pick `auth`
+
+---
+
+## Usage Examples
+
+### Terminal Help Output
+
+```
+$ axrun --help
+axrun (a╳point) v1.2.3
+
+Execute agent workflows in a unified environment.
+
+USAGE:
+    axrun <workflow> [OPTIONS]
+
+EXAMPLES:
+    axrun deploy.yml --agent claude
+    axrun test.py --parallel --agents gemini,codex
+
+SEE ALSO:
+    axconfig(1), axauth(1)
+```
+
+### Feature Grid (Documentation/Website)
+
+```
+┌─────────┐    ┌─────────┐    ┌───────────┐
+│  axrun  │ →  │  axauth │ →  │ axconfig  │
+└─────────┘    └─────────┘    └───────────┘
+      ↓              ↓              ↓
+   Execute     Authenticate    Configure
+```
+
+### README Header
+
+```markdown
+# a╳point
+
+The universal adapter for AI agent workflows.
+```
+
+---
+
+## Asset Checklist
+
+When creating new tools or documentation, ensure:
+
+- [ ] Tool name follows `ax` + postfix pattern
+- [ ] Postfix is 3–10 lowercase ASCII characters
+- [ ] Help output includes `<tool> (a╳point) v<version>` header
+
+
+---
+
+# a╳point
+
+**One interface, many agents.**
+
+a╳point is a unified ecosystem of CLI tools for managing multiple AI coding agents — Claude Code, Codex, Gemini CLI, OpenCode, and Copilot CLI — through a single, cohesive interface.
+
+---
+
+## The Ecosystem
+
+a╳point is not a single tool, but a suite of composable utilities designed to work together.
+
+```
+              ┌─────────────────────────────────┐
+              │            axshared             │
+              │   (types, agent metadata, CLI)  │
+              └───┬─────────┬─────────┬─────────┘
+                  │         │         │
+                  ▼         │         ▼
+              axconfig      │     axinstall
+          (permissions)     │   (installation)
+                  │         │
+          ┌───────┼─────────┤
+          │       │         │
+          ▼       ▼         ▼
+       axrun   axusage   axauth
+     (runner) (metrics) (credentials)
+```
+
+## Project Goals
+
+Each tool in the a╳point suite has a specific responsibility:
+
+### **axshared**
+*   **Goal**: Provide the shared type definitions, agent metadata, and core utilities that power the entire ecosystem.
+*   **Role**: Ensures consistency across all tools. If an agent definition changes, it changes here.
+
+### **axconfig**
+*   **Goal**: Unify configuration and permission management across disparate agents.
+*   **Role**: Manages what agents are allowed to do (file access, network requests, shell commands) using a standardized permission model, translating abstract permissions into agent-specific flags.
+
+### **axauth**
+*   **Goal**: Simplify credential management and token retrieval.
+*   **Role**: Securely installs and retrieves API keys and session tokens, providing a unified interface for authentication checks (`axauth list`) and token injection. Also provides isolated config execution via `axauth exec` for testing credentials in custom directories.
+
+### **axinstall**
+*   **Goal**: Make setting up AI agents effortless.
+*   **Role**: Auto-detects the user's package manager (npm, pnpm, yarn, brew) and system environment to install and upgrade agents correctly.
+
+### **axrun**
+*   **Goal**: Execute agent workflows with normalized behavior and output.
+*   **Role**: The primary runner. It normalizes input prompts and streams output events (JSONL/TSV), effectively acting as a "driver" that makes different agents behave consistently in scripts and pipelines.
+
+### **axusage**
+*   **Goal**: Provide visibility into API usage and costs.
+*   **Role**: Aggregates usage statistics (tokens, costs, request counts) across different providers, exporting them in standard formats (JSON, Prometheus) for monitoring.
+
+## Supported Agents
+
+| Agent | CLI | Package | Provider |
+|-------|-----|---------|----------|
+| Claude Code | `claude` | @anthropic-ai/claude-code | Anthropic |
+| Codex CLI | `codex` | @openai/codex | OpenAI |
+| Gemini CLI | `gemini` | @google/gemini-cli | Google |
+| OpenCode | `opencode` | opencode-ai | Sst |
+| Copilot CLI | `copilot` | @github/copilot | GitHub |
+
+## Workflow Examples
+
+### 1. Installation & Setup
+```bash
+# Install agents (auto-detects pnpm/bun/yarn/npm/brew)
+axinstall claude
+axinstall codex --with npm
+
+# Verify what's installed
+axinstall --status
+```
+
+### 2. Configuration & Auth
+```bash
+# Configure permissions (unified syntax)
+axconfig set --agent claude allow "read,glob,bash:git *"
+
+# Check authenticated agents
+axauth list
+
+# Export and test credentials in isolation
+axauth export --agent gemini --output creds.json --no-password
+axauth install-credentials --agent gemini --input creds.json \
+  --config-dir /tmp/test/.gemini
+axauth run --agent gemini --config-dir /tmp/test/.gemini -- gemini "test"
+
+# CI/CD: pass credentials via conventional env var (auto-detected)
+export AX_GEMINI_CREDENTIALS=$(cat creds.json)
+axauth run --agent gemini --config-dir /tmp/test/.gemini -- gemini "test"
+```
+
+### 3. Execution (The "Pipe" Dream)
+All tools produce machine-readable output by default for Unix pipeline integration.
+
+```bash
+# Run an agent and parse its output
+axrun --agent claude "Fix the type error" --format jsonl | jq '.type'
+
+# Filter available agents by provider
+axshared agents list | awk -F'	' '$4 == "Anthropic"'
+
+# Export usage metrics to Prometheus
+axusage --format prometheus
+```
+
+## Repositories
+
+| Project | Repository |
+|---------|------------|
+| axshared | [github.com/Jercik/axshared](https://github.com/Jercik/axshared) |
+| axconfig | [github.com/Jercik/axconfig](https://github.com/Jercik/axconfig) |
+| axauth | [github.com/Jercik/axauth](https://github.com/Jercik/axauth) |
+| axinstall | [github.com/Jercik/axinstall](https://github.com/Jercik/axinstall) |
+| axrun | [github.com/Jercik/axrun](https://github.com/Jercik/axrun) |
+| axusage | [github.com/Jercik/axusage](https://github.com/Jercik/axusage) |
+
+## Standards & Principles
+
+a╳point is built on four core pillars:
+1.  **Unified Experience**: One set of conventions everywhere.
+2.  **Agent Agnostic**: Neutral exchange, no favorites.
+3.  **Composability**: Tools that chain together naturally.
+4.  **Transparency**: No magic, just clear operations.
+
+For detailed design rules, coding standards, and architectural guidelines, see **[STANDARDS.md](./STANDARDS.md)**.
+
+---
+
+# a╳point Standards & Design Principles
+
+This document defines the foundational goals, design philosophy, and rules that all tools in the a╳point ecosystem must follow.
+
+---
+
+## Core Goals
+
+### 1. Unified Experience
+Every tool in the suite should feel like part of a cohesive whole. Users learn one set of conventions and apply them everywhere.
+
+### 2. Agent Agnostic
+No tool should favor a specific AI provider. The toolchain is a neutral exchange that treats all agents as first-class citizens.
+
+### 3. Composability
+Tools should work together. Output from one tool should be valid input for another. Workflows should chain naturally.
+
+### 4. Transparency
+Users should always understand what's happening. No magic, no hidden state, no surprises.
+
+---
+
+## CLI Design Rules
+
+All command-line tools in a╳point must follow these rules.
+
+### Naming
+See [BRANDING.md](./rules/axpoint/BRANDING.md) for complete naming conventions.
+
+- Pattern: `ax` + postfix (e.g., `axrun`, `axauth`)
+- Postfix: 3–10 lowercase ASCII characters
+- No separators, no unicode in executable names
+
+### Output Behavior
+
+#### TTY-Aware Defaults
+Output format adapts automatically based on context:
+- **TTY (interactive terminal)**: Human-readable format (e.g., truncated TSV)
+- **Non-TTY (piped/redirected)**: Machine-readable format (e.g., JSONL)
+
+Users can override with explicit `--format` flag.
+
+#### Streaming Output
+For tools that produce multiple events or long-running operations:
+- Use line-buffered streaming (one record per line)
+- Emit events immediately as they occur (no batching)
+- **JSONL**: One JSON object per line for machine consumption
+- **TSV**: Tab-separated values for human readability
+
+#### Exit Codes
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error (runtime failure, task failed) |
+| 2 | Invalid usage (bad arguments, missing input) |
+
+Keep exit codes simple. Let error messages provide specifics.
+
+#### Diagnostic Output
+- Debug/diagnostic output goes to stderr, never stdout
+- Use `--debug` for verbose diagnostic logging
+- Buffer subprocess stderr for error reporting (with reasonable limits)
+
+### Arguments & Flags
+
+#### Positional Arguments
+- Use for the primary target of the command
+- Maximum of 2 positional arguments per command
+- Order should be intuitive (e.g., `axrun <workflow> [agent]`)
+
+#### Flags
+- Long form required for all flags: `--output`
+- Short form optional for common flags: `-o`
+- Boolean flags default to false
+- Use `--no-<flag>` for explicit false (e.g., `--no-color`)
+
+#### Common Flags (Reserved)
+All tools must implement these flags consistently:
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--help` | | Show help and exit |
+| `--version` | `-V` | Show version and exit |
+| `--format` | `-f` | Output format (e.g., `jsonl`, `tsv`) |
+| `--debug` | | Enable debug/diagnostic output |
+
+Additional flags depend on tool purpose. Use short forms sparingly for frequently-used flags.
+
+### Configuration
+
+#### Hierarchy (Highest to Lowest Priority)
+1. Command-line flags
+2. Environment variables
+3. Built-in defaults
+
+Tools should avoid config files. Environment variables provide sufficient flexibility while keeping configuration explicit and portable.
+
+#### Environment Variables
+- Pass through relevant environment variables to subprocesses
+- Each tool/adapter documents which variables it reads
+- Examples: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`
+
+Let underlying tools and agents handle their own authentication and configuration errors.
+
+### Error Handling
+
+#### Error Messages
+- Write to stderr, not stdout
+- Include what went wrong
+- Include why it went wrong (if known)
+- Suggest how to fix it (if possible)
+
+```
+Error: Agent "claude" not authenticated.
+
+Run `claude` to authenticate, then retry.
+```
+
+#### Fail Fast
+- Validate all inputs before starting work
+- Don't leave partial state on failure
+- Clean up temporary resources on error
+
+### Process Management
+
+#### Subprocess Handling
+When spawning child processes:
+- Forward termination signals (`SIGINT`, `SIGTERM`) to child processes
+- Clean up signal handlers in finally blocks
+- Buffer child stderr for error context (with size limits)
+- Detect spawn failures early (e.g., `ENOENT` for missing binaries)
+
+#### Signal Handling
+```
+SIGINT/SIGTERM received
+       ↓
+Forward to child process
+       ↓
+Wait for child to exit
+       ↓
+Clean up handlers
+       ↓
+Exit with appropriate code
+```
+
+### Interactivity
+
+#### Prompts
+- Prompt for required input only when stdin is a TTY
+- Never prompt when stdin is piped
+- All prompts must have non-interactive alternatives (flags or env vars)
+
+#### Confirmation
+- Destructive operations should prompt for confirmation
+- Use `--force` / `-f` to skip confirmation
+- Default to safe behavior (don't destroy without consent)
+
+### Help & Documentation
+
+#### Help Text Structure
+Help is auto-generated by the CLI framework (Commander.js). Ensure:
+- One-line description from package.json
+- Usage line shows command structure
+- Options list all available flags
+- Show suggestion after errors (`--help` hint)
+
+---
+
+## Code Quality Standards
+
+### Language & Runtime
+- **Runtime**: Node.js 22+
+- **Language**: TypeScript (strict mode)
+- **Package Manager**: pnpm
+
+### Core Libraries
+| Purpose | Library |
+|---------|---------|
+| CLI Framework | Commander.js (`@commander-js/extra-typings`) |
+| Schema Validation | Zod |
+
+### Architecture
+
+#### Functional Core / Imperative Shell
+Separate pure logic from side effects:
+
+**Functional Core** (pure, testable):
+- Output format resolution
+- Event parsing and transformation
+- Success/failure determination
+- Error message formatting
+
+**Imperative Shell** (side effects):
+- Process spawning and streaming
+- File and network I/O
+- CLI entry point and orchestration
+
+#### Adapter Pattern
+For tools that support multiple backends (agents, providers, etc.):
+- Self-registering adapters (import triggers registration)
+- Common interface for all adapters
+- Adapters handle provider-specific details
+
+#### Adapter Capabilities
+Adapters declare their capabilities so tools can validate compatibility:
+```typescript
+interface AgentCapabilities {
+  toolPermissions: boolean;   // Per-tool allow/deny
+  bashPatterns: boolean;      // Bash command patterns
+  pathRestrictions: boolean;  // Path-based permissions
+  canDenyRead: boolean;       // Can restrict read access
+}
+```
+Tools validate requested features against capabilities and warn/error appropriately.
+
+### Testing
+- Unit tests for functional core (pure functions)
+- Integration tests for CLI behavior
+- Test all exit codes
+- Test both TTY and non-TTY output modes
+
+### Documentation
+- README with quick start in every tool
+- All flags documented in help text
+- Examples for common use cases
+- Changelog maintained for all releases
+
+---
+
+## Type Conventions
+
+### Discriminated Unions
+Model variant types explicitly using a discriminant field:
+
+```typescript
+// Events discriminated by 'type'
+type AxrunEvent =
+  | { type: "session.start"; agent: string; sessionId: string }
+  | { type: "session.complete"; duration: number }
+  | { type: "session.error"; code: string; message: string };
+
+// Auth types discriminated by 'kind'
+type AuthType =
+  | { kind: "subscription"; tiers: string[] }
+  | { kind: "api-key"; envVar: string }
+  | { kind: "oauth-token"; envVar: string };
+```
+Avoid bags of optional properties that allow impossible states.
+
+### Result Types
+For recoverable errors in functional code, return result types instead of throwing:
+
+```typescript
+type Result<T, E extends Error> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+function parseConfig(input: string): Result<Config, ParseError> {
+  try {
+    return { ok: true, value: JSON.parse(input) };
+  } catch (e) {
+    return { ok: false, error: new ParseError(e.message) };
+  }
+}
+```
+Reserve exceptions for unrecoverable errors and framework integration points.
+
+### Zod Schema Naming
+Use identical names for Zod schemas and their inferred types:
+```typescript
+const UsageResponse = z.object({ ... });
+type UsageResponse = z.infer<typeof UsageResponse>;
+```
+TypeScript allows this because types and values exist in separate namespaces.
+
+### Import Types
+Use `import type` for type-only imports:
+```typescript
+import type { AgentCli, AuthType } from "axshared";
+import { getAgent, AGENTS } from "axshared";
+```
+
+### No Default Exports
+Use named exports exclusively (except where frameworks require default exports).
+
+### No Barrel Files
+Avoid `index.ts` files that only re-export siblings. Import directly from source modules. Exception: library entry points referenced by `package.json` exports.
+
+---
+
+## File Naming
+
+### Functional Core Files
+Name files for their primary responsibility using verb–noun patterns:
+
+| Pattern | Purpose | Examples |
+|---------|---------|----------|
+| `calculate-*.ts` | Pure calculations | `calculate-usage-rate.ts` |
+| `parse-*.ts` | Parsing/transformation | `parse-claude-usage.ts`, `parse-event.ts` |
+| `format-*.ts` | Output formatting | `format-service-usage.ts`, `format-event-tsv.ts` |
+| `validate-*.ts` | Validation logic | `validate-agent.ts` |
+| `resolve-*.ts` | Resolution/lookup | `resolve-config-path.ts` |
+
+### Imperative Shell Files
+
+| Pattern | Purpose | Examples |
+|---------|---------|----------|
+| `*-adapter.ts` | Agent/service adapters | `claude-code-adapter.ts` |
+| `*-command.ts` | CLI command handlers | `usage-command.ts` |
+| `*-registry.ts` | Adapter registration | `service-adapter-registry.ts` |
+| `*-manager.ts` | Stateful services | `browser-auth-manager.ts` |
+| `*-storage.ts` | Persistence | `file-storage.ts`, `keychain.ts` |
+
+---
+
+## Versioning
+
+### Semantic Versioning
+All tools use [SemVer](https://semver.org/).
+- **MAJOR**: Breaking changes to CLI interface or behavior
+- **MINOR**: New features, backward compatible
+- **PATCH**: Bug fixes, backward compatible
+
+### Breaking Changes Include
+- Removing or renaming commands, flags, or arguments
+- Changing exit codes
+- Changing default behavior
+- Changing output structure (JSONL schema, TSV columns)
+
+### Version Synchronization
+Individual tools may version independently, but major versions should stay aligned when tools have tight integration.
+
+---
+
+## Security
+
+### Credentials
+- Never log credentials, even in debug mode
+- Pass credentials via environment variables to subprocesses
+- Let underlying tools handle credential storage and retrieval
+- Don't implement custom credential storage unless necessary
+
+### Credential Storage
+When credential storage is necessary (axauth):
+- **macOS**: Use Keychain via `security` CLI
+- **All platforms**: JSON files with `0o600` permissions
+- **Directory permissions**: `0o700` for credential directories
+
+### Export/Import Encryption
+For portable credential export:
+- **Algorithm**: AES-256-GCM
+- **Key derivation**: PBKDF2 with SHA-256, 100,000 iterations
+- **Format**: JSON with base64-encoded ciphertext, salt, IV, and auth tag
+
+### Input Validation
+- Validate arguments and flags before spawning subprocesses
+- Use schema validation (Zod) for structured input
+- Validate subprocess output schemas before processing
+
+### Shell Injection Prevention
+Use `execFile` with argument arrays, never `exec` with string concatenation.
+
+
+---
+
+# Rule: Avoid Leaky Abstractions
+
+Design abstractions around consumer needs, not implementation details. A leaky abstraction forces callers to understand the underlying system to use it correctly—defeating its purpose. While all non-trivial abstractions leak somewhat (Joel Spolsky's Law), minimize leakage by ensuring your interface doesn't expose internal constraints, infrastructure artifacts, or inconsistent behavior.
+
+## Warning signs
+
+- **Inconsistent signatures**: Some methods require parameters others don't, revealing backend differences
+- **Infrastructure artifacts**: Connection strings, database IDs, or ORM-specific constructs in the API
+- **Performance surprises**: Logically equivalent operations with vastly different performance
+- **Implementation-dependent error handling**: Callers must catch specific exceptions from underlying layers
+- **Required internal knowledge**: Using the abstraction safely requires understanding what's beneath it
+
+## Before/after example
+
+```ts
+// Leaky: Exposes database concerns, inconsistent signature
+interface ReservationRepository {
+  create(restaurantId: number, reservation: Reservation): number; // Returns DB ID
+  findById(id: string): Reservation | null; // No restaurantId needed?
+  update(reservation: Reservation): void;
+  connect(connectionString: string): void;
+  disconnect(): void;
+}
+```
+
+```ts
+// Better: Consistent interface, infrastructure hidden
+interface ReservationRepository {
+  create(restaurantId: number, reservation: Reservation): Promise<void>;
+  findById(restaurantId: number, id: string): Promise<Reservation | null>;
+  update(restaurantId: number, reservation: Reservation): Promise<void>;
+}
+
+// Connection management injected, not exposed
+class PostgresReservationRepository implements ReservationRepository {
+  constructor(private readonly pool: Pool) {}
+  // ...
+}
+```
+
+## Practical guidance
+
+- Design interfaces for what callers need to do, not how you implement it
+- Keep signatures consistent—if one method needs context, all similar methods should accept it
+- Return domain types, not infrastructure artifacts (avoid returning raw database IDs)
+- Inject infrastructure dependencies through constructors, not method parameters
+- Normalize error handling so callers don't need to catch implementation-specific exceptions
+- Prefer focused interfaces over "fat" interfaces with unrelated methods
+
+
+---
+
 # Rule: Design Means Deciding
 
 Design is the art of making choices. When you add a configuration option instead of deciding, you're abdicating your responsibility as a designer and forcing that decision onto users who don't care.
@@ -92,6 +786,54 @@ Power users work across multiple machines, reinstall systems, and upgrade freque
 - Anything where you'd recommend a default anyway
 
 If you're tempted to add an option because you can't decide which approach is better, that's a signal to think harder, not to defer. Someone else will ship a simpler product that makes the choice for users, and users will prefer it.
+
+
+---
+
+# Rule: Early Returns
+
+Use guard clauses to handle edge cases and invalid states at the top of a function, then return early. This flattens nested conditionals, makes the happy path obvious, and reduces cognitive load.
+
+```ts
+// Nested (hard to follow)
+function getDiscount(user: User | null) {
+  if (user) {
+    if (user.isActive) {
+      if (user.membership === "premium") {
+        return 0.2;
+      } else {
+        return 0.1;
+      }
+    }
+  }
+  return 0;
+}
+
+// Flat (guard clauses)
+function getDiscount(user: User | null) {
+  if (!user) return 0;
+  if (!user.isActive) return 0;
+  if (user.membership === "premium") return 0.2;
+  return 0.1;
+}
+```
+
+Guard clauses invert the condition and exit immediately, leaving the main logic at the top level with minimal indentation. Each guard documents a precondition the function requires.
+
+## When to use
+
+- Null/undefined checks
+- Permission or authorization checks
+- Validation of required preconditions
+- Empty collection checks (`if (items.length === 0) return []`)
+
+## When to reconsider
+
+- **Many guards accumulating**: If you need 5+ guard clauses, the function may have too many responsibilities—consider splitting it
+- **Guards with side effects**: Keep guards as pure condition checks; don't mix in logging, mutations, or complex logic
+- **Resource cleanup required**: In languages without RAII or `defer`, multiple returns can complicate cleanup (less relevant in JS/TS with garbage collection)
+
+The goal is clarity, not dogma. A single well-placed `if-else` is fine when both branches represent equally valid paths rather than a precondition check.
 
 
 ---
