@@ -1,4 +1,4 @@
-import { extractRawCredentials, getAccessToken } from "axauth";
+import { getAgentAccessToken } from "axauth";
 
 import type {
   Result,
@@ -21,31 +21,14 @@ export const chatGPTAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const credentials = extractRawCredentials("codex");
+    const accessToken = await getAgentAccessToken("codex");
 
-    if (!credentials) {
+    if (!accessToken) {
       return {
         ok: false,
         error: new ApiError(
           "No Codex credentials found. Run 'codex' to authenticate.",
         ),
-      };
-    }
-
-    if (credentials.type !== "oauth") {
-      return {
-        ok: false,
-        error: new ApiError(
-          "ChatGPT usage API requires OAuth authentication. API key authentication is not supported for usage data.",
-        ),
-      };
-    }
-
-    const accessToken = getAccessToken(credentials);
-    if (!accessToken) {
-      return {
-        ok: false,
-        error: new ApiError("Invalid OAuth credentials: missing access token."),
       };
     }
 
