@@ -250,19 +250,19 @@ Each tool in the a╳point suite has a specific responsibility:
 
 ### **axauth**
 *   **Goal**: Simplify credential management and token retrieval.
-*   **Role**: Securely installs and retrieves API keys and session tokens, providing a unified interface for authentication checks (`axauth list`) and token injection. Also provides isolated config execution via `axauth exec` for testing credentials in custom directories.
+*   **Role**: Securely installs and retrieves API keys and session tokens, providing a unified interface for authentication checks (`axauth list`), token retrieval (`axauth token`), and portable credential export/import.
 
 ### **axinstall**
 *   **Goal**: Make setting up AI agents effortless.
-*   **Role**: Auto-detects the user's package manager (npm, pnpm, yarn, brew) and system environment to install and upgrade agents correctly.
+*   **Role**: Auto-detects the user's package manager (npm, pnpm, yarn, brew, bun) and system environment to install agents correctly.
 
 ### **axrun**
 *   **Goal**: Execute agent workflows with normalized behavior and output.
 *   **Role**: The primary runner. It normalizes input prompts and streams output events (JSONL/TSV), effectively acting as a "driver" that makes different agents behave consistently in scripts and pipelines.
 
 ### **axusage**
-*   **Goal**: Provide visibility into API usage and costs.
-*   **Role**: Aggregates usage statistics (tokens, costs, request counts) across different providers, exporting them in standard formats (JSON, Prometheus) for monitoring.
+*   **Goal**: Provide visibility into API usage quotas.
+*   **Role**: Aggregates usage utilization percentages and quota reset times across providers, exporting them in standard formats (text, TSV, JSON, Prometheus) for monitoring.
 
 ## Supported Agents
 
@@ -273,6 +273,47 @@ Each tool in the a╳point suite has a specific responsibility:
 | Gemini CLI | `gemini` | @google/gemini-cli | Google |
 | OpenCode | `opencode` | opencode-ai | Sst |
 | Copilot CLI | `copilot` | @github/copilot | GitHub |
+
+### Environment Variables
+
+| Agent | API Key | OAuth Token |
+|-------|---------|-------------|
+| Claude | `ANTHROPIC_API_KEY` | `CLAUDE_CODE_OAUTH_TOKEN` |
+| Codex | `OPENAI_API_KEY` | — |
+| Gemini | `GEMINI_API_KEY` | — |
+| OpenCode | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | — |
+| Copilot | — | `COPILOT_GITHUB_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN` |
+
+### CI/CD Credentials
+
+For CI/CD pipelines, credentials can be exported and passed via environment variables:
+
+| Agent | Credential Env Var |
+|-------|--------------------|
+| Claude | `AX_CLAUDE_CREDENTIALS` |
+| Codex | `AX_CODEX_CREDENTIALS` |
+| Gemini | `AX_GEMINI_CREDENTIALS` |
+| OpenCode | `AX_OPENCODE_CREDENTIALS` |
+| Copilot | `AX_COPILOT_CREDENTIALS` |
+
+When `axrun` detects these variables, it automatically installs credentials to a temporary directory before running the agent.
+
+#### Claude: Long-Lasting OAuth Token (Recommended)
+
+Claude Code supports a long-lasting OAuth token for CI/CD, generated via `claude setup-token`. This is simpler than `AX_CLAUDE_CREDENTIALS` since it doesn't require credential file installation:
+
+```bash
+claude setup-token  # One-time setup, opens browser
+```
+
+Then use `CLAUDE_CODE_OAUTH_TOKEN` in your workflow:
+
+```yaml
+- name: Run Claude Review
+  env:
+    CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+  run: axrun --agent claude --prompt "Review the changes"
+```
 
 ## Workflow Examples
 
@@ -294,15 +335,19 @@ axconfig set --agent claude allow "read,glob,bash:git *"
 # Check authenticated agents
 axauth list
 
-# Export and test credentials in isolation
+# Get a token for programmatic use
+axauth token --agent claude
+
+# Export credentials for backup or transfer
 axauth export --agent gemini --output creds.json --no-password
+
+# Install credentials on another machine or in CI/CD
 axauth install-credentials --agent gemini --input creds.json \
   --config-dir /tmp/test/.gemini
-axauth run --agent gemini --config-dir /tmp/test/.gemini -- gemini "test"
 
 # CI/CD: pass credentials via conventional env var (auto-detected)
 export AX_GEMINI_CREDENTIALS=$(cat creds.json)
-axauth run --agent gemini --config-dir /tmp/test/.gemini -- gemini "test"
+axauth install-credentials --agent gemini --config-dir /tmp/test/.gemini
 ```
 
 ### 3. Execution (The "Pipe" Dream)
@@ -317,6 +362,31 @@ axshared agents list | awk -F'	' '$4 == "Anthropic"'
 
 # Export usage metrics to Prometheus
 axusage --format prometheus
+```
+
+### 4. CI/CD Integration
+Run agents in GitHub Actions or other CI/CD pipelines:
+
+```bash
+# Export credentials locally (one-time setup)
+axauth export --agent claude --output creds.json --no-password
+
+# Store creds.json contents as a repository secret (e.g., AX_CLAUDE_CREDENTIALS)
+
+# In CI/CD, axrun automatically detects and installs credentials
+axrun --agent claude --model opus \
+  --allow 'read,glob,grep,bash:git *' \
+  --prompt "Review this PR"
+```
+
+Example GitHub Actions workflow:
+```yaml
+- name: Run Claude Review
+  env:
+    AX_CLAUDE_CREDENTIALS: ${{ secrets.AX_CLAUDE_CREDENTIALS }}
+  run: |
+    npm install -g axrun @anthropic-ai/claude-code
+    axrun --agent claude --prompt "Review the changes"
 ```
 
 ## Repositories
@@ -369,7 +439,7 @@ Users should always understand what's happening. No magic, no hidden state, no s
 All command-line tools in a╳point must follow these rules.
 
 ### Naming
-See [BRANDING.md](./rules/axpoint/BRANDING.md) for complete naming conventions.
+See [BRANDING.md](./BRANDING.md) for complete naming conventions.
 
 - Pattern: `ax` + postfix (e.g., `axrun`, `axauth`)
 - Postfix: 3–10 lowercase ASCII characters
@@ -555,6 +625,28 @@ interface AgentCapabilities {
   canDenyRead: boolean;       // Can restrict read access
 }
 ```
+
+**Capability Matrix by Agent:**
+
+| Agent    | Tool Perms | Bash Patterns | Path Restrictions | Can Deny Read |
+|----------|:----------:|:-------------:|:-----------------:|:-------------:|
+| Claude   | ✓          | ✓             | ✓                 | ✓             |
+| Codex    | ✗ (sandbox)| ✓             | ✗                 | ✗             |
+| Gemini   | ✓          | ✓             | ✗                 | ✓             |
+| OpenCode | ✓          | ✓             | ✗                 | ✓             |
+| Copilot  | ✗          | ✗             | ✗                 | ✗             |
+
+*Note: Codex uses sandbox modes (`read-only`, `workspace-write`, `danger-full-access`) instead of per-tool permissions. Copilot uses runtime approval prompts and has no pre-configured permission model.*
+
+#### Permission Translation Behavior
+
+When translating abstract permissions to agent-specific formats, tools handle unsupported features asymmetrically:
+
+- **Allow rules with unsupported features**: Generate **warnings** (safe to ignore; the permission simply won't be enforced)
+- **Deny rules with unsupported features**: Generate **errors** (cannot proceed; security constraints would be silently dropped)
+
+This asymmetry ensures security constraints are never silently ignored. If you request `deny "bash:rm *"` for an agent that doesn't support bash patterns, axconfig will error rather than proceed without the protection.
+
 Tools validate requested features against capabilities and warn/error appropriately.
 
 ### Testing
@@ -585,9 +677,11 @@ type AxrunEvent =
 
 // Auth types discriminated by 'kind'
 type AuthType =
-  | { kind: "subscription"; tiers: string[] }
+  | { kind: "subscription"; tiers?: string[] }
   | { kind: "api-key"; envVar: string }
-  | { kind: "oauth-token"; envVar: string };
+  | { kind: "oauth-token"; envVar: string }
+  | { kind: "cli-auth"; cliTool: string }
+  | { kind: "cloud-credentials"; cloudProvider: "aws" | "gcp" | "azure" };
 ```
 Avoid bags of optional properties that allow impossible states.
 
@@ -696,6 +790,26 @@ For portable credential export:
 - **Key derivation**: PBKDF2 with SHA-256, 100,000 iterations
 - **Format**: JSON with base64-encoded ciphertext, salt, IV, and auth tag
 
+### CI/CD Credential Flow
+When running agents in CI/CD environments:
+
+1. **Export**: `axauth export --agent <agent> --output creds.json --no-password`
+2. **Store**: Add file contents as repository secret (e.g., `AX_CLAUDE_CREDENTIALS`)
+3. **Install**: `axrun` detects `AX_*_CREDENTIALS` env vars and auto-installs credentials
+
+#### Agent Config Directory Mechanisms
+Different agents use different mechanisms to locate credentials:
+
+| Agent | Config Directory Env Var | Notes |
+|-------|-------------------------|-------|
+| Claude | `CLAUDE_CONFIG_DIR` | Points directly to config dir |
+| Codex | `CODEX_HOME` | Points directly to config dir |
+| Gemini | `HOME` | Looks for `.gemini` subdirectory |
+| OpenCode | `XDG_CONFIG_HOME` | Looks for `opencode` subdirectory |
+| Copilot | None | Requires `COPILOT_GITHUB_TOKEN` env var |
+
+For agents without config directory env vars (like Copilot), axauth adapters must implement `credentialsToEnvironment()` to return the token as an environment variable that gets passed to the child process.
+
 ### Input Validation
 - Validate arguments and flags before spawning subprocesses
 - Use schema validation (Zod) for structured input
@@ -755,37 +869,6 @@ class PostgresReservationRepository implements ReservationRepository {
 - Inject infrastructure dependencies through constructors, not method parameters
 - Normalize error handling so callers don't need to catch implementation-specific exceptions
 - Prefer focused interfaces over "fat" interfaces with unrelated methods
-
-
----
-
-# Rule: Design Means Deciding
-
-Design is the art of making choices. When you add a configuration option instead of deciding, you're abdicating your responsibility as a designer and forcing that decision onto users who don't care.
-
-Every option you provide asks users to make a decision. Users care about their task—the document they're writing, the site they're building—not your software's internals. They don't care whether the database is optimized for size or speed, where the toolbar docks, or how the help index is built. Make these decisions for them.
-
-## Options dialogs are archaeological records
-
-An options dialog reveals design arguments that were never resolved. "Should we auto-save? Yes! No!" becomes a checkbox. The #ifdef goes in, the debate ends, and users inherit the cognitive burden forever. If you find yourself reaching for a config option, stop and decide instead.
-
-## Customization is overrated
-
-Power users work across multiple machines, reinstall systems, and upgrade frequently. Customizations don't propagate. Most "power users" do minimal customization because it's not worth re-doing after every reinstall or on every machine they touch.
-
-## When options are appropriate
-
-- **Choices integral to the user's work:** Document formatting, site appearance, output settings—anything directly related to what they're creating. Go deep here.
-- **Visual personalization that doesn't affect behavior:** Themes, skins, wallpapers. Users can ignore these and still get work done.
-
-## When to decide instead
-
-- Technical implementation details (indexing strategy, caching behavior)
-- UI chrome placement (toolbar position, panel arrangement)
-- Anything requiring a "wizard" to explain the choice
-- Anything where you'd recommend a default anyway
-
-If you're tempted to add an option because you can't decide which approach is better, that's a signal to think harder, not to defer. Someone else will ship a simpler product that makes the choice for users, and users will prefer it.
 
 
 ---
@@ -1604,45 +1687,6 @@ import { type User } from "./user";
 
 // After transpilation
 import "./user";
-```
-
-
----
-
-# Rule: Interface Extends
-
-ALWAYS prefer interfaces when modelling inheritance.
-
-The `&` operator has terrible performance in TypeScript. Only use it where `interface extends` is not possible.
-
-```ts
-// BAD
-
-type A = {
-  a: string;
-};
-
-type B = {
-  b: string;
-};
-
-type C = A & B;
-```
-
-```ts
-// GOOD
-
-interface A {
-  a: string;
-}
-
-interface B {
-  b: string;
-}
-
-interface C extends A, B {
-  // Additional properties can be added here
-}
 ```
 
 
