@@ -94,7 +94,14 @@ async function fetchFromVault(
     return undefined;
   }
 
-  return extractAccessToken(result.credentials);
+  const token = extractAccessToken(result.credentials);
+  if (!token) {
+    console.error(
+      `[axusage] Vault credentials for ${agentId}/${credentialName} missing access token. ` +
+        `Credential type: ${result.credentials.type}`,
+    );
+  }
+  return token;
 }
 
 /**
