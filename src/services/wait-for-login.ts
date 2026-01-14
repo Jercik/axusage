@@ -32,7 +32,12 @@ export async function waitForLogin(
         { signal: manualController.signal },
       )
         .then(() => "manual" as const)
-        .catch(() => "manual" as const)
+        .catch((error) => {
+          if (error instanceof Error && error.name === "AbortPromptError") {
+            return "manual" as const;
+          }
+          throw error;
+        })
     : undefined;
   if (shouldShowCountdown) {
     interval = setInterval(() => {

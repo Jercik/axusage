@@ -16,20 +16,18 @@ function resolveColorOverride(enabled?: boolean): "force" | "disable" | "auto" {
 
 const autoLevel = chalkBase.level;
 
-export let chalk = chalkBase;
+const chalk = chalkBase;
+export { chalk };
 
 export function configureColor(config: ColorConfig = {}): void {
   const mode = resolveColorOverride(config.enabled);
   if (mode === "disable") {
     chalkBase.level = 0;
-    chalk = chalkBase;
     return;
   }
   if (mode === "force") {
     chalkBase.level = 3;
-    chalk = chalkBase;
     return;
   }
   chalkBase.level = autoLevel;
-  chalk = chalkBase;
 }
