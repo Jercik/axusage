@@ -77,9 +77,13 @@ function getCredentialSourceConfig(): SourcesConfig {
     try {
       const parsed = SourcesConfig.parse(JSON.parse(environmentVariable));
       return parsed;
-    } catch {
+    } catch (error) {
+      const reason =
+        error instanceof SyntaxError
+          ? "invalid JSON syntax"
+          : "schema validation failed";
       console.error(
-        "Warning: AXUSAGE_SOURCES contains invalid JSON, falling back to config file",
+        `Warning: AXUSAGE_SOURCES ${reason}, falling back to config file`,
       );
     }
   }
