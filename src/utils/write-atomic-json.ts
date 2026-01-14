@@ -27,14 +27,30 @@ export async function writeAtomicJson(
   } catch (error) {
     const code = getErrorCode(error);
     if (code === "EPERM" || code === "EACCES" || code === "EEXIST") {
+      // Windows can reject rename over an existing file; fall back to a backup swap.
+      const backupPath = `${filePath}.${randomUUID()}.bak`;
+      let hasBackup = false;
       try {
-        await unlink(filePath);
+        await rename(filePath, backupPath);
+        hasBackup = true;
+      } catch {
+        // Best-effort: source file may not exist or be locked.
+      }
+
+      try {
         await rename(temporaryPath, filePath);
-        return;
       } catch (fallbackError) {
+        if (hasBackup) {
+          await rename(backupPath, filePath).catch(() => {});
+        }
         await unlink(temporaryPath).catch(() => {});
         throw fallbackError;
       }
+
+      if (hasBackup) {
+        await unlink(backupPath).catch(() => {});
+      }
+      return;
     }
     await unlink(temporaryPath).catch(() => {});
     throw error;

@@ -17,6 +17,9 @@ function describeLoginOutcome(outcome: LoginWaitOutcome): string {
     case "closed": {
       return "after the browser window closed";
     }
+    case "aborted": {
+      return "after prompt cancellation";
+    }
     case "selector": {
       return "after detecting a login signal";
     }

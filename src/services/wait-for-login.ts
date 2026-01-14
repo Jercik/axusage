@@ -10,6 +10,7 @@ export type LoginWaitOutcome =
   | "manual"
   | "timeout"
   | "closed"
+  | "aborted"
   | "skipped";
 
 function isTimeoutError(error: unknown): boolean {
@@ -82,13 +83,14 @@ export async function waitForLogin(
         .catch((error) => {
           if (
             error instanceof Error &&
-            (error.name === "AbortPromptError" ||
-              error.name === "AbortError" ||
-              error.name === "ExitPromptError")
+            (error.name === "AbortPromptError" || error.name === "AbortError")
           ) {
             // Expected when we cancel the prompt after a selector wins.
             // Returning "manual" keeps the promise resolved for the race.
             return "manual" as const;
+          }
+          if (error instanceof Error && error.name === "ExitPromptError") {
+            return "aborted" as const;
           }
           throw error;
         })

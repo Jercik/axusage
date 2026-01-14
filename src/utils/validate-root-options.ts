@@ -14,6 +14,7 @@ export function getRootOptionsError(
   options: RootOptions,
   formatSource?: string,
 ): string | undefined {
+  // Commander sets optional args to `true` when provided without a value.
   const authSelectionCount =
     Number(Boolean(options.authSetup)) +
     Number(options.authStatus !== undefined) +
