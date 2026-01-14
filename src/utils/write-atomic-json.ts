@@ -28,6 +28,7 @@ export async function writeAtomicJson(
     const code = getErrorCode(error);
     if (code === "EPERM" || code === "EACCES" || code === "EEXIST") {
       // Windows can reject rename over an existing file; fall back to a backup swap.
+      // Best-effort: not fully atomic and assumes a single writer.
       const backupPath = `${filePath}.${randomUUID()}.bak`;
       let hasBackup = false;
       try {
