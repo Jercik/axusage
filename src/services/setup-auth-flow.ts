@@ -58,7 +58,7 @@ export async function setupAuthInContext(
         : await verifySessionByFetching(context, config.verifyUrl);
       if (!ok) {
         throw new Error(
-          `Unable to verify session via ${config.verifyUrl} ${outcomeLabel}. Authentication was not saved.`,
+          `Unable to verify session via ${config.verifyUrl} ${outcomeLabel}. Authentication was not saved. Check network access and account entitlements, then retry.`,
         );
       }
     } else if (selectors.length > 0 && loginOutcome !== "selector") {
