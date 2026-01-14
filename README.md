@@ -248,8 +248,8 @@ You can perform the interactive login flow on a workstation (for example, a loca
    tar czf axusage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
    ```
 
-   Archive structure: `browser-contexts/claude-auth.json`, `browser-contexts/chatgpt-auth.json`,
-   `browser-contexts/gemini-auth.json`, plus matching `*-auth.meta.json` files.
+   Archive structure: `browser-contexts/github-copilot-auth.json` plus matching
+   `github-copilot-auth.meta.json` (CLI-auth services do not use browser contexts).
 
 ### 2. Transfer the browser contexts to the Linux server
 
