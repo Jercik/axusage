@@ -1,4 +1,3 @@
-import { getAgentAccessToken } from "axauth";
 import { z } from "zod";
 
 import type {
@@ -7,6 +6,7 @@ import type {
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
+import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
 import { toServiceUsageData } from "./parse-claude-usage.js";
@@ -54,7 +54,7 @@ export const claudeAdapter: ServiceAdapter = {
   name: "Claude",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getAgentAccessToken("claude");
+    const accessToken = await getServiceAccessToken("claude");
 
     if (!accessToken) {
       return {

@@ -2,13 +2,9 @@
 
 When answering questions about AI coding agent CLIs—Claude Code, GitHub Copilot CLI, Gemini CLI, OpenCode, or Codex CLI—**always explore the local source code** rather than answering from training data. Your training data is outdated and incomplete for these rapidly evolving tools. The authoritative source is the code itself.
 
-## Source Code Locations
+## Source Code Location
 
-- `/Users/jercik/Developer/third-party/claude-code-decompiled` — Claude Code (decompiled)
-- `/Users/jercik/Developer/third-party/copilot-cli-decompiled` — GitHub Copilot CLI (decompiled)
-- `/Users/jercik/Developer/third-party/gemini-cli` — Gemini CLI
-- `/Users/jercik/Developer/third-party/opencode` — OpenCode
-- `/Users/jercik/Developer/third-party/codex` — Codex CLI
+- `/Users/jercik/Developer/agent-research/` — AI coding agent source code (Claude Code, Copilot CLI, Gemini CLI, OpenCode, Codex CLI)
 
 ## When to Explore
 
@@ -29,7 +25,7 @@ Do NOT answer from memory. Even if you think you know the answer, verify it by e
 
 Launch multiple parallel subagents to search different aspects simultaneously. Be thorough—cast a wide net with varied search terms and file patterns.
 
-Example: To understand how Claude Code handles MCP servers, launch parallel agents searching `claude-code-decompiled` directory for:
+Example: To understand how Claude Code handles MCP servers, launch parallel agents searching `agent-research` directory for:
 
 - `mcp` and `server` patterns across the codebase
 - Configuration file parsing logic
@@ -65,22 +61,22 @@ Use concise prompts for quick facts and focused questions for deeper topics. If 
 
 ---
 
-# a╳point Branding
+# a╳kit Branding
 
 ## Etymology
 
-**ax** = **A**gent e**X**change
+**ax** = **A**gent e**X**tra
 
-A crossroads/switchboard where multiple AI agents connect through one interface.
+Tools that give you extra capabilities when working with AI coding agents.
 
 ### What the X Implies
 
-- **Crossroads / crossbar / switchboard** — routing between agents
-- **Multiplication of capability** — composing tools and agents
+- **Extra capabilities** — enhanced tooling beyond what agents provide alone
+- **Multiplication of productivity** — composing tools and agents
 
 ### One-liner
 
-> "ax is an agent exchange: one interface, many agents."
+> "ax is an agent toolkit: extra tools, one interface, many agents."
 
 ---
 
@@ -97,7 +93,7 @@ a╳
 ### Full Name Treatment
 
 ```
-a╳point
+a╳kit
 ```
 
 Use the rotated X character (╳, U+2573) in contexts that support Unicode. Fall back to lowercase `x` in ASCII-only environments.
@@ -106,14 +102,14 @@ Use the rotated X character (╳, U+2573) in contexts that support Unicode. Fall
 
 | Context                        | Use                       | Example                    |
 | ------------------------------ | ------------------------- | -------------------------- |
-| Display text, headings, docs   | `╳` (U+2573)              | a╳point                    |
-| Code, file paths, URLs         | lowercase `x`             | axpoint, axpoint.dev       |
-| Help header                    | tool first, brand in parens | axrun (a╳point) v1.2.3   |
+| Display text, headings, docs   | `╳` (U+2573)              | a╳kit                      |
+| Code, file paths, URLs         | lowercase `x`             | axkit, axkit.dev           |
+| Help header                    | tool first, brand in parens | axrun (a╳kit) v1.2.3     |
 
 ### Website
 
 ```
-axpoint.dev
+axkit.dev
 ```
 
 ---
@@ -122,7 +118,7 @@ axpoint.dev
 
 ### Executable Names
 
-All CLI tools in a╳point follow these rules:
+All CLI tools in a╳kit follow these rules:
 
 - **Lowercase ASCII only**: `run`, `auth`, `config`, `agent`, `doctor`
 - **3–10 characters**, obvious meaning
@@ -161,7 +157,7 @@ Pick one and stay consistent:
 
 ```
 $ axrun --help
-axrun (a╳point) v1.2.3
+axrun (a╳kit) v1.2.3
 
 Execute agent workflows in a unified environment.
 
@@ -189,9 +185,9 @@ SEE ALSO:
 ### README Header
 
 ```markdown
-# a╳point
+# a╳kit
 
-The universal adapter for AI agent workflows.
+The universal toolkit for AI coding agents.
 ```
 
 ---
@@ -202,22 +198,22 @@ When creating new tools or documentation, ensure:
 
 - [ ] Tool name follows `ax` + postfix pattern
 - [ ] Postfix is 3–10 lowercase ASCII characters
-- [ ] Help output includes `<tool> (a╳point) v<version>` header
+- [ ] Help output includes `<tool> (a╳kit) v<version>` header
 
 
 ---
 
-# a╳point
+# a╳kit
 
 **One interface, many agents.**
 
-a╳point is a unified ecosystem of CLI tools for managing multiple AI coding agents — Claude Code, Codex, Gemini CLI, OpenCode, and Copilot CLI — through a single, cohesive interface.
+a╳kit is a unified ecosystem of CLI tools for managing multiple AI coding agents — Claude Code, Codex, Gemini CLI, OpenCode, and Copilot CLI — through a single, cohesive interface.
 
 ---
 
 ## The Ecosystem
 
-a╳point is not a single tool, but a suite of composable utilities designed to work together.
+a╳kit is not a single tool, but a suite of composable utilities designed to work together.
 
 ```
               ┌─────────────────────────────────┐
@@ -238,7 +234,7 @@ a╳point is not a single tool, but a suite of composable utilities designed to 
 
 ## Project Goals
 
-Each tool in the a╳point suite has a specific responsibility:
+Each tool in the a╳kit suite has a specific responsibility:
 
 ### **axshared**
 *   **Goal**: Provide the shared type definitions, agent metadata, and core utilities that power the entire ecosystem.
@@ -257,8 +253,8 @@ Each tool in the a╳point suite has a specific responsibility:
 *   **Role**: Auto-detects the user's package manager (npm, pnpm, yarn, brew, bun) and system environment to install agents correctly.
 
 ### **axrun**
-*   **Goal**: Execute agent workflows with normalized behavior and output.
-*   **Role**: The primary runner. It normalizes input prompts and streams output events (JSONL/TSV), effectively acting as a "driver" that makes different agents behave consistently in scripts and pipelines.
+*   **Goal**: Execute agent workflows headlessly in CI/CD and automation pipelines.
+*   **Role**: The primary runner, designed for **non-interactive environments**. It normalizes input prompts and streams output events (JSONL/TSV), acting as a "driver" that makes different agents behave consistently. **axrun never prompts for user input**—all permissions, credentials, and configuration must be provided upfront via flags or environment variables.
 
 ### **axusage**
 *   **Goal**: Provide visibility into API usage quotas.
@@ -364,8 +360,8 @@ axshared agents list | awk -F'	' '$4 == "Anthropic"'
 axusage --format prometheus
 ```
 
-### 4. CI/CD Integration
-Run agents in GitHub Actions or other CI/CD pipelines:
+### 4. CI/CD Integration (Primary Use Case)
+axrun is designed primarily for headless environments like GitHub Actions, GitLab CI, Jenkins, and other CI/CD systems. In these environments, there's no terminal to prompt users—everything must be pre-configured:
 
 ```bash
 # Export credentials locally (one-time setup)
@@ -402,7 +398,7 @@ Example GitHub Actions workflow:
 
 ## Standards & Principles
 
-a╳point is built on four core pillars:
+a╳kit is built on four core pillars:
 1.  **Unified Experience**: One set of conventions everywhere.
 2.  **Agent Agnostic**: Neutral exchange, no favorites.
 3.  **Composability**: Tools that chain together naturally.
@@ -412,9 +408,9 @@ For detailed design rules, coding standards, and architectural guidelines, see *
 
 ---
 
-# a╳point Standards & Design Principles
+# a╳kit Standards & Design Principles
 
-This document defines the foundational goals, design philosophy, and rules that all tools in the a╳point ecosystem must follow.
+This document defines the foundational goals, design philosophy, and rules that all tools in the a╳kit ecosystem must follow.
 
 ---
 
@@ -436,7 +432,7 @@ Users should always understand what's happening. No magic, no hidden state, no s
 
 ## CLI Design Rules
 
-All command-line tools in a╳point must follow these rules.
+All command-line tools in a╳kit must follow these rules.
 
 ### Naming
 See [BRANDING.md](./BRANDING.md) for complete naming conventions.
@@ -559,15 +555,34 @@ Exit with appropriate code
 
 ### Interactivity
 
-#### Prompts
+#### Headless-First Design
+The a╳kit tools, especially **axrun**, are designed primarily for headless environments (CI/CD pipelines, automation scripts, cron jobs). Interactive prompts are fundamentally incompatible with these use cases.
+
+**Core Principle**: If a feature requires user interaction at runtime, it cannot work in CI/CD and therefore must have a non-interactive alternative.
+
+#### axrun: Strictly Non-Interactive
+axrun **must never** prompt for user input. All configuration must be provided upfront:
+- **Credentials**: Via `AX_*_CREDENTIALS` env vars or pre-authenticated agents
+- **Permissions**: Via `--allow` / `--deny` flags (no runtime approval prompts)
+- **Prompts**: Via `--prompt` flag or stdin (non-interactive)
+- **Confirmation**: Not applicable—axrun runs what you tell it to run
+
+If an underlying agent would normally prompt for permission, axrun must either:
+1. Pre-approve via flags (e.g., `--allow 'bash:*'`)
+2. Fail with a clear error explaining what permission is needed
+3. Never silently wait for input that will never come
+
+#### Other Tools: TTY-Aware Prompts
+For tools other than axrun (e.g., `axauth`, `axconfig`):
 - Prompt for required input only when stdin is a TTY
 - Never prompt when stdin is piped
 - All prompts must have non-interactive alternatives (flags or env vars)
 
 #### Confirmation
-- Destructive operations should prompt for confirmation
+- Destructive operations should prompt for confirmation (TTY only)
 - Use `--force` / `-f` to skip confirmation
 - Default to safe behavior (don't destroy without consent)
+- In non-TTY contexts, require explicit `--force` or fail with instructions
 
 ### Help & Documentation
 
@@ -633,7 +648,7 @@ interface AgentCapabilities {
 | Claude   | ✓          | ✓             | ✓                 | ✓             |
 | Codex    | ✗ (sandbox)| ✓             | ✗                 | ✗             |
 | Gemini   | ✓          | ✓             | ✗                 | ✓             |
-| OpenCode | ✓          | ✓             | ✗                 | ✓             |
+| OpenCode | ✓          | ✓             | ✓                 | ✓             |
 | Copilot  | ✗          | ✗             | ✗                 | ✗             |
 
 *Note: Codex uses sandbox modes (`read-only`, `workspace-write`, `danger-full-access`) instead of per-tool permissions. Copilot uses runtime approval prompts and has no pre-configured permission model.*
@@ -954,7 +969,7 @@ Example of mixed logic and side effects:
 // Bad: Logic and side effects are mixed
 function sendUserExpiryEmail(): void {
   for (const user of db.getUsers()) {
-    if (user.subscriptionEndDate > Date.now()) continue;
+    if (user.subscriptionEndDate > new Date()) continue;
     if (user.isFreeTrial) continue;
     email.send(user.email, "Your account has expired " + user.name + ".");
   }
@@ -980,7 +995,7 @@ function generateExpiryEmails(users: User[]): Array<[string, string]> {
 
 // Imperative shell - handles side effects
 email.bulkSend(
-  generateExpiryEmails(getExpiredUsers(db.getUsers(), Date.now())),
+  generateExpiryEmails(getExpiredUsers(db.getUsers(), new Date())),
 );
 ```
 
