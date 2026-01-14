@@ -79,7 +79,7 @@ function migrateLegacySources(config: Conf<{ sources?: SourcesConfig }>): void {
   const parsed = SourcesConfig.safeParse(legacySources);
   if (!parsed.success) {
     console.error(
-      "Warning: Legacy axusage config contains invalid sources; skipping migration",
+      "Warning: Legacy axusage config contains invalid sources; skipping migration. Check your legacy config and migrate manually if needed.",
     );
     return;
   }

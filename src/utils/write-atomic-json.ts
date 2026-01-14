@@ -15,7 +15,7 @@ export async function writeAtomicJson(
 ): Promise<void> {
   const temporaryPath = `${filePath}.${randomUUID()}.tmp`;
   const writeOptions: Parameters<typeof writeFile>[2] =
-    mode === undefined ? "utf8" : { encoding: "utf8" as BufferEncoding, mode };
+    mode === undefined ? "utf8" : { encoding: "utf8", mode };
   await writeFile(temporaryPath, JSON.stringify(data), writeOptions);
   if (mode !== undefined) {
     await chmod(temporaryPath, mode).catch(() => {
@@ -28,7 +28,8 @@ export async function writeAtomicJson(
     const code = getErrorCode(error);
     if (code === "EPERM" || code === "EACCES" || code === "EEXIST") {
       // Windows can reject rename over an existing file; fall back to a backup swap.
-      // Best-effort: not fully atomic and assumes a single writer.
+      // Best-effort: not fully atomic and assumes a single writer. Backups are
+      // cleaned up by auth-clear when possible.
       const backupPath = `${filePath}.${randomUUID()}.bak`;
       let hasBackup = false;
       try {

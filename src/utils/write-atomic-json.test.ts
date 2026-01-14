@@ -53,4 +53,57 @@ describe("writeAtomicJson", () => {
     vi.unmock("node:fs/promises");
     vi.unmock("node:crypto");
   });
+
+  it("falls back to a backup swap when rename errors match Windows cases", async () => {
+    vi.resetModules();
+
+    const writeFile = vi.fn(() => Promise.resolve());
+    const chmod = vi.fn(() => Promise.resolve());
+    const unlink = vi.fn(() => Promise.resolve());
+    const rename = vi
+      .fn()
+      .mockRejectedValueOnce(
+        Object.assign(new Error("rename failed"), { code: "EPERM" }),
+      )
+      .mockImplementationOnce(async () => {})
+      .mockImplementationOnce(async () => {});
+
+    vi.doMock("node:fs/promises", () => ({
+      writeFile,
+      chmod,
+      rename,
+      unlink,
+    }));
+    const randomUUID = vi
+      .fn()
+      .mockReturnValueOnce("temp")
+      .mockReturnValueOnce("backup");
+    vi.doMock("node:crypto", () => ({
+      randomUUID,
+    }));
+
+    const { writeAtomicJson } = await import("./write-atomic-json.js");
+
+    await writeAtomicJson("/tmp/target.json", { ok: true }, 0o600);
+
+    expect(rename).toHaveBeenNthCalledWith(
+      1,
+      "/tmp/target.json.temp.tmp",
+      "/tmp/target.json",
+    );
+    expect(rename).toHaveBeenNthCalledWith(
+      2,
+      "/tmp/target.json",
+      "/tmp/target.json.backup.bak",
+    );
+    expect(rename).toHaveBeenNthCalledWith(
+      3,
+      "/tmp/target.json.temp.tmp",
+      "/tmp/target.json",
+    );
+    expect(unlink).toHaveBeenCalledWith("/tmp/target.json.backup.bak");
+
+    vi.unmock("node:fs/promises");
+    vi.unmock("node:crypto");
+  });
 });
