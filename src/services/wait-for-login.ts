@@ -124,6 +124,10 @@ export async function waitForLogin(
               throw error;
             })
         : undefined;
+    if (selectorPromise) {
+      // Avoid unhandled rejections if the manual prompt wins the race.
+      void selectorPromise.catch(() => {});
+    }
     const raceTargets: Array<Promise<LoginWaitOutcome>> = [];
     if (manualPromise) raceTargets.push(manualPromise);
     if (selectorPromise) raceTargets.push(selectorPromise);

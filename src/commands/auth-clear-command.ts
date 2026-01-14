@@ -1,5 +1,6 @@
 import { confirm } from "@inquirer/prompts";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
 import trash from "trash";
 import { validateService } from "../services/supported-service.js";
 import {
@@ -25,6 +26,22 @@ function isPromptCancellation(error: unknown): boolean {
   );
 }
 
+function collectRelatedArtifacts(filePath: string): string[] {
+  const directory = path.dirname(filePath);
+  const baseName = path.basename(filePath);
+  try {
+    return readdirSync(directory)
+      .filter(
+        (entry) =>
+          entry.startsWith(`${baseName}.`) &&
+          (entry.endsWith(".bak") || entry.endsWith(".tmp")),
+      )
+      .map((entry) => path.join(directory, entry));
+  } catch {
+    return [];
+  }
+}
+
 export async function authClearCommand(
   options: AuthClearOptions,
 ): Promise<void> {
@@ -33,7 +50,11 @@ export async function authClearCommand(
   const storage = getStorageStatePathFor(dataDirectory, service);
   const meta = getAuthMetaPathFor(dataDirectory, service);
   try {
-    const targets = [storage, meta].filter((p) => existsSync(p));
+    const artifactTargets = [storage, meta].filter((p) => existsSync(p));
+    const backupTargets = [storage, meta].flatMap((filePath) =>
+      collectRelatedArtifacts(filePath),
+    );
+    const targets = [...new Set([...artifactTargets, ...backupTargets])];
     if (targets.length === 0) {
       console.error(
         chalk.gray(`\nNo saved authentication found for ${service}.`),

@@ -10,6 +10,7 @@ vi.mock("trash", () => ({
 
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
+  readdirSync: vi.fn(),
 }));
 
 vi.mock("../services/supported-service.js", () => ({
@@ -29,11 +30,12 @@ vi.spyOn(console, "error").mockImplementation(() => {});
 
 import { confirm } from "@inquirer/prompts";
 import trash from "trash";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { authClearCommand } from "./auth-clear-command.js";
 
 const mockTrash = vi.mocked(trash);
 const mockExistsSync = vi.mocked(existsSync);
+const mockReaddirSync = vi.mocked(readdirSync);
 const mockConfirm = vi.mocked(confirm);
 
 const originalStdinIsTTY = process.stdin.isTTY;
@@ -55,6 +57,7 @@ describe("authClearCommand", () => {
     vi.clearAllMocks();
     process.exitCode = undefined;
     setTtyState(true, true);
+    mockReaddirSync.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -78,6 +81,19 @@ describe("authClearCommand", () => {
     await authClearCommand({ service: "claude", force: true });
 
     expect(mockTrash).not.toHaveBeenCalled();
+  });
+
+  it("clears backup artifacts even when primary files are missing", async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue([
+      "storage.json.abc.bak",
+    ] as unknown as ReturnType<typeof readdirSync>);
+
+    await authClearCommand({ service: "claude", force: true });
+
+    expect(mockTrash).toHaveBeenCalledWith(["/tmp/storage.json.abc.bak"], {
+      glob: false,
+    });
   });
 
   it("fails when confirmation is required but --interactive is missing", async () => {

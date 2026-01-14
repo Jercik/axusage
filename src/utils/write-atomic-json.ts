@@ -42,7 +42,11 @@ export async function writeAtomicJson(
         await rename(temporaryPath, filePath);
       } catch (fallbackError) {
         if (hasBackup) {
-          await rename(backupPath, filePath).catch(() => {});
+          await rename(backupPath, filePath).catch(() => {
+            console.warn(
+              `Warning: Failed to restore backup from ${backupPath}`,
+            );
+          });
         }
         await unlink(temporaryPath).catch(() => {});
         throw fallbackError;
