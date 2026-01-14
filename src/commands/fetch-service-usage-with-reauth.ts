@@ -23,7 +23,7 @@ export async function fetchServiceUsageWithAutoReauth(
   if (isAuthFailure(result)) {
     console.error(
       chalk.yellow(
-        `⚠ Authentication failed for ${serviceName}. Opening browser to re-authenticate...`,
+        `⚠ Authentication failed for ${serviceName}. Attempting to re-authenticate...`,
       ),
     );
 

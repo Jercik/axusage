@@ -11,21 +11,26 @@ export async function waitForLogin(
 ): Promise<void> {
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
-  // Prevent unhandled rejections if the page closes before all waiters finish
   const waiters = selectors.map((sel) =>
-    page.waitForSelector(sel, { timeout: timeoutMs }).catch(() => {
-      // Intentionally ignored: the page may navigate/close before selector resolves
-    }),
+    page.waitForSelector(sel, { timeout: timeoutMs }),
   );
   const shouldShowCountdown = process.stderr.isTTY;
   let interval: NodeJS.Timeout | undefined;
-  let manualPromise: Promise<string> | undefined;
-  if (process.stdin.isTTY && process.stdout.isTTY) {
-    manualPromise = input({
-      message: "Press Enter to continue without waiting for login...",
-      default: "",
-    }).catch(() => "");
-  }
+  const manualController =
+    process.stdin.isTTY && process.stdout.isTTY
+      ? new AbortController()
+      : undefined;
+  const manualPromise = manualController
+    ? input(
+        {
+          message: "Press Enter to continue without waiting for login...",
+          default: "",
+        },
+        { signal: manualController.signal },
+      )
+        .then(() => {})
+        .catch(() => {})
+    : undefined;
   if (shouldShowCountdown) {
     interval = setInterval(() => {
       const remaining = deadline - Date.now();
@@ -43,15 +48,19 @@ export async function waitForLogin(
     }, 60_000);
   }
   try {
-    const raceTargets =
-      manualPromise && waiters.length > 0
-        ? [manualPromise, ...waiters]
-        : manualPromise
-          ? [manualPromise]
-          : waiters;
+    const selectorPromise =
+      waiters.length > 0
+        ? Promise.any(waiters)
+            .then(() => {})
+            .catch(() => {})
+        : undefined;
+    const raceTargets: Array<Promise<void>> = [];
+    if (manualPromise) raceTargets.push(manualPromise);
+    if (selectorPromise) raceTargets.push(selectorPromise);
     if (raceTargets.length === 0) return;
     await Promise.race(raceTargets);
   } finally {
     if (interval) clearInterval(interval);
+    manualController?.abort();
   }
 }

@@ -1,13 +1,10 @@
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
 import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
-import type {
-  AuthCliService,
-  CliDependency,
-} from "../utils/check-cli-dependency.js";
+import type { AuthCliService } from "../utils/check-cli-dependency.js";
 import {
-  checkCliDependency,
-  getAuthCliDependency,
+  ensureAuthCliDependency,
+  reportMissingCliDependency,
 } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
 
@@ -53,27 +50,10 @@ export function isAuthFailure(
   );
 }
 
-function reportMissingCliDependency(
-  dependency: CliDependency,
-  path: string,
-): void {
-  console.error(
-    chalk.red(`Error: Required dependency '${dependency.command}' not found.`),
-  );
-  console.error(chalk.gray(`Looked for: ${path}`));
-  console.error(chalk.gray("\nTo fix, either:"));
-  console.error(chalk.gray(`  1. Install it: ${dependency.installHint}`));
-  console.error(
-    chalk.gray(`  2. Set ${dependency.envVar}=/path/to/${dependency.command}`),
-  );
-  console.error(chalk.gray("Try 'axusage --help' for requirements."));
-}
-
 function ensureCliDependency(cliService: AuthCliService): string | undefined {
-  const dependency = getAuthCliDependency(cliService);
-  const result = checkCliDependency(dependency);
+  const result = ensureAuthCliDependency(cliService);
   if (!result.ok) {
-    reportMissingCliDependency(dependency, result.path);
+    reportMissingCliDependency(result.dependency, result.path);
     return undefined;
   }
   return result.path;

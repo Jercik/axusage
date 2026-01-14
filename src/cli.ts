@@ -17,7 +17,6 @@ type RootOptions = UsageCommandOptions & {
   readonly authStatus?: string | boolean;
   readonly authClear?: string;
   readonly force?: boolean;
-  readonly color?: boolean;
 };
 
 const hasNoColorFlag = process.argv.includes("--no-color");
@@ -56,7 +55,7 @@ const program = new Command()
   .option("-f, --force", "skip confirmation for destructive actions")
   .addHelpText(
     "after",
-    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # TSV output for piping to cut, awk, sort\n  ${packageJson.name} --format=tsv | tail -n +2 | awk -F'\\t' '{print $1, $4"%"}'\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep axusage_utilization_percent\n\n  # Check authentication status for all services\n  ${packageJson.name} --auth-status\n\nStorage: ${getBrowserContextsDirectory()}\n(respects XDG_DATA_HOME and platform defaults)\n\nRequires: claude, codex, gemini (CLI auth); Playwright Chromium (GitHub Copilot auth)\nOverride CLI paths: AXUSAGE_CLAUDE_PATH, AXUSAGE_CODEX_PATH, AXUSAGE_GEMINI_PATH\nPlaywright: PLAYWRIGHT_BROWSERS_PATH\n`,
+    `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format=json\n\n  # TSV output for piping to cut, awk, sort\n  ${packageJson.name} --format=tsv | tail -n +2 | awk -F'\\t' '{print $1, $4"%"}'\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format=prometheus | grep axusage_utilization_percent\n\n  # Check authentication status for all services\n  ${packageJson.name} --auth-status\n\nStorage: ${getBrowserContextsDirectory()}\n(respects XDG_DATA_HOME and platform defaults)\n\nRequires: claude, codex (ChatGPT), gemini (CLI auth); Playwright Chromium (GitHub Copilot auth)\nOverride CLI paths: AXUSAGE_CLAUDE_PATH, AXUSAGE_CODEX_PATH, AXUSAGE_GEMINI_PATH\nPlaywright: PLAYWRIGHT_BROWSERS_PATH\n`,
   );
 
 function fail(message: string): void {

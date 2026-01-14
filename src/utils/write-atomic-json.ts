@@ -1,4 +1,4 @@
-import { chmod, rename, writeFile } from "node:fs/promises";
+import { chmod, rename, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 
 export async function writeAtomicJson(
@@ -7,9 +7,18 @@ export async function writeAtomicJson(
   mode?: number,
 ): Promise<void> {
   const temporaryPath = `${filePath}.${randomUUID()}.tmp`;
-  await writeFile(temporaryPath, JSON.stringify(data), "utf8");
+  const writeOptions: Parameters<typeof writeFile>[2] =
+    mode === undefined ? "utf8" : { encoding: "utf8" as BufferEncoding, mode };
+  await writeFile(temporaryPath, JSON.stringify(data), writeOptions);
   if (mode !== undefined) {
-    await chmod(temporaryPath, mode).catch(() => {});
+    await chmod(temporaryPath, mode).catch(() => {
+      // Best-effort: some filesystems ignore chmod, but the mode was set at write.
+    });
   }
-  await rename(temporaryPath, filePath);
+  try {
+    await rename(temporaryPath, filePath);
+  } catch (error) {
+    await unlink(temporaryPath).catch(() => {});
+    throw error;
+  }
 }

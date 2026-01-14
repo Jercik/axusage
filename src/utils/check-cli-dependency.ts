@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { chalk } from "./color.js";
 
 type CliDependency = {
   readonly command: string;
@@ -48,4 +49,33 @@ export function checkCliDependency(dep: CliDependency): {
   }
 }
 
-export type { CliDependency, AuthCliService };
+export function ensureAuthCliDependency(
+  service: AuthCliService,
+):
+  | { ok: true; path: string }
+  | { ok: false; dependency: CliDependency; path: string } {
+  const dependency = getAuthCliDependency(service);
+  const result = checkCliDependency(dependency);
+  if (result.ok) return { ok: true, path: result.path };
+  return { ok: false, dependency, path: result.path };
+}
+
+export function reportMissingCliDependency(
+  dependency: CliDependency,
+  path: string,
+): void {
+  console.error(
+    chalk.red(`Error: Required dependency '${dependency.command}' not found.`),
+  );
+  console.error(chalk.gray(`Looked for: ${path}`));
+  console.error(chalk.gray("\nTo fix, either:"));
+  console.error(chalk.gray(`  1. Install it: ${dependency.installHint}`));
+  console.error(
+    chalk.gray(`  2. Set ${dependency.envVar}=/path/to/${dependency.command}`),
+  );
+  console.error(
+    chalk.gray("Try 'axusage --help' for requirements and overrides."),
+  );
+}
+
+export type { AuthCliService };
