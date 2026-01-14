@@ -16,6 +16,7 @@ axusage --auth-setup github-copilot --interactive
 
 # Check authentication status
 axusage --auth-status
+# For CLI-auth services, this reports CLI availability; use the CLI to confirm login.
 
 # Fetch usage
 axusage
@@ -61,6 +62,9 @@ axusage --auth-setup github-copilot --interactive
 # Check authentication status
 axusage --auth-status
 ```
+
+`--auth-status` reports browser-auth status for GitHub Copilot and CLI availability
+for Claude/ChatGPT/Gemini. Use `claude`, `codex`, or `gemini` to confirm CLI login.
 
 When you run `axusage --auth-setup github-copilot --interactive`, a browser window will open.
 Simply log in to GitHub as you normally would. Your authentication will be
@@ -204,7 +208,8 @@ Use `axusage` when you need a quick, scriptable snapshot of API usage across Cla
 ### "No saved authentication" error
 
 - Check which services are authenticated: `axusage --auth-status`.
-- Set up the missing service: `axusage --auth-setup <service> --interactive`.
+- For GitHub Copilot, set up the missing service: `axusage --auth-setup <service> --interactive`.
+- For Claude/ChatGPT/Gemini, run the provider CLI to authenticate.
 
 ### Sessions expire
 
@@ -233,6 +238,8 @@ You can perform the interactive login flow on a workstation (for example, a loca
    ```bash
    axusage --auth-status
    ```
+
+   For CLI-auth services, run `claude`, `codex`, or `gemini` to confirm login.
 
 3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
 

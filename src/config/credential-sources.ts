@@ -59,8 +59,32 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
         },
       },
     });
+    migrateLegacySources(configInstance);
   }
   return configInstance;
+}
+
+function migrateLegacySources(config: Conf<{ sources?: SourcesConfig }>): void {
+  if (config.get("sources") !== undefined) return;
+
+  const legacyConfig = new Conf<{ sources?: SourcesConfig }>({
+    projectName: "axusage",
+  });
+  const legacySources = legacyConfig.get("sources");
+  if (!legacySources) return;
+
+  const parsed = SourcesConfig.safeParse(legacySources);
+  if (!parsed.success) {
+    console.error(
+      "Warning: Legacy axusage config contains invalid sources; skipping migration",
+    );
+    return;
+  }
+
+  config.set("sources", parsed.data);
+  console.error(
+    "Migrated credential source configuration from legacy axusage-nodejs config path.",
+  );
 }
 
 /**

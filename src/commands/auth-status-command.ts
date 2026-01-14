@@ -5,6 +5,11 @@ import {
 } from "../services/supported-service.js";
 import { getStorageStatePathFor } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
+import type { AuthCliService } from "../utils/check-cli-dependency.js";
+import {
+  checkCliDependency,
+  getAuthCliDependency,
+} from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
 
 type AuthStatusOptions = { readonly service?: string };
@@ -14,11 +19,26 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     ? [validateService(options.service)]
     : SUPPORTED_SERVICES;
 
+  const cliAuthServices = new Set(["claude", "chatgpt", "gemini"]);
   const dataDirectory = getBrowserContextsDirectory();
 
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
   for (const service of servicesToCheck) {
+    if (cliAuthServices.has(service)) {
+      const dependency = getAuthCliDependency(service as AuthCliService);
+      const result = checkCliDependency(dependency);
+      const status = result.ok
+        ? chalk.yellow("↪ CLI-managed")
+        : chalk.red("✗ CLI missing");
+      console.log(`${chalk.bold(service)}: ${status}`);
+      console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
+      console.log(
+        `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${dependency.command} to check/login`)}`,
+      );
+      continue;
+    }
+
     const storagePath = getStorageStatePathFor(dataDirectory, service);
     const hasAuth = existsSync(storagePath);
     const status = hasAuth
@@ -28,8 +48,11 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
   }
 
-  const allAuthenticated = servicesToCheck.every((s) =>
-    existsSync(getStorageStatePathFor(dataDirectory, s)),
+  const browserServices = servicesToCheck.filter(
+    (service) => !cliAuthServices.has(service),
+  );
+  const allAuthenticated = browserServices.every((service) =>
+    existsSync(getStorageStatePathFor(dataDirectory, service)),
   );
   if (!allAuthenticated) {
     console.error(
