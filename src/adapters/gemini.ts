@@ -1,5 +1,3 @@
-import { getAgentAccessToken } from "axauth";
-
 import type {
   Result,
   ServiceAdapter,
@@ -10,6 +8,7 @@ import {
   fetchGeminiQuota,
   fetchGeminiProject,
 } from "../services/gemini-api.js";
+import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { toServiceUsageData } from "./parse-gemini-usage.js";
 
 /**
@@ -22,7 +21,7 @@ export const geminiAdapter: ServiceAdapter = {
   name: "Gemini",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getAgentAccessToken("gemini");
+    const accessToken = await getServiceAccessToken("gemini");
 
     if (!accessToken) {
       return {

@@ -1,11 +1,10 @@
-import { getAgentAccessToken } from "axauth";
-
 import type {
   Result,
   ServiceAdapter,
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
+import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "../types/chatgpt.js";
 import { toServiceUsageData } from "./parse-chatgpt-usage.js";
 
@@ -21,7 +20,7 @@ export const chatGPTAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getAgentAccessToken("codex");
+    const accessToken = await getServiceAccessToken("chatgpt");
 
     if (!accessToken) {
       return {
