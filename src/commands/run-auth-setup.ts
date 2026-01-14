@@ -121,6 +121,7 @@ export async function runAuthSetup(
 
   const manager = new BrowserAuthManager({ headless: false });
 
+  let setupPromise: Promise<void> | undefined;
   let timeoutId: NodeJS.Timeout | undefined;
 
   try {
@@ -128,7 +129,7 @@ export async function runAuthSetup(
       chalk.blue(`\nOpening browser for ${service} authentication...\n`),
     );
 
-    const setupPromise = manager.setupAuth(service);
+    setupPromise = manager.setupAuth(service);
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error("Authentication setup timed out after 5 minutes"));
@@ -150,6 +151,10 @@ export async function runAuthSetup(
     return false;
   } finally {
     clearTimeout(timeoutId);
+    if (setupPromise) {
+      // Avoid unhandled rejections if the timeout wins the race.
+      void setupPromise.catch(() => {});
+    }
     await manager.close();
   }
 }

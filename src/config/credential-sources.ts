@@ -59,6 +59,7 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
         },
       },
     });
+    // Migration runs once per process when the config is first initialized.
     migrateLegacySources(configInstance);
   }
   return configInstance;

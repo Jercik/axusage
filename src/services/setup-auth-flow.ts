@@ -46,6 +46,12 @@ export async function setupAuthInContext(
     const loginOutcome = await waitForLoginForService(page, selectors);
     const outcomeLabel = describeLoginOutcome(loginOutcome);
 
+    if (loginOutcome === "aborted") {
+      throw new Error(
+        "Authentication was canceled. Authentication was not saved.",
+      );
+    }
+
     if (config.verifyUrl) {
       const ok = config.verifyFunction
         ? await config.verifyFunction(context, config.verifyUrl)

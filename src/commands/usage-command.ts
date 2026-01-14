@@ -131,7 +131,8 @@ export async function usageCommand(
     console.error(
       chalk.gray(
         `Authentication required for: ${list}. ` +
-          "Run 'axusage --auth-setup <service> --interactive' or re-run with '--interactive' to re-authenticate during fetch.",
+          "For GitHub Copilot, run 'axusage --auth-setup github-copilot --interactive'. " +
+          "For CLI-auth services, run the provider CLI (claude/codex/gemini), or re-run with '--interactive' to re-authenticate during fetch.",
       ),
     );
     if (successes.length > 0) {

@@ -84,4 +84,31 @@ describe("setupAuthInContext", () => {
     expect(mockWriteAtomicJson).not.toHaveBeenCalled();
     expect(closeMock).toHaveBeenCalled();
   });
+
+  it("throws when authentication is canceled", async () => {
+    mockGetServiceAuthConfig.mockReturnValue({
+      url: "https://example.com/login",
+      waitForSelectors: ["#logged-in"],
+    });
+    mockWaitForLogin.mockResolvedValue("aborted");
+
+    const closeMock = vi.fn();
+    const page = {
+      goto: vi.fn(),
+      evaluate: vi.fn().mockResolvedValue("agent"),
+      close: closeMock,
+    } as unknown as Page;
+    const context = {
+      newPage: vi.fn().mockResolvedValue(page),
+      storageState: vi.fn().mockResolvedValue({}),
+    } as unknown as BrowserContext;
+
+    await expect(
+      setupAuthInContext("github-copilot", context, "/tmp/state.json"),
+    ).rejects.toThrow(
+      "Authentication was canceled. Authentication was not saved.",
+    );
+    expect(mockWriteAtomicJson).not.toHaveBeenCalled();
+    expect(closeMock).toHaveBeenCalled();
+  });
 });

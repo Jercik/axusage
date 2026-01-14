@@ -43,7 +43,7 @@ const program = new Command()
   )
   .option(
     "--auth-setup <service>",
-    "set up browser-based authentication for a service",
+    "set up authentication for a service (CLI or browser-based)",
   )
   .option("--auth-status [service]", "check authentication status for services")
   .option(

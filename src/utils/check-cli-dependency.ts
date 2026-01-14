@@ -42,7 +42,7 @@ export function getAuthCliDependency(service: AuthCliService): CliDependency {
 }
 
 function resolveCliDependencyPath(dep: CliDependency): string {
-  const environmentValue = process.env[dep.envVar];
+  const environmentValue = process.env[dep.envVar]?.trim();
   // Treat empty env vars as unset to fall back to the default command.
   if (environmentValue) return environmentValue;
   return dep.command;
