@@ -33,7 +33,9 @@ export function getAuthCliDependency(service: AuthCliService): CliDependency {
 }
 
 function resolveCliDependencyPath(dep: CliDependency): string {
-  return process.env[dep.envVar] ?? dep.command;
+  const environmentValue = process.env[dep.envVar];
+  if (environmentValue) return environmentValue;
+  return dep.command;
 }
 
 export function checkCliDependency(dep: CliDependency): {

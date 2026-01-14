@@ -50,7 +50,7 @@ const program = new Command()
   .option("--auth-status [service]", "check authentication status for services")
   .option(
     "--auth-clear <service>",
-    "clear saved browser authentication for a service",
+    "clear saved browser authentication for a service (moves files to system Trash)",
   )
   .option("-f, --force", "skip confirmation for destructive actions")
   .addHelpText(

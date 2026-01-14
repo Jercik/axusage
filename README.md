@@ -88,6 +88,8 @@ Security notes:
 axusage --auth-clear github-copilot --interactive
 ```
 
+This moves the saved browser files to your system Trash/Recycle Bin (recoverable).
+
 Use `--force` to skip confirmation in scripts.
 
 Browser installation:

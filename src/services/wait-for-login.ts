@@ -5,21 +5,24 @@ import { input } from "@inquirer/prompts";
 /**
  * Waits until one of the selectors appears on the page, or the user presses Enter to continue.
  */
+export type LoginWaitOutcome = "selector" | "manual" | "timeout" | "skipped";
+
 export async function waitForLogin(
   page: Page,
   selectors: readonly string[],
-): Promise<void> {
+): Promise<LoginWaitOutcome> {
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
+  const canPrompt = process.stdin.isTTY && process.stdout.isTTY;
+  if (!canPrompt && selectors.length === 0) {
+    return "skipped";
+  }
   const waiters = selectors.map((sel) =>
     page.waitForSelector(sel, { timeout: timeoutMs }),
   );
-  const shouldShowCountdown = process.stderr.isTTY;
+  const shouldShowCountdown = process.stderr.isTTY && waiters.length > 0;
   let interval: NodeJS.Timeout | undefined;
-  const manualController =
-    process.stdin.isTTY && process.stdout.isTTY
-      ? new AbortController()
-      : undefined;
+  const manualController = canPrompt ? new AbortController() : undefined;
   const manualPromise = manualController
     ? input(
         {
@@ -28,8 +31,8 @@ export async function waitForLogin(
         },
         { signal: manualController.signal },
       )
-        .then(() => {})
-        .catch(() => {})
+        .then(() => "manual" as const)
+        .catch(() => "manual" as const)
     : undefined;
   if (shouldShowCountdown) {
     interval = setInterval(() => {
@@ -51,14 +54,14 @@ export async function waitForLogin(
     const selectorPromise =
       waiters.length > 0
         ? Promise.any(waiters)
-            .then(() => {})
-            .catch(() => {})
+            .then(() => "selector" as const)
+            .catch(() => "timeout" as const)
         : undefined;
-    const raceTargets: Array<Promise<void>> = [];
+    const raceTargets: Array<Promise<LoginWaitOutcome>> = [];
     if (manualPromise) raceTargets.push(manualPromise);
     if (selectorPromise) raceTargets.push(selectorPromise);
-    if (raceTargets.length === 0) return;
-    await Promise.race(raceTargets);
+    if (raceTargets.length === 0) return "skipped";
+    return await Promise.race(raceTargets);
   } finally {
     if (interval) clearInterval(interval);
     manualController?.abort();

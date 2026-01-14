@@ -60,6 +60,20 @@ describe("check-cli-dependency", () => {
     );
   });
 
+  it("falls back to default when env var is empty", () => {
+    process.env.AXUSAGE_CLAUDE_PATH = "";
+    mockExecFileSync.mockImplementation(() => "1.0.0");
+
+    const dependency = getAuthCliDependency("claude");
+    const result = checkCliDependency(dependency);
+
+    expect(result.ok).toBe(true);
+    expect(result.path).toBe("claude");
+    expect(mockExecFileSync).toHaveBeenCalledWith("claude", ["--version"], {
+      stdio: "ignore",
+    });
+  });
+
   it("returns failure details when dependency is missing", () => {
     mockExecFileSync.mockImplementation(() => {
       throw new Error("missing");
