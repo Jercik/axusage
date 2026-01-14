@@ -113,7 +113,7 @@ export async function runAuthSetup(
     );
     console.error(
       chalk.gray(
-        "Re-run with --interactive in a terminal to complete authentication.",
+        "Re-run in a TTY terminal (avoid piping stdin/stdout) with --interactive to complete authentication.",
       ),
     );
     return false;

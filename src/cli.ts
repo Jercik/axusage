@@ -34,7 +34,7 @@ const program = new Command()
   )
   .option(
     "-i, --interactive",
-    "allow interactive authentication prompts (required for browser auth)",
+    "allow interactive authentication prompts (usage reauth, --auth-setup/--auth-clear; ignored with --auth-status)",
   )
   .addOption(
     new Option("-o, --format <format>", "Output format")
