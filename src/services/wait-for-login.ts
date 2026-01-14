@@ -82,7 +82,9 @@ export async function waitForLogin(
         .catch((error) => {
           if (
             error instanceof Error &&
-            (error.name === "AbortPromptError" || error.name === "AbortError")
+            (error.name === "AbortPromptError" ||
+              error.name === "AbortError" ||
+              error.name === "ExitPromptError")
           ) {
             // Expected when we cancel the prompt after a selector wins.
             // Returning "manual" keeps the promise resolved for the race.

@@ -19,7 +19,9 @@ type AuthClearOptions = {
 function isPromptCancellation(error: unknown): boolean {
   return (
     error instanceof Error &&
-    (error.name === "AbortPromptError" || error.name === "CancelPromptError")
+    (error.name === "AbortPromptError" ||
+      error.name === "CancelPromptError" ||
+      error.name === "ExitPromptError")
   );
 }
 
@@ -77,6 +79,7 @@ export async function authClearCommand(
       } catch (error) {
         if (isPromptCancellation(error)) {
           console.error(chalk.gray("Aborted."));
+          process.exitCode = 1;
           return;
         }
         throw error;

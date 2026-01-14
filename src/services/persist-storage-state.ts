@@ -4,7 +4,7 @@ import { chalk } from "../utils/color.js";
 
 /**
  * Persist context storage state to disk with secure permissions (0o600).
- * Errors are silently ignored to avoid blocking the main operation.
+ * Errors are logged as warnings to avoid blocking the main operation.
  */
 export async function persistStorageState(
   context: BrowserContext,

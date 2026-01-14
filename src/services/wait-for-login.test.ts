@@ -67,6 +67,16 @@ describe("waitForLogin", () => {
     await expect(waitForLogin(page, [])).resolves.toBe("manual");
   });
 
+  it("returns manual when prompt exits", async () => {
+    setTtyState(true, true, false);
+    const error = new Error("exit");
+    error.name = "ExitPromptError";
+    mockInput.mockRejectedValue(error);
+    const page = { waitForSelector: vi.fn() } as unknown as Page;
+
+    await expect(waitForLogin(page, [])).resolves.toBe("manual");
+  });
+
   it("returns selector when a selector resolves", async () => {
     const page = {
       waitForSelector: vi.fn().mockResolvedValue({}),

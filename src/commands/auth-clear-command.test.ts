@@ -111,6 +111,18 @@ describe("authClearCommand", () => {
     expect(mockTrash).not.toHaveBeenCalled();
   });
 
+  it("sets exit code when confirmation is canceled", async () => {
+    mockExistsSync.mockReturnValue(true);
+    const error = new Error("canceled");
+    error.name = "CancelPromptError";
+    mockConfirm.mockRejectedValue(error);
+
+    await authClearCommand({ service: "claude", interactive: true });
+
+    expect(process.exitCode).toBe(1);
+    expect(mockTrash).not.toHaveBeenCalled();
+  });
+
   it("clears auth when confirmation is accepted", async () => {
     mockExistsSync.mockReturnValue(true);
     mockConfirm.mockResolvedValue(true);
