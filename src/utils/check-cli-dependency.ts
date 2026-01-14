@@ -27,7 +27,13 @@ const CLI_DEPENDENCIES = {
 
 type AuthCliService = "claude" | "chatgpt" | "gemini";
 
-const CLI_DEPENDENCY_TIMEOUT_MS = 2000;
+function resolveCliDependencyTimeout(): number {
+  const raw = process.env.AXUSAGE_CLI_TIMEOUT_MS;
+  if (!raw) return 5000;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 5000;
+  return Math.round(parsed);
+}
 
 export function getAuthCliDependency(service: AuthCliService): CliDependency {
   if (service === "chatgpt") return CLI_DEPENDENCIES.codex;
@@ -36,6 +42,7 @@ export function getAuthCliDependency(service: AuthCliService): CliDependency {
 
 function resolveCliDependencyPath(dep: CliDependency): string {
   const environmentValue = process.env[dep.envVar];
+  // Treat empty env vars as unset to fall back to the default command.
   if (environmentValue) return environmentValue;
   return dep.command;
 }
@@ -46,9 +53,10 @@ export function checkCliDependency(dep: CliDependency): {
 } {
   const path = resolveCliDependencyPath(dep);
   try {
+    const timeout = resolveCliDependencyTimeout();
     execFileSync(path, ["--version"], {
       stdio: "ignore",
-      timeout: CLI_DEPENDENCY_TIMEOUT_MS,
+      timeout,
     });
     return { ok: true, path };
   } catch {
@@ -67,7 +75,20 @@ export function ensureAuthCliDependency(
   return { ok: false, dependency, path: result.path };
 }
 
-export function reportMissingCliDependency(
+export function resolveAuthCliDependencyOrReport(
+  service: AuthCliService,
+  options: { readonly setExitCode?: boolean } = {},
+): string | undefined {
+  const result = ensureAuthCliDependency(service);
+  if (!result.ok) {
+    reportMissingCliDependency(result.dependency, result.path);
+    if (options.setExitCode) process.exitCode = 1;
+    return undefined;
+  }
+  return result.path;
+}
+
+function reportMissingCliDependency(
   dependency: CliDependency,
   path: string,
 ): void {

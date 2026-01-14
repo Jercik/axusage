@@ -1,10 +1,6 @@
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import { validateService } from "../services/supported-service.js";
-import type { AuthCliService } from "../utils/check-cli-dependency.js";
-import {
-  ensureAuthCliDependency,
-  reportMissingCliDependency,
-} from "../utils/check-cli-dependency.js";
+import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
 
 /**
@@ -23,21 +19,11 @@ export async function authSetupCommand(
 ): Promise<void> {
   const service = validateService(options.service);
 
-  const resolveCliDependencyOrReport = (
-    cliService: AuthCliService,
-  ): string | undefined => {
-    const result = ensureAuthCliDependency(cliService);
-    if (!result.ok) {
-      reportMissingCliDependency(result.dependency, result.path);
-      process.exitCode = 1;
-      return undefined;
-    }
-    return result.path;
-  };
-
   // CLI-based auth - users should run the native CLI directly
   if (service === "gemini") {
-    const cliPath = resolveCliDependencyOrReport("gemini");
+    const cliPath = resolveAuthCliDependencyOrReport("gemini", {
+      setExitCode: true,
+    });
     if (!cliPath) return;
     console.error(
       chalk.yellow(
@@ -55,7 +41,9 @@ export async function authSetupCommand(
   }
 
   if (service === "claude") {
-    const cliPath = resolveCliDependencyOrReport("claude");
+    const cliPath = resolveAuthCliDependencyOrReport("claude", {
+      setExitCode: true,
+    });
     if (!cliPath) return;
     console.error(
       chalk.yellow(
@@ -71,7 +59,9 @@ export async function authSetupCommand(
   }
 
   if (service === "chatgpt") {
-    const cliPath = resolveCliDependencyOrReport("chatgpt");
+    const cliPath = resolveAuthCliDependencyOrReport("chatgpt", {
+      setExitCode: true,
+    });
     if (!cliPath) return;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),

@@ -4,6 +4,7 @@ import {
   checkCliDependency,
   ensureAuthCliDependency,
   getAuthCliDependency,
+  resolveAuthCliDependencyOrReport,
 } from "./check-cli-dependency.js";
 
 vi.mock("node:child_process", () => ({
@@ -16,9 +17,10 @@ const ENV_KEYS = [
   "AXUSAGE_CLAUDE_PATH",
   "AXUSAGE_CODEX_PATH",
   "AXUSAGE_GEMINI_PATH",
+  "AXUSAGE_CLI_TIMEOUT_MS",
 ] as const;
 
-const CLI_DEPENDENCY_TIMEOUT_MS = 2000;
+const DEFAULT_TIMEOUT_MS = 5000;
 
 const originalEnvironment = Object.fromEntries(
   ENV_KEYS.map((key) => [key, process.env[key]]),
@@ -27,6 +29,7 @@ const originalEnvironment = Object.fromEntries(
 describe("check-cli-dependency", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.exitCode = undefined;
   });
 
   afterEach(() => {
@@ -58,7 +61,7 @@ describe("check-cli-dependency", () => {
     expect(mockExecFileSync).toHaveBeenCalledWith(
       "/custom/claude",
       ["--version"],
-      { stdio: "ignore", timeout: CLI_DEPENDENCY_TIMEOUT_MS },
+      { stdio: "ignore", timeout: DEFAULT_TIMEOUT_MS },
     );
   });
 
@@ -73,7 +76,21 @@ describe("check-cli-dependency", () => {
     expect(result.path).toBe("claude");
     expect(mockExecFileSync).toHaveBeenCalledWith("claude", ["--version"], {
       stdio: "ignore",
-      timeout: CLI_DEPENDENCY_TIMEOUT_MS,
+      timeout: DEFAULT_TIMEOUT_MS,
+    });
+  });
+
+  it("uses the configured timeout when provided", () => {
+    process.env.AXUSAGE_CLI_TIMEOUT_MS = "12000";
+    mockExecFileSync.mockImplementation(() => "1.0.0");
+
+    const dependency = getAuthCliDependency("claude");
+    const result = checkCliDependency(dependency);
+
+    expect(result.ok).toBe(true);
+    expect(mockExecFileSync).toHaveBeenCalledWith("claude", ["--version"], {
+      stdio: "ignore",
+      timeout: 12_000,
     });
   });
 
@@ -93,5 +110,18 @@ describe("check-cli-dependency", () => {
       },
       path: "gemini",
     });
+  });
+
+  it("sets exit code when requested while reporting missing dependency", () => {
+    mockExecFileSync.mockImplementation(() => {
+      throw new Error("missing");
+    });
+
+    const result = resolveAuthCliDependencyOrReport("claude", {
+      setExitCode: true,
+    });
+
+    expect(result).toBeUndefined();
+    expect(process.exitCode).toBe(1);
   });
 });

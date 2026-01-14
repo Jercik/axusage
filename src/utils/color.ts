@@ -6,11 +6,11 @@ type ColorConfig = {
 
 function resolveColorOverride(enabled?: boolean): "force" | "disable" | "auto" {
   if (enabled === false) return "disable";
+  if (enabled === true) return "force";
+  if (process.env.FORCE_COLOR === "0") return "disable";
   if (process.env.NO_COLOR !== undefined && process.env.NO_COLOR !== "") {
     return "disable";
   }
-  if (process.env.FORCE_COLOR === "0") return "disable";
-  if (enabled === true) return "force";
   return "auto";
 }
 

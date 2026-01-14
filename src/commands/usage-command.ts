@@ -202,6 +202,6 @@ export async function usageCommand(
   }
 
   if (hasPartialFailures) {
-    process.exitCode = 2;
+    process.exitCode = 1;
   }
 }

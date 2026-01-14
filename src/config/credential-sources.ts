@@ -65,6 +65,7 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
 }
 
 function migrateLegacySources(config: Conf<{ sources?: SourcesConfig }>): void {
+  // Respect explicit new config values; never overwrite them with legacy data.
   if (config.get("sources") !== undefined) return;
 
   // Conf defaults to the legacy "-nodejs" suffix, which matches older configs.

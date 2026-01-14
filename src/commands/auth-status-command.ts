@@ -21,6 +21,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
 
   const cliAuthServices = new Set(["claude", "chatgpt", "gemini"]);
   const dataDirectory = getBrowserContextsDirectory();
+  let hasFailures = false;
 
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
@@ -31,6 +32,9 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       const status = result.ok
         ? chalk.yellow("↪ CLI-managed")
         : chalk.red("✗ CLI missing");
+      if (!result.ok) {
+        hasFailures = true;
+      }
       console.log(`${chalk.bold(service)}: ${status}`);
       console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
       console.log(
@@ -44,6 +48,9 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     const status = hasAuth
       ? chalk.green("✓ Authenticated")
       : chalk.gray("✗ Not authenticated");
+    if (!hasAuth) {
+      hasFailures = true;
+    }
     console.log(`${chalk.bold(service)}: ${status}`);
     console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
   }
@@ -60,5 +67,8 @@ export function authStatusCommand(options: AuthStatusOptions): void {
         `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup <service> --interactive")}`,
       ),
     );
+  }
+  if (hasFailures) {
+    process.exitCode = 1;
   }
 }

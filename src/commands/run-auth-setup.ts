@@ -1,11 +1,7 @@
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
 import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
-import type { AuthCliService } from "../utils/check-cli-dependency.js";
-import {
-  ensureAuthCliDependency,
-  reportMissingCliDependency,
-} from "../utils/check-cli-dependency.js";
+import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
 
 /** Timeout for authentication setup (5 minutes) */
@@ -50,17 +46,6 @@ export function isAuthFailure(
   );
 }
 
-function resolveCliDependencyOrReport(
-  cliService: AuthCliService,
-): string | undefined {
-  const result = ensureAuthCliDependency(cliService);
-  if (!result.ok) {
-    reportMissingCliDependency(result.dependency, result.path);
-    return undefined;
-  }
-  return result.path;
-}
-
 /**
  * Run auth setup for a service programmatically.
  * Returns true if auth setup completed successfully.
@@ -74,7 +59,7 @@ export async function runAuthSetup(
 ): Promise<boolean> {
   // CLI-based auth cannot use browser auth flow
   if (service === "gemini") {
-    const cliPath = resolveCliDependencyOrReport("gemini");
+    const cliPath = resolveAuthCliDependencyOrReport("gemini");
     if (!cliPath) return false;
     console.error(
       chalk.yellow(
@@ -92,7 +77,7 @@ export async function runAuthSetup(
   }
 
   if (service === "claude") {
-    const cliPath = resolveCliDependencyOrReport("claude");
+    const cliPath = resolveAuthCliDependencyOrReport("claude");
     if (!cliPath) return false;
     console.error(
       chalk.yellow(
@@ -108,7 +93,7 @@ export async function runAuthSetup(
   }
 
   if (service === "chatgpt") {
-    const cliPath = resolveCliDependencyOrReport("chatgpt");
+    const cliPath = resolveAuthCliDependencyOrReport("chatgpt");
     if (!cliPath) return false;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),

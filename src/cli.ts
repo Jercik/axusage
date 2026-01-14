@@ -19,8 +19,9 @@ type RootOptions = UsageCommandOptions & {
   readonly force?: boolean;
 };
 
-const hasNoColorFlag = process.argv.includes("--no-color");
-configureColor({ enabled: hasNoColorFlag ? false : undefined });
+// Parse --no-color early so help/error output is consistently uncolored.
+const shouldDisableColor = process.argv.includes("--no-color");
+configureColor({ enabled: shouldDisableColor ? false : undefined });
 
 const program = new Command()
   .name(packageJson.name)

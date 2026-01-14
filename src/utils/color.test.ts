@@ -41,9 +41,15 @@ describe("configureColor", () => {
     expect(chalk.level).toBe(3);
   });
 
+  it("respects explicit enable even when NO_COLOR is set", () => {
+    process.env.NO_COLOR = "1";
+    configureColor({ enabled: true });
+    expect(chalk.level).toBe(3);
+  });
+
   it("disables color when FORCE_COLOR is 0", () => {
     process.env.FORCE_COLOR = "0";
-    configureColor({ enabled: true });
+    configureColor();
     expect(chalk.level).toBe(0);
   });
 });
