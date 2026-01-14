@@ -68,13 +68,14 @@ export function authStatusCommand(options: AuthStatusOptions): void {
   const browserServices = servicesToCheck.filter(
     (service) => !cliAuthServices.has(service),
   );
-  const allAuthenticated = browserServices.every((service) =>
-    existsSync(getStorageStatePathFor(dataDirectory, service)),
-  );
-  if (!allAuthenticated) {
+  const copilotService = "github-copilot";
+  const needsCopilotSetup =
+    browserServices.includes(copilotService) &&
+    !existsSync(getStorageStatePathFor(dataDirectory, copilotService));
+  if (needsCopilotSetup) {
     console.error(
       chalk.gray(
-        `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup <service> --interactive")}`,
+        `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup github-copilot --interactive")}`,
       ),
     );
   }
