@@ -60,7 +60,7 @@ jobs:
           npm_config_strict_ssl=true
           npm_config_proxy=
           npm_config_https_proxy=
-          npx -y axinstall@latest ${{ matrix.agent }} --with npm
+          npx -y axinstall@1.2.0 ${{ matrix.agent }} --with npm
 
       - name: Run ${{ matrix.display_name }} Review
         env:
@@ -330,7 +330,7 @@ jobs:
           npm_config_strict_ssl=true \
           npm_config_proxy= \
           npm_config_https_proxy= \
-          npx -y axrun@latest --agent ${{ matrix.agent }} --model ${{ matrix.model }} \
+          npx -y axrun@1.4.2 --agent ${{ matrix.agent }} --model ${{ matrix.model }} \
             --vault-credential ${{ matrix.vault_credential }} \
             --allow '${{ env.AXRUN_ALLOW }}' \
             --prompt "$(cat /tmp/prompt.md)"

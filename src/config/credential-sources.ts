@@ -37,7 +37,11 @@ interface ResolvedSourceConfig {
 /** Service IDs that support vault credentials (API-based services) */
 type VaultSupportedServiceId = "claude" | "chatgpt" | "gemini";
 
-/** All service IDs */
+/**
+ * All service IDs.
+ * Note: github-copilot uses GitHub token auth, not vault credentials,
+ * so it's excluded from VaultSupportedServiceId.
+ */
 type ServiceId = VaultSupportedServiceId | "github-copilot";
 
 // Lazy-initialized config instance

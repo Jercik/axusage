@@ -23,7 +23,7 @@ import {
 /** Map service IDs to agent IDs for axauth/vault */
 const SERVICE_TO_AGENT: Record<VaultSupportedServiceId, AgentCli> = {
   claude: "claude",
-  chatgpt: "codex", // ChatGPT uses Codex/OpenAI credentials
+  chatgpt: "codex", // ChatGPT and Codex both use OpenAI API credentials
   gemini: "gemini",
 };
 
@@ -142,7 +142,15 @@ async function getServiceAccessToken(
         );
         return undefined;
       }
-      return fetchFromVault(agentId, config.name);
+      const token = await fetchFromVault(agentId, config.name);
+      if (!token) {
+        // User explicitly selected vault but it failed - provide clear feedback
+        console.error(
+          `[axusage] Vault credential fetch failed for ${service}. ` +
+            `Check that vault is configured (AXVAULT env) and credential "${config.name}" exists.`,
+        );
+      }
+      return token;
     }
 
     case "auto": {
