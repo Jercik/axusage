@@ -51,6 +51,7 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
   if (!configInstance) {
     configInstance = new Conf<{ sources?: SourcesConfig }>({
       projectName: "axusage",
+      projectSuffix: "",
       schema: {
         sources: {
           type: "object",

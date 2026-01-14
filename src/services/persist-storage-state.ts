@@ -1,5 +1,5 @@
 import type { BrowserContext } from "playwright";
-import { chmod } from "node:fs/promises";
+import { writeAtomicJson } from "../utils/write-atomic-json.js";
 
 /**
  * Persist context storage state to disk with secure permissions (0o600).
@@ -10,10 +10,8 @@ export async function persistStorageState(
   storagePath: string,
 ): Promise<void> {
   try {
-    await context.storageState({ path: storagePath });
-    await chmod(storagePath, 0o600).catch(() => {
-      // best effort: permissions may already be correct or OS may ignore
-    });
+    const state = await context.storageState();
+    await writeAtomicJson(storagePath, state, 0o600);
   } catch {
     // ignore persistence errors; do not block request completion
   }

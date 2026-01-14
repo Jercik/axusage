@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import { chalk } from "./color.js";
 import type { ServiceUsageData, UsageWindow } from "../types/domain.js";
 import { calculateUsageRate } from "./calculate-usage-rate.js";
 import { classifyUsageRate } from "./classify-usage-rate.js";

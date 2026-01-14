@@ -38,7 +38,7 @@ describe("authClearCommand", () => {
   it("moves existing auth files to trash", async () => {
     mockExistsSync.mockReturnValue(true);
 
-    await authClearCommand({ service: "claude" });
+    await authClearCommand({ service: "claude", force: true });
 
     expect(mockTrash).toHaveBeenCalledWith(
       ["/tmp/storage.json", "/tmp/meta.json"],
@@ -49,7 +49,7 @@ describe("authClearCommand", () => {
   it("does not call trash when no auth files exist", async () => {
     mockExistsSync.mockReturnValue(false);
 
-    await authClearCommand({ service: "claude" });
+    await authClearCommand({ service: "claude", force: true });
 
     expect(mockTrash).not.toHaveBeenCalled();
   });

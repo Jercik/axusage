@@ -1,7 +1,6 @@
 import type { Page } from "playwright";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
+import { input } from "@inquirer/prompts";
 
 /**
  * Waits until one of the selectors appears on the page, or the user presses Enter to continue.
@@ -10,13 +9,6 @@ export async function waitForLogin(
   page: Page,
   selectors: readonly string[],
 ): Promise<void> {
-  const reader = createInterface({ input, output });
-  const manual = reader.question(
-    "Press Enter to continue without waiting for login... ",
-  );
-  // Absorb rejection when the interface is closed to prevent
-  // unhandled promise rejection (AbortError) after a selector wins.
-  const manualSilenced = manual.catch(() => {});
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
   // Prevent unhandled rejections if the page closes before all waiters finish
@@ -27,6 +19,13 @@ export async function waitForLogin(
   );
   const shouldShowCountdown = process.stderr.isTTY;
   let interval: NodeJS.Timeout | undefined;
+  let manualPromise: Promise<string> | undefined;
+  if (process.stdin.isTTY && process.stdout.isTTY) {
+    manualPromise = input({
+      message: "Press Enter to continue without waiting for login...",
+      default: "",
+    }).catch(() => "");
+  }
   if (shouldShowCountdown) {
     interval = setInterval(() => {
       const remaining = deadline - Date.now();
@@ -44,9 +43,15 @@ export async function waitForLogin(
     }, 60_000);
   }
   try {
-    await Promise.race([manualSilenced, ...waiters]);
+    const raceTargets =
+      manualPromise && waiters.length > 0
+        ? [manualPromise, ...waiters]
+        : manualPromise
+          ? [manualPromise]
+          : waiters;
+    if (raceTargets.length === 0) return;
+    await Promise.race(raceTargets);
   } finally {
     if (interval) clearInterval(interval);
-    reader.close();
   }
 }

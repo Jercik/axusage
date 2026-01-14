@@ -1,7 +1,15 @@
-import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
 import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
+import type {
+  AuthCliService,
+  CliDependency,
+} from "../utils/check-cli-dependency.js";
+import {
+  checkCliDependency,
+  getAuthCliDependency,
+} from "../utils/check-cli-dependency.js";
+import { chalk } from "../utils/color.js";
 
 /** Timeout for authentication setup (5 minutes) */
 const AUTH_SETUP_TIMEOUT_MS = 300_000;
@@ -45,6 +53,32 @@ export function isAuthFailure(
   );
 }
 
+function reportMissingCliDependency(
+  dependency: CliDependency,
+  path: string,
+): void {
+  console.error(
+    chalk.red(`Error: Required dependency '${dependency.command}' not found.`),
+  );
+  console.error(chalk.gray(`Looked for: ${path}`));
+  console.error(chalk.gray("\nTo fix, either:"));
+  console.error(chalk.gray(`  1. Install it: ${dependency.installHint}`));
+  console.error(
+    chalk.gray(`  2. Set ${dependency.envVar}=/path/to/${dependency.command}`),
+  );
+  console.error(chalk.gray("Try 'axusage --help' for requirements."));
+}
+
+function ensureCliDependency(cliService: AuthCliService): string | undefined {
+  const dependency = getAuthCliDependency(cliService);
+  const result = checkCliDependency(dependency);
+  if (!result.ok) {
+    reportMissingCliDependency(dependency, result.path);
+    return undefined;
+  }
+  return result.path;
+}
+
 /**
  * Run auth setup for a service programmatically.
  * Returns true if auth setup completed successfully.
@@ -58,13 +92,15 @@ export async function runAuthSetup(
 ): Promise<boolean> {
   // CLI-based auth cannot use browser auth flow
   if (service === "gemini") {
+    const cliPath = ensureCliDependency("gemini");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow(
         "\nGemini uses CLI-based authentication managed by the Gemini CLI.",
       ),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  gemini"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray(
         "\nThe Gemini CLI will guide you through the OAuth login process.\n",
@@ -74,13 +110,15 @@ export async function runAuthSetup(
   }
 
   if (service === "claude") {
+    const cliPath = ensureCliDependency("claude");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow(
         "\nClaude uses CLI-based authentication managed by Claude Code.",
       ),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  claude"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nClaude Code will guide you through authentication.\n"),
     );
@@ -88,13 +126,27 @@ export async function runAuthSetup(
   }
 
   if (service === "chatgpt") {
+    const cliPath = ensureCliDependency("chatgpt");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  codex"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nCodex will guide you through authentication.\n"),
+    );
+    return false;
+  }
+
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error(
+      chalk.red("Error: Interactive authentication requires a TTY terminal."),
+    );
+    console.error(
+      chalk.gray(
+        "Re-run with --interactive in a terminal to complete authentication.",
+      ),
     );
     return false;
   }

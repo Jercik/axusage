@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import { confirm } from "@inquirer/prompts";
 import { existsSync } from "node:fs";
 import trash from "trash";
 import { validateService } from "../services/supported-service.js";
@@ -7,8 +7,17 @@ import {
   getStorageStatePathFor,
 } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
+import { chalk } from "../utils/color.js";
 
-type AuthClearOptions = { readonly service?: string };
+type AuthClearOptions = {
+  readonly service?: string;
+  readonly interactive?: boolean;
+  readonly force?: boolean;
+};
+
+function canPrompt(): boolean {
+  return process.stdin.isTTY && process.stdout.isTTY;
+}
 
 export async function authClearCommand(
   options: AuthClearOptions,
@@ -25,6 +34,46 @@ export async function authClearCommand(
       );
       return;
     }
+
+    if (!options.force) {
+      if (!options.interactive) {
+        console.error(
+          chalk.red(
+            "Error: Clearing saved authentication requires confirmation.",
+          ),
+        );
+        console.error(
+          chalk.gray(
+            "Re-run with --interactive to confirm, or use --force to skip confirmation.",
+          ),
+        );
+        console.error(chalk.gray("Try 'axusage --help' for details."));
+        process.exitCode = 1;
+        return;
+      }
+
+      if (!canPrompt()) {
+        console.error(
+          chalk.red("Error: --interactive requires a TTY-enabled terminal."),
+        );
+        console.error(
+          chalk.gray("Re-run in a terminal or pass --force instead."),
+        );
+        console.error(chalk.gray("Try 'axusage --help' for details."));
+        process.exitCode = 1;
+        return;
+      }
+
+      const confirmed = await confirm({
+        message: `Remove saved authentication for ${service}?`,
+        default: false,
+      });
+      if (!confirmed) {
+        console.error(chalk.gray("Aborted."));
+        return;
+      }
+    }
+
     await trash(targets, { glob: false });
     console.error(chalk.green(`\n✓ Cleared authentication for ${service}`));
   } catch (error) {

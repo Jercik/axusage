@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
@@ -18,6 +17,7 @@ import {
 } from "./fetch-service-usage.js";
 import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
 import { isAuthFailure } from "./run-auth-setup.js";
+import { chalk } from "../utils/color.js";
 
 /**
  * Fetches usage for services using hybrid strategy:
@@ -130,7 +130,8 @@ export async function usageCommand(
     const list = [...authFailureServices].join(", ");
     console.error(
       chalk.gray(
-        `Authentication required for: ${list}. Run 'axusage auth setup <service>' or re-run with '--interactive' to re-authenticate during fetch.`,
+        `Authentication required for: ${list}. ` +
+          "Run 'axusage --auth-setup <service> --interactive' or re-run with '--interactive' to re-authenticate during fetch.",
       ),
     );
     if (successes.length > 0) {

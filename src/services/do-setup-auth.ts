@@ -1,9 +1,9 @@
 import type { BrowserContext } from "playwright";
 import type { SupportedService } from "./supported-service.js";
 import { setupAuthInContext } from "./setup-auth-flow.js";
-import { writeFile, chmod } from "node:fs/promises";
 import path from "node:path";
 import { getAuthMetaPathFor } from "./auth-storage-path.js";
+import { writeAtomicJson } from "../utils/write-atomic-json.js";
 
 export async function doSetupAuth(
   service: SupportedService,
@@ -17,12 +17,7 @@ export async function doSetupAuth(
   try {
     if (userAgent) {
       const metaPath = getAuthMetaPathFor(path.dirname(storagePath), service);
-      await writeFile(metaPath, JSON.stringify({ userAgent }), "utf8");
-      try {
-        await chmod(metaPath, 0o600);
-      } catch {
-        // best effort
-      }
+      await writeAtomicJson(metaPath, { userAgent }, 0o600);
     }
   } catch {
     // ignore errors when writing meta; not critical

@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import { existsSync } from "node:fs";
 import {
   SUPPORTED_SERVICES,
@@ -6,6 +5,7 @@ import {
 } from "../services/supported-service.js";
 import { getStorageStatePathFor } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
+import { chalk } from "../utils/color.js";
 
 type AuthStatusOptions = { readonly service?: string };
 
@@ -34,7 +34,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
   if (!allAuthenticated) {
     console.error(
       chalk.gray(
-        `\nTo set up authentication, run: ${chalk.cyan("axusage auth setup <service>")}`,
+        `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup <service> --interactive")}`,
       ),
     );
   }

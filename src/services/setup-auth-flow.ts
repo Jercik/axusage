@@ -3,7 +3,7 @@ import type { SupportedService } from "./supported-service.js";
 import { getServiceAuthConfig } from "./service-auth-configs.js";
 import { waitForLogin } from "./wait-for-login.js";
 import { verifySessionByFetching } from "./verify-session.js";
-import { chmod } from "node:fs/promises";
+import { writeAtomicJson } from "../utils/write-atomic-json.js";
 
 export async function setupAuthInContext(
   service: SupportedService,
@@ -34,12 +34,8 @@ export async function setupAuthInContext(
 
     // Capture user agent for future headless contexts
     const userAgent = await page.evaluate(() => navigator.userAgent);
-    await context.storageState({ path: storagePath });
-    try {
-      await chmod(storagePath, 0o600);
-    } catch {
-      // best effort to restrict sensitive storage state
-    }
+    const state = await context.storageState();
+    await writeAtomicJson(storagePath, state, 0o600);
     return userAgent;
   } finally {
     await page.close();
