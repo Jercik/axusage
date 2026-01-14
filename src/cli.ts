@@ -82,7 +82,7 @@ program.action(async (options: RootOptions, command: Command) => {
   }
 
   const formatSource = command.getOptionValueSource("format");
-  const hasExplicitFormat = formatSource === "cli" && options.format !== "text";
+  const hasExplicitFormat = formatSource === "cli";
   const hasUsageOptions = Boolean(options.service) || hasExplicitFormat;
   if (authSelectionCount > 0 && hasUsageOptions) {
     fail("Usage options cannot be combined with auth operations.");

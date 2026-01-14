@@ -30,16 +30,25 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       const dependency = getAuthCliDependency(service as AuthCliService);
       const result = checkCliDependency(dependency);
       const status = result.ok
-        ? chalk.yellow("↪ CLI-managed")
+        ? chalk.green("↪ CLI-managed")
         : chalk.red("✗ CLI missing");
       if (!result.ok) {
         hasFailures = true;
       }
       console.log(`${chalk.bold(service)}: ${status}`);
       console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
-      console.log(
-        `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${result.path} to check/login`)}`,
-      );
+      if (result.ok) {
+        console.log(
+          `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${result.path} to check/login`)}`,
+        );
+      } else {
+        console.log(
+          `  ${chalk.dim("Install:")} ${chalk.dim(dependency.installHint)}`,
+        );
+        console.log(
+          `  ${chalk.dim("Override:")} ${chalk.dim(`${dependency.envVar}=/path/to/${dependency.command}`)}`,
+        );
+      }
       continue;
     }
 

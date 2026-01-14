@@ -19,6 +19,13 @@ function canPrompt(): boolean {
   return process.stdin.isTTY && process.stdout.isTTY;
 }
 
+function isPromptCancellation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortPromptError" || error.name === "CancelPromptError")
+  );
+}
+
 export async function authClearCommand(
   options: AuthClearOptions,
 ): Promise<void> {
@@ -64,10 +71,19 @@ export async function authClearCommand(
         return;
       }
 
-      const confirmed = await confirm({
-        message: `Remove saved authentication for ${service}?`,
-        default: false,
-      });
+      let confirmed = false;
+      try {
+        confirmed = await confirm({
+          message: `Remove saved authentication for ${service}?`,
+          default: false,
+        });
+      } catch (error) {
+        if (isPromptCancellation(error)) {
+          console.error(chalk.gray("Aborted."));
+          return;
+        }
+        throw error;
+      }
       if (!confirmed) {
         console.error(chalk.gray("Aborted."));
         return;

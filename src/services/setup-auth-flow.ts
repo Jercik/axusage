@@ -50,6 +50,7 @@ export async function setupAuthInContext(
         );
       }
     } else if (selectors.length > 0 && loginOutcome !== "selector") {
+      // Without a verification URL, we only persist when a login selector confirms success.
       throw new Error(
         `Login was not confirmed ${outcomeLabel}. Authentication was not saved.`,
       );

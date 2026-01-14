@@ -11,11 +11,25 @@ function isTimeoutError(error: unknown): boolean {
   return error instanceof errors.TimeoutError;
 }
 
-function isTimeoutAggregate(error: unknown): boolean {
+const SELECTOR_TIMEOUT_MESSAGES = [
+  "target closed",
+  "page closed",
+  "context closed",
+  "execution context was destroyed",
+] as const;
+
+function isSelectorTimeoutError(error: unknown): boolean {
+  if (isTimeoutError(error)) return true;
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return SELECTOR_TIMEOUT_MESSAGES.some((snippet) => message.includes(snippet));
+}
+
+function isSelectorTimeoutAggregate(error: unknown): boolean {
   if (error instanceof AggregateError) {
-    return error.errors.every((item) => isTimeoutError(item));
+    return error.errors.every((item) => isSelectorTimeoutError(item));
   }
-  return isTimeoutError(error);
+  return isSelectorTimeoutError(error);
 }
 
 export async function waitForLogin(
@@ -23,7 +37,6 @@ export async function waitForLogin(
   selectors: readonly string[],
 ): Promise<LoginWaitOutcome> {
   const timeoutMs = LOGIN_TIMEOUT_MS;
-  const deadline = Date.now() + timeoutMs;
   const canPrompt = process.stdin.isTTY && process.stdout.isTTY;
   if (!canPrompt && selectors.length === 0) {
     return "skipped";
@@ -44,14 +57,19 @@ export async function waitForLogin(
       )
         .then(() => "manual" as const)
         .catch((error) => {
-          if (error instanceof Error && error.name === "AbortPromptError") {
+          if (
+            error instanceof Error &&
+            (error.name === "AbortPromptError" || error.name === "AbortError")
+          ) {
             // Expected when we cancel the prompt after a selector wins.
+            // Returning "manual" keeps the promise resolved for the race.
             return "manual" as const;
           }
           throw error;
         })
     : undefined;
   if (shouldShowCountdown) {
+    const deadline = Date.now() + timeoutMs;
     interval = setInterval(() => {
       const remaining = deadline - Date.now();
       if (remaining <= 0) {
@@ -74,7 +92,7 @@ export async function waitForLogin(
             .then(() => "selector" as const)
             .catch((error) => {
               // Promise.any only rejects once all selectors have settled.
-              if (isTimeoutAggregate(error)) return "timeout" as const;
+              if (isSelectorTimeoutAggregate(error)) return "timeout" as const;
               throw error;
             })
         : undefined;
