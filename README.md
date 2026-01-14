@@ -27,7 +27,7 @@ axusage
 - `claude` CLI (Claude auth) — `npm install -g @anthropic-ai/claude-code`
 - `codex` CLI (ChatGPT auth) — `npm install -g @openai/codex`
 - `gemini` CLI (Gemini auth) — `npm install -g @google/gemini-cli`
-- Playwright Chromium for GitHub Copilot auth (`pnpm exec playwright install chromium`)
+- Playwright Chromium for GitHub Copilot auth (see "Browser installation" below for global install steps)
 
 ### Custom Paths
 
@@ -248,7 +248,8 @@ You can perform the interactive login flow on a workstation (for example, a loca
    tar czf axusage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
    ```
 
-   Archive structure: `browser-contexts/claude/`, `browser-contexts/chatgpt/`, etc.
+   Archive structure: `browser-contexts/claude-auth.json`, `browser-contexts/chatgpt-auth.json`,
+   `browser-contexts/gemini-auth.json`, plus matching `*-auth.meta.json` files.
 
 ### 2. Transfer the browser contexts to the Linux server
 

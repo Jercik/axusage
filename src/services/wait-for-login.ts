@@ -7,6 +7,17 @@ import { input } from "@inquirer/prompts";
  */
 export type LoginWaitOutcome = "selector" | "manual" | "timeout" | "skipped";
 
+function isTimeoutError(error: unknown): boolean {
+  return error instanceof Error && error.name === "TimeoutError";
+}
+
+function isTimeoutAggregate(error: unknown): boolean {
+  if (error instanceof AggregateError) {
+    return error.errors.every((item) => isTimeoutError(item));
+  }
+  return isTimeoutError(error);
+}
+
 export async function waitForLogin(
   page: Page,
   selectors: readonly string[],
@@ -60,7 +71,10 @@ export async function waitForLogin(
       waiters.length > 0
         ? Promise.any(waiters)
             .then(() => "selector" as const)
-            .catch(() => "timeout" as const)
+            .catch((error) => {
+              if (isTimeoutAggregate(error)) return "timeout" as const;
+              throw error;
+            })
         : undefined;
     const raceTargets: Array<Promise<LoginWaitOutcome>> = [];
     if (manualPromise) raceTargets.push(manualPromise);
