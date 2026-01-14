@@ -1,4 +1,4 @@
-import type { Page } from "playwright";
+import { errors, type Page } from "playwright";
 import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
 import { input } from "@inquirer/prompts";
 
@@ -8,7 +8,7 @@ import { input } from "@inquirer/prompts";
 export type LoginWaitOutcome = "selector" | "manual" | "timeout" | "skipped";
 
 function isTimeoutError(error: unknown): boolean {
-  return error instanceof Error && error.name === "TimeoutError";
+  return error instanceof errors.TimeoutError;
 }
 
 function isTimeoutAggregate(error: unknown): boolean {

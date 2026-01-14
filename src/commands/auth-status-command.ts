@@ -34,7 +34,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       console.log(`${chalk.bold(service)}: ${status}`);
       console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
       console.log(
-        `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${dependency.command} to check/login`)}`,
+        `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${result.path} to check/login`)}`,
       );
       continue;
     }

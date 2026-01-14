@@ -67,6 +67,7 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
 function migrateLegacySources(config: Conf<{ sources?: SourcesConfig }>): void {
   if (config.get("sources") !== undefined) return;
 
+  // Conf defaults to the legacy "-nodejs" suffix, which matches older configs.
   const legacyConfig = new Conf<{ sources?: SourcesConfig }>({
     projectName: "axusage",
   });
