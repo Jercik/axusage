@@ -19,7 +19,7 @@ const ServiceSourceConfig = z.union([
   CredentialSourceType,
   z.object({
     source: CredentialSourceType,
-    name: z.string(),
+    name: z.string().optional(),
   }),
 ]);
 type ServiceSourceConfig = z.infer<typeof ServiceSourceConfig>;

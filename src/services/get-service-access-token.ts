@@ -79,29 +79,36 @@ async function fetchFromVault(
   agentId: AgentCli,
   credentialName: string,
 ): Promise<string | undefined> {
-  const result = await fetchVaultCredentials({
-    agentId,
-    name: credentialName,
-  });
+  try {
+    const result = await fetchVaultCredentials({
+      agentId,
+      name: credentialName,
+    });
 
-  if (!result.ok) {
-    // Log warning for debugging, but don't fail hard
-    if (result.reason !== "not-configured" && result.reason !== "not-found") {
+    if (!result.ok) {
+      // Log warning for debugging, but don't fail hard
+      if (result.reason !== "not-configured" && result.reason !== "not-found") {
+        console.error(
+          `[axusage] Vault fetch failed for ${agentId}/${credentialName}: ${result.reason}`,
+        );
+      }
+      return undefined;
+    }
+
+    const token = extractAccessToken(result.credentials);
+    if (!token) {
       console.error(
-        `[axusage] Vault fetch failed for ${agentId}/${credentialName}: ${result.reason}`,
+        `[axusage] Vault credentials for ${agentId}/${credentialName} missing access token. ` +
+          `Credential type: ${result.credentials.type}`,
       );
     }
+    return token;
+  } catch (error) {
+    console.error(
+      `[axusage] Vault fetch error for ${agentId}/${credentialName}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return undefined;
   }
-
-  const token = extractAccessToken(result.credentials);
-  if (!token) {
-    console.error(
-      `[axusage] Vault credentials for ${agentId}/${credentialName} missing access token. ` +
-        `Credential type: ${result.credentials.type}`,
-    );
-  }
-  return token;
 }
 
 /**
@@ -110,7 +117,14 @@ async function fetchFromVault(
  * @returns Access token string or undefined if not available
  */
 async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
-  return getAgentAccessToken(agentId);
+  try {
+    return await getAgentAccessToken(agentId);
+  } catch (error) {
+    console.error(
+      `[axusage] Local credential fetch error for ${agentId}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return undefined;
+  }
 }
 
 /**
