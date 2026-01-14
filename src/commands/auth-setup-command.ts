@@ -2,6 +2,7 @@ import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import { validateService } from "../services/supported-service.js";
 import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
 /**
  * Options for the auth setup command
@@ -88,7 +89,7 @@ export async function authSetupCommand(
     return;
   }
 
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!resolvePromptCapability()) {
     console.error(
       chalk.red("Error: --interactive requires a TTY-enabled terminal."),
     );

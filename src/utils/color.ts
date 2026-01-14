@@ -1,4 +1,5 @@
 import chalkBase from "chalk";
+export { default as chalk } from "chalk";
 
 type ColorConfig = {
   readonly enabled?: boolean;
@@ -15,9 +16,6 @@ function resolveColorOverride(enabled?: boolean): "force" | "disable" | "auto" {
 }
 
 const autoLevel = chalkBase.level;
-
-const chalk = chalkBase;
-export { chalk };
 
 export function configureColor(config: ColorConfig = {}): void {
   const mode = resolveColorOverride(config.enabled);

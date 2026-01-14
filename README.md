@@ -37,6 +37,9 @@ If the CLIs are not on your `PATH`, override the binaries:
 export AXUSAGE_CLAUDE_PATH=/path/to/claude
 export AXUSAGE_CODEX_PATH=/path/to/codex
 export AXUSAGE_GEMINI_PATH=/path/to/gemini
+
+# Optional: adjust CLI dependency check timeout (milliseconds)
+export AXUSAGE_CLI_TIMEOUT_MS=5000
 ```
 
 For Playwright-managed browsers:
@@ -44,6 +47,11 @@ For Playwright-managed browsers:
 ```bash
 export PLAYWRIGHT_BROWSERS_PATH=/path/to/playwright-browsers
 ```
+
+### Exit Codes
+
+- `0`: success
+- `1`: errors, including partial failures
 
 ## Authentication
 

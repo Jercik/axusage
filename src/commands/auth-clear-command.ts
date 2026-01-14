@@ -8,16 +8,13 @@ import {
 } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
 import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
 type AuthClearOptions = {
   readonly service?: string;
   readonly interactive?: boolean;
   readonly force?: boolean;
 };
-
-function canPrompt(): boolean {
-  return process.stdin.isTTY && process.stdout.isTTY;
-}
 
 function isPromptCancellation(error: unknown): boolean {
   return (
@@ -59,7 +56,7 @@ export async function authClearCommand(
         return;
       }
 
-      if (!canPrompt()) {
+      if (!resolvePromptCapability()) {
         console.error(
           chalk.red("Error: --interactive requires a TTY-enabled terminal."),
         );

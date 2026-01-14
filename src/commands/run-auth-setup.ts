@@ -3,6 +3,7 @@ import type { SupportedService } from "../services/supported-service.js";
 import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
 import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
 /** Timeout for authentication setup (5 minutes) */
 const AUTH_SETUP_TIMEOUT_MS = 300_000;
@@ -106,7 +107,7 @@ export async function runAuthSetup(
     return false;
   }
 
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!resolvePromptCapability()) {
     console.error(
       chalk.red("Error: Interactive authentication requires a TTY terminal."),
     );

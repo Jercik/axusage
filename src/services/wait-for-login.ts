@@ -60,6 +60,7 @@ export async function waitForLogin(
 ): Promise<LoginWaitOutcome> {
   const timeoutMs = LOGIN_TIMEOUT_MS;
   const canPrompt = process.stdin.isTTY && process.stdout.isTTY;
+  // Non-TTY sessions rely solely on selector waits (no manual continuation).
   if (!canPrompt && selectors.length === 0) {
     return "skipped";
   }

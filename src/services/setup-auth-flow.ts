@@ -76,5 +76,6 @@ async function waitForLoginForService(
   if (selectors.length > 0) {
     return waitForLogin(page, selectors);
   }
+  // When no selectors are configured, skip waiting and rely on verification if available.
   return "skipped";
 }

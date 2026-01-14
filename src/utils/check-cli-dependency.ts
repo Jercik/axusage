@@ -25,7 +25,8 @@ const CLI_DEPENDENCIES = {
   },
 } as const satisfies Record<string, CliDependency>;
 
-type AuthCliService = "claude" | "chatgpt" | "gemini";
+const AUTH_CLI_SERVICES = ["claude", "chatgpt", "gemini"] as const;
+type AuthCliService = (typeof AUTH_CLI_SERVICES)[number];
 
 function resolveCliDependencyTimeout(): number {
   const raw = process.env.AXUSAGE_CLI_TIMEOUT_MS;
@@ -106,4 +107,5 @@ function reportMissingCliDependency(
   );
 }
 
+export { AUTH_CLI_SERVICES };
 export type { AuthCliService };

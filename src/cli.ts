@@ -11,13 +11,10 @@ import { getBrowserContextsDirectory } from "./services/app-paths.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
 import { installAuthManagerCleanup } from "./services/shared-browser-auth-manager.js";
 import { configureColor } from "./utils/color.js";
-
-type RootOptions = UsageCommandOptions & {
-  readonly authSetup?: string;
-  readonly authStatus?: string | boolean;
-  readonly authClear?: string;
-  readonly force?: boolean;
-};
+import {
+  getRootOptionsError,
+  type RootOptions,
+} from "./utils/validate-root-options.js";
 
 // Parse --no-color early so help/error output is consistently uncolored.
 const shouldDisableColor = process.argv.includes("--no-color");
@@ -66,26 +63,12 @@ function fail(message: string): void {
 }
 
 program.action(async (options: RootOptions, command: Command) => {
-  const authSelectionCount =
-    Number(Boolean(options.authSetup)) +
-    Number(options.authStatus !== undefined) +
-    Number(Boolean(options.authClear));
-
-  if (authSelectionCount > 1) {
-    fail("Use only one of --auth-setup, --auth-status, or --auth-clear.");
-    return;
-  }
-
-  if (options.force && !options.authClear) {
-    fail("--force is only supported with --auth-clear.");
-    return;
-  }
-
-  const formatSource = command.getOptionValueSource("format");
-  const hasExplicitFormat = formatSource === "cli";
-  const hasUsageOptions = Boolean(options.service) || hasExplicitFormat;
-  if (authSelectionCount > 0 && hasUsageOptions) {
-    fail("Usage options cannot be combined with auth operations.");
+  const errorMessage = getRootOptionsError(
+    options,
+    command.getOptionValueSource("format"),
+  );
+  if (errorMessage) {
+    fail(errorMessage);
     return;
   }
 

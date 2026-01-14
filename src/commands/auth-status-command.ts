@@ -7,6 +7,7 @@ import { getStorageStatePathFor } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
 import type { AuthCliService } from "../utils/check-cli-dependency.js";
 import {
+  AUTH_CLI_SERVICES,
   checkCliDependency,
   getAuthCliDependency,
 } from "../utils/check-cli-dependency.js";
@@ -19,7 +20,7 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     ? [validateService(options.service)]
     : SUPPORTED_SERVICES;
 
-  const cliAuthServices = new Set(["claude", "chatgpt", "gemini"]);
+  const cliAuthServices = new Set(AUTH_CLI_SERVICES);
   const dataDirectory = getBrowserContextsDirectory();
   let hasFailures = false;
 
