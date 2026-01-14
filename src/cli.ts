@@ -81,7 +81,8 @@ program.action(async (options: RootOptions, command: Command) => {
   }
 
   const formatSource = command.getOptionValueSource("format");
-  const hasUsageOptions = Boolean(options.service) || formatSource === "cli";
+  const hasExplicitFormat = formatSource === "cli" && options.format !== "text";
+  const hasUsageOptions = Boolean(options.service) || hasExplicitFormat;
   if (authSelectionCount > 0 && hasUsageOptions) {
     fail("Usage options cannot be combined with auth operations.");
     return;

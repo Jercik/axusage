@@ -50,7 +50,9 @@ export function isAuthFailure(
   );
 }
 
-function ensureCliDependency(cliService: AuthCliService): string | undefined {
+function resolveCliDependencyOrReport(
+  cliService: AuthCliService,
+): string | undefined {
   const result = ensureAuthCliDependency(cliService);
   if (!result.ok) {
     reportMissingCliDependency(result.dependency, result.path);
@@ -72,7 +74,7 @@ export async function runAuthSetup(
 ): Promise<boolean> {
   // CLI-based auth cannot use browser auth flow
   if (service === "gemini") {
-    const cliPath = ensureCliDependency("gemini");
+    const cliPath = resolveCliDependencyOrReport("gemini");
     if (!cliPath) return false;
     console.error(
       chalk.yellow(
@@ -90,7 +92,7 @@ export async function runAuthSetup(
   }
 
   if (service === "claude") {
-    const cliPath = ensureCliDependency("claude");
+    const cliPath = resolveCliDependencyOrReport("claude");
     if (!cliPath) return false;
     console.error(
       chalk.yellow(
@@ -106,7 +108,7 @@ export async function runAuthSetup(
   }
 
   if (service === "chatgpt") {
-    const cliPath = ensureCliDependency("chatgpt");
+    const cliPath = resolveCliDependencyOrReport("chatgpt");
     if (!cliPath) return false;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),

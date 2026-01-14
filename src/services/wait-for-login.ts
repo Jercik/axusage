@@ -45,6 +45,7 @@ export async function waitForLogin(
         .then(() => "manual" as const)
         .catch((error) => {
           if (error instanceof Error && error.name === "AbortPromptError") {
+            // Expected when we cancel the prompt after a selector wins.
             return "manual" as const;
           }
           throw error;
@@ -72,6 +73,7 @@ export async function waitForLogin(
         ? Promise.any(waiters)
             .then(() => "selector" as const)
             .catch((error) => {
+              // Promise.any only rejects once all selectors have settled.
               if (isTimeoutAggregate(error)) return "timeout" as const;
               throw error;
             })

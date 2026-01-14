@@ -27,6 +27,8 @@ const CLI_DEPENDENCIES = {
 
 type AuthCliService = "claude" | "chatgpt" | "gemini";
 
+const CLI_DEPENDENCY_TIMEOUT_MS = 2000;
+
 export function getAuthCliDependency(service: AuthCliService): CliDependency {
   if (service === "chatgpt") return CLI_DEPENDENCIES.codex;
   return CLI_DEPENDENCIES[service];
@@ -44,7 +46,10 @@ export function checkCliDependency(dep: CliDependency): {
 } {
   const path = resolveCliDependencyPath(dep);
   try {
-    execFileSync(path, ["--version"], { stdio: "ignore" });
+    execFileSync(path, ["--version"], {
+      stdio: "ignore",
+      timeout: CLI_DEPENDENCY_TIMEOUT_MS,
+    });
     return { ok: true, path };
   } catch {
     return { ok: false, path };

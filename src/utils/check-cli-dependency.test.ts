@@ -18,6 +18,8 @@ const ENV_KEYS = [
   "AXUSAGE_GEMINI_PATH",
 ] as const;
 
+const CLI_DEPENDENCY_TIMEOUT_MS = 2000;
+
 const originalEnvironment = Object.fromEntries(
   ENV_KEYS.map((key) => [key, process.env[key]]),
 );
@@ -56,7 +58,7 @@ describe("check-cli-dependency", () => {
     expect(mockExecFileSync).toHaveBeenCalledWith(
       "/custom/claude",
       ["--version"],
-      { stdio: "ignore" },
+      { stdio: "ignore", timeout: CLI_DEPENDENCY_TIMEOUT_MS },
     );
   });
 
@@ -71,6 +73,7 @@ describe("check-cli-dependency", () => {
     expect(result.path).toBe("claude");
     expect(mockExecFileSync).toHaveBeenCalledWith("claude", ["--version"], {
       stdio: "ignore",
+      timeout: CLI_DEPENDENCY_TIMEOUT_MS,
     });
   });
 

@@ -6,6 +6,23 @@ import type { LoginWaitOutcome } from "./wait-for-login.js";
 import { verifySessionByFetching } from "./verify-session.js";
 import { writeAtomicJson } from "../utils/write-atomic-json.js";
 
+function describeLoginOutcome(outcome: LoginWaitOutcome): string {
+  switch (outcome) {
+    case "manual": {
+      return "after manual continuation";
+    }
+    case "timeout": {
+      return "after login timeout";
+    }
+    case "selector": {
+      return "after detecting a login signal";
+    }
+    case "skipped": {
+      return "without waiting for a login signal";
+    }
+  }
+}
+
 export async function setupAuthInContext(
   service: SupportedService,
   context: BrowserContext,
@@ -21,24 +38,21 @@ export async function setupAuthInContext(
       (config.waitForSelector ? [config.waitForSelector] : []);
 
     const loginOutcome = await waitForLoginForService(page, selectors);
+    const outcomeLabel = describeLoginOutcome(loginOutcome);
 
     if (config.verifyUrl) {
       const ok = config.verifyFunction
         ? await config.verifyFunction(context, config.verifyUrl)
         : await verifySessionByFetching(context, config.verifyUrl);
       if (!ok) {
-        const outcomeLabel =
-          loginOutcome === "manual"
-            ? "after manual continuation"
-            : loginOutcome === "timeout"
-              ? "after login timeout"
-              : "without detecting a login signal";
         throw new Error(
           `Unable to verify session via ${config.verifyUrl} ${outcomeLabel}. Authentication was not saved.`,
         );
       }
     } else if (selectors.length > 0 && loginOutcome !== "selector") {
-      throw new Error("Login was not confirmed; authentication was not saved.");
+      throw new Error(
+        `Login was not confirmed ${outcomeLabel}. Authentication was not saved.`,
+      );
     }
 
     // Capture user agent for future headless contexts

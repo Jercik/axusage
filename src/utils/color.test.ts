@@ -35,7 +35,7 @@ describe("configureColor", () => {
     expect(chalk.level).toBe(0);
   });
 
-  it("does not treat empty NO_COLOR as a disable signal", () => {
+  it("treats empty NO_COLOR as unset per spec", () => {
     process.env.NO_COLOR = "";
     configureColor({ enabled: true });
     expect(chalk.level).toBe(3);

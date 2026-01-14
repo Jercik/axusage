@@ -23,7 +23,7 @@ export async function authSetupCommand(
 ): Promise<void> {
   const service = validateService(options.service);
 
-  const ensureCliDependency = (
+  const resolveCliDependencyOrReport = (
     cliService: AuthCliService,
   ): string | undefined => {
     const result = ensureAuthCliDependency(cliService);
@@ -37,7 +37,7 @@ export async function authSetupCommand(
 
   // CLI-based auth - users should run the native CLI directly
   if (service === "gemini") {
-    const cliPath = ensureCliDependency("gemini");
+    const cliPath = resolveCliDependencyOrReport("gemini");
     if (!cliPath) return;
     console.error(
       chalk.yellow(
@@ -55,7 +55,7 @@ export async function authSetupCommand(
   }
 
   if (service === "claude") {
-    const cliPath = ensureCliDependency("claude");
+    const cliPath = resolveCliDependencyOrReport("claude");
     if (!cliPath) return;
     console.error(
       chalk.yellow(
@@ -71,7 +71,7 @@ export async function authSetupCommand(
   }
 
   if (service === "chatgpt") {
-    const cliPath = ensureCliDependency("chatgpt");
+    const cliPath = resolveCliDependencyOrReport("chatgpt");
     if (!cliPath) return;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
