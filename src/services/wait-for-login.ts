@@ -5,31 +5,53 @@ import { input } from "@inquirer/prompts";
 /**
  * Waits until one of the selectors appears on the page, or the user presses Enter to continue.
  */
-export type LoginWaitOutcome = "selector" | "manual" | "timeout" | "skipped";
+export type LoginWaitOutcome =
+  | "selector"
+  | "manual"
+  | "timeout"
+  | "closed"
+  | "skipped";
 
 function isTimeoutError(error: unknown): boolean {
   return error instanceof errors.TimeoutError;
 }
 
-const SELECTOR_TIMEOUT_MESSAGES = [
+const SELECTOR_CLOSED_MESSAGES = [
   "target closed",
   "page closed",
   "context closed",
   "execution context was destroyed",
 ] as const;
 
-function isSelectorTimeoutError(error: unknown): boolean {
-  if (isTimeoutError(error)) return true;
+function isSelectorClosedError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
-  return SELECTOR_TIMEOUT_MESSAGES.some((snippet) => message.includes(snippet));
+  return SELECTOR_CLOSED_MESSAGES.some((snippet) => message.includes(snippet));
 }
 
-function isSelectorTimeoutAggregate(error: unknown): boolean {
+function classifySelectorFailure(
+  error: unknown,
+): Exclude<LoginWaitOutcome, "selector" | "manual" | "skipped"> | undefined {
+  if (isTimeoutError(error)) return "timeout";
+  if (isSelectorClosedError(error)) return "closed";
+  return undefined;
+}
+
+function classifySelectorAggregate(
+  error: unknown,
+): Exclude<LoginWaitOutcome, "selector" | "manual" | "skipped"> | undefined {
   if (error instanceof AggregateError) {
-    return error.errors.every((item) => isSelectorTimeoutError(item));
+    const outcomes = error.errors.map((item) => classifySelectorFailure(item));
+    if (outcomes.every((item) => item === "timeout")) return "timeout";
+    if (
+      outcomes.every((item) => item === "timeout" || item === "closed") &&
+      outcomes.includes("closed")
+    ) {
+      return "closed";
+    }
+    return undefined;
   }
-  return isSelectorTimeoutError(error);
+  return classifySelectorFailure(error);
 }
 
 export async function waitForLogin(
@@ -92,7 +114,8 @@ export async function waitForLogin(
             .then(() => "selector" as const)
             .catch((error) => {
               // Promise.any only rejects once all selectors have settled.
-              if (isSelectorTimeoutAggregate(error)) return "timeout" as const;
+              const outcome = classifySelectorAggregate(error);
+              if (outcome) return outcome;
               throw error;
             })
         : undefined;

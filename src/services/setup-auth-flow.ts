@@ -14,6 +14,9 @@ function describeLoginOutcome(outcome: LoginWaitOutcome): string {
     case "timeout": {
       return "after login timeout";
     }
+    case "closed": {
+      return "after the browser window closed";
+    }
     case "selector": {
       return "after detecting a login signal";
     }
