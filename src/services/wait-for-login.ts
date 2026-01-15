@@ -74,7 +74,7 @@ export async function waitForLogin(
   const manualPromise = manualController
     ? input(
         {
-          message: "Press Enter to continue without waiting for login...",
+          message: "Press Enter after completing login in the browser...",
           default: "",
         },
         { signal: manualController.signal },
