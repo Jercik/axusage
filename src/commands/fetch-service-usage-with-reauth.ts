@@ -1,8 +1,8 @@
-import chalk from "chalk";
 import { fetchServiceUsage } from "./fetch-service-usage.js";
 import { isAuthFailure, runAuthSetup } from "./run-auth-setup.js";
 import { validateService } from "../services/supported-service.js";
 import type { ServiceResult } from "../types/domain.js";
+import { chalk } from "../utils/color.js";
 
 /**
  * Fetch usage for a service, with automatic re-authentication on auth errors.
@@ -23,7 +23,7 @@ export async function fetchServiceUsageWithAutoReauth(
   if (isAuthFailure(result)) {
     console.error(
       chalk.yellow(
-        `⚠ Authentication failed for ${serviceName}. Opening browser to re-authenticate...`,
+        `⚠ Authentication failed for ${serviceName}. Attempting to re-authenticate...`,
       ),
     );
 

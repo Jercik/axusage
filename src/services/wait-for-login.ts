@@ -1,33 +1,102 @@
-import type { Page } from "playwright";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import { errors, type Page } from "playwright";
 import { LOGIN_TIMEOUT_MS } from "./auth-timeouts.js";
+import { input } from "@inquirer/prompts";
 
 /**
  * Waits until one of the selectors appears on the page, or the user presses Enter to continue.
  */
+export type LoginWaitOutcome =
+  | "selector"
+  | "manual"
+  | "timeout"
+  | "closed"
+  | "aborted"
+  | "skipped";
+
+function isTimeoutError(error: unknown): boolean {
+  return error instanceof errors.TimeoutError;
+}
+
+const SELECTOR_CLOSED_MESSAGES = [
+  "target closed",
+  "page closed",
+  "context closed",
+  "execution context was destroyed",
+] as const;
+
+function isSelectorClosedError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return SELECTOR_CLOSED_MESSAGES.some((snippet) => message.includes(snippet));
+}
+
+function classifySelectorFailure(
+  error: unknown,
+): Exclude<LoginWaitOutcome, "selector" | "manual" | "skipped"> | undefined {
+  if (isTimeoutError(error)) return "timeout";
+  if (isSelectorClosedError(error)) return "closed";
+  return undefined;
+}
+
+function classifySelectorAggregate(
+  error: unknown,
+): Exclude<LoginWaitOutcome, "selector" | "manual" | "skipped"> | undefined {
+  if (error instanceof AggregateError) {
+    const outcomes = error.errors.map((item) => classifySelectorFailure(item));
+    if (outcomes.every((item) => item === "timeout")) return "timeout";
+    if (
+      outcomes.every((item) => item === "timeout" || item === "closed") &&
+      outcomes.includes("closed")
+    ) {
+      return "closed";
+    }
+    return undefined;
+  }
+  return classifySelectorFailure(error);
+}
+
 export async function waitForLogin(
   page: Page,
   selectors: readonly string[],
-): Promise<void> {
-  const reader = createInterface({ input, output });
-  const manual = reader.question(
-    "Press Enter to continue without waiting for login... ",
-  );
-  // Absorb rejection when the interface is closed to prevent
-  // unhandled promise rejection (AbortError) after a selector wins.
-  const manualSilenced = manual.catch(() => {});
+): Promise<LoginWaitOutcome> {
   const timeoutMs = LOGIN_TIMEOUT_MS;
-  const deadline = Date.now() + timeoutMs;
-  // Prevent unhandled rejections if the page closes before all waiters finish
+  const canPrompt = process.stdin.isTTY && process.stdout.isTTY;
+  // Non-TTY sessions rely solely on selector waits (no manual continuation).
+  if (!canPrompt && selectors.length === 0) {
+    return "skipped";
+  }
   const waiters = selectors.map((sel) =>
-    page.waitForSelector(sel, { timeout: timeoutMs }).catch(() => {
-      // Intentionally ignored: the page may navigate/close before selector resolves
-    }),
+    page.waitForSelector(sel, { timeout: timeoutMs }),
   );
-  const shouldShowCountdown = process.stderr.isTTY;
+  const shouldShowCountdown = process.stderr.isTTY && waiters.length > 0;
   let interval: NodeJS.Timeout | undefined;
+  const manualController = canPrompt ? new AbortController() : undefined;
+  const manualPromise = manualController
+    ? input(
+        {
+          message: "Press Enter after completing login in the browser...",
+          default: "",
+        },
+        { signal: manualController.signal },
+      )
+        .then(() => "manual" as const)
+        .catch((error) => {
+          if (
+            error instanceof Error &&
+            (error.name === "AbortPromptError" || error.name === "AbortError")
+          ) {
+            // Expected when we cancel the prompt after a selector wins.
+            // Returning "manual" keeps the promise resolved for the race.
+            return "manual" as const;
+          }
+          if (error instanceof Error && error.name === "ExitPromptError") {
+            return "aborted" as const;
+          }
+          throw error;
+        })
+    : undefined;
   if (shouldShowCountdown) {
+    const deadline = Date.now() + timeoutMs;
     interval = setInterval(() => {
       const remaining = deadline - Date.now();
       if (remaining <= 0) {
@@ -44,9 +113,28 @@ export async function waitForLogin(
     }, 60_000);
   }
   try {
-    await Promise.race([manualSilenced, ...waiters]);
+    const selectorPromise =
+      waiters.length > 0
+        ? Promise.any(waiters)
+            .then(() => "selector" as const)
+            .catch((error) => {
+              // Promise.any only rejects once all selectors have settled.
+              const outcome = classifySelectorAggregate(error);
+              if (outcome) return outcome;
+              throw error;
+            })
+        : undefined;
+    if (selectorPromise) {
+      // Avoid unhandled rejections if the manual prompt wins the race.
+      void selectorPromise.catch(() => {});
+    }
+    const raceTargets: Array<Promise<LoginWaitOutcome>> = [];
+    if (manualPromise) raceTargets.push(manualPromise);
+    if (selectorPromise) raceTargets.push(selectorPromise);
+    if (raceTargets.length === 0) return "skipped";
+    return await Promise.race(raceTargets);
   } finally {
     if (interval) clearInterval(interval);
-    reader.close();
+    manualController?.abort();
   }
 }

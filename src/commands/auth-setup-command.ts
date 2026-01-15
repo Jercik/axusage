@@ -1,12 +1,15 @@
-import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import { validateService } from "../services/supported-service.js";
+import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
+import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
 /**
  * Options for the auth setup command
  */
 type AuthSetupOptions = {
   readonly service?: string;
+  readonly interactive?: boolean;
 };
 
 /**
@@ -19,13 +22,17 @@ export async function authSetupCommand(
 
   // CLI-based auth - users should run the native CLI directly
   if (service === "gemini") {
+    const cliPath = resolveAuthCliDependencyOrReport("gemini", {
+      setExitCode: true,
+    });
+    if (!cliPath) return;
     console.error(
       chalk.yellow(
         "\nGemini uses CLI-based authentication managed by the Gemini CLI.",
       ),
     );
     console.error(chalk.gray("\nTo authenticate, run:"));
-    console.error(chalk.cyan("  gemini"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray(
         "\nThe Gemini CLI will guide you through the OAuth login process.\n",
@@ -35,13 +42,17 @@ export async function authSetupCommand(
   }
 
   if (service === "claude") {
+    const cliPath = resolveAuthCliDependencyOrReport("claude", {
+      setExitCode: true,
+    });
+    if (!cliPath) return;
     console.error(
       chalk.yellow(
         "\nClaude uses CLI-based authentication managed by Claude Code.",
       ),
     );
     console.error(chalk.gray("\nTo authenticate, run:"));
-    console.error(chalk.cyan("  claude"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nClaude Code will guide you through authentication.\n"),
     );
@@ -49,14 +60,44 @@ export async function authSetupCommand(
   }
 
   if (service === "chatgpt") {
+    const cliPath = resolveAuthCliDependencyOrReport("chatgpt", {
+      setExitCode: true,
+    });
+    if (!cliPath) return;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
     );
     console.error(chalk.gray("\nTo authenticate, run:"));
-    console.error(chalk.cyan("  codex"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nCodex will guide you through authentication.\n"),
     );
+    return;
+  }
+
+  if (!options.interactive) {
+    console.error(
+      chalk.red("Error: Authentication setup requires --interactive."),
+    );
+    console.error(
+      chalk.gray(
+        "Re-run with --interactive in a TTY-enabled terminal to continue.",
+      ),
+    );
+    console.error(chalk.gray("Try 'axusage --help' for details."));
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!resolvePromptCapability()) {
+    console.error(
+      chalk.red("Error: --interactive requires a TTY-enabled terminal."),
+    );
+    console.error(
+      chalk.gray("Re-run in a terminal session to complete authentication."),
+    );
+    console.error(chalk.gray("Try 'axusage --help' for details."));
+    process.exitCode = 1;
     return;
   }
 
@@ -74,7 +115,7 @@ export async function authSetupCommand(
     );
     console.error(
       chalk.gray(
-        `\nYou can now run: ${chalk.cyan(`axusage usage --service ${service}`)}`,
+        `\nYou can now run: ${chalk.cyan(`axusage --service ${service}`)}`,
       ),
     );
   } catch (error) {

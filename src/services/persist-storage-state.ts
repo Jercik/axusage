@@ -1,20 +1,24 @@
 import type { BrowserContext } from "playwright";
-import { chmod } from "node:fs/promises";
+import { writeAtomicJson } from "../utils/write-atomic-json.js";
+import { chalk } from "../utils/color.js";
 
 /**
  * Persist context storage state to disk with secure permissions (0o600).
- * Errors are silently ignored to avoid blocking the main operation.
+ * Errors are logged as warnings to avoid blocking the main operation.
  */
 export async function persistStorageState(
   context: BrowserContext,
   storagePath: string,
 ): Promise<void> {
   try {
-    await context.storageState({ path: storagePath });
-    await chmod(storagePath, 0o600).catch(() => {
-      // best effort: permissions may already be correct or OS may ignore
-    });
-  } catch {
-    // ignore persistence errors; do not block request completion
+    const state = await context.storageState();
+    await writeAtomicJson(storagePath, state, 0o600);
+  } catch (error) {
+    const details = error instanceof Error ? error.message : String(error);
+    console.error(
+      chalk.yellow(
+        `Warning: Failed to persist auth state to ${storagePath} (${details}).`,
+      ),
+    );
   }
 }

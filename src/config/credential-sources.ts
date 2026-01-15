@@ -51,6 +51,7 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
   if (!configInstance) {
     configInstance = new Conf<{ sources?: SourcesConfig }>({
       projectName: "axusage",
+      projectSuffix: "",
       schema: {
         sources: {
           type: "object",
@@ -58,8 +59,35 @@ function getConfig(): Conf<{ sources?: SourcesConfig }> {
         },
       },
     });
+    // Migration runs once per process when the config is first initialized.
+    migrateLegacySources(configInstance);
   }
   return configInstance;
+}
+
+function migrateLegacySources(config: Conf<{ sources?: SourcesConfig }>): void {
+  // Respect explicit new config values; never overwrite them with legacy data.
+  if (config.get("sources") !== undefined) return;
+
+  // Conf defaults to the legacy "-nodejs" suffix, which matches older configs.
+  const legacyConfig = new Conf<{ sources?: SourcesConfig }>({
+    projectName: "axusage",
+  });
+  const legacySources = legacyConfig.get("sources");
+  if (!legacySources) return;
+
+  const parsed = SourcesConfig.safeParse(legacySources);
+  if (!parsed.success) {
+    console.error(
+      "Warning: Legacy axusage config contains invalid sources; skipping migration. Check your legacy config and migrate manually if needed.",
+    );
+    return;
+  }
+
+  config.set("sources", parsed.data);
+  console.error(
+    "Migrated credential source configuration from legacy axusage-nodejs config path.",
+  );
 }
 
 /**

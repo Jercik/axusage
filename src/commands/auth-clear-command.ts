@@ -1,5 +1,6 @@
-import chalk from "chalk";
-import { existsSync } from "node:fs";
+import { confirm } from "@inquirer/prompts";
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
 import trash from "trash";
 import { validateService } from "../services/supported-service.js";
 import {
@@ -7,8 +8,39 @@ import {
   getStorageStatePathFor,
 } from "../services/auth-storage-path.js";
 import { getBrowserContextsDirectory } from "../services/app-paths.js";
+import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
-type AuthClearOptions = { readonly service?: string };
+type AuthClearOptions = {
+  readonly service?: string;
+  readonly interactive?: boolean;
+  readonly force?: boolean;
+};
+
+function isPromptCancellation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortPromptError" ||
+      error.name === "CancelPromptError" ||
+      error.name === "ExitPromptError")
+  );
+}
+
+function collectRelatedArtifacts(filePath: string): string[] {
+  const directory = path.dirname(filePath);
+  const baseName = path.basename(filePath);
+  try {
+    return readdirSync(directory)
+      .filter(
+        (entry) =>
+          entry.startsWith(`${baseName}.`) &&
+          (entry.endsWith(".bak") || entry.endsWith(".tmp")),
+      )
+      .map((entry) => path.join(directory, entry));
+  } catch {
+    return [];
+  }
+}
 
 export async function authClearCommand(
   options: AuthClearOptions,
@@ -18,13 +50,67 @@ export async function authClearCommand(
   const storage = getStorageStatePathFor(dataDirectory, service);
   const meta = getAuthMetaPathFor(dataDirectory, service);
   try {
-    const targets = [storage, meta].filter((p) => existsSync(p));
+    const artifactTargets = [storage, meta].filter((p) => existsSync(p));
+    const backupTargets = [storage, meta].flatMap((filePath) =>
+      collectRelatedArtifacts(filePath),
+    );
+    const targets = [...new Set([...artifactTargets, ...backupTargets])];
     if (targets.length === 0) {
       console.error(
         chalk.gray(`\nNo saved authentication found for ${service}.`),
       );
       return;
     }
+
+    if (!options.force) {
+      if (!options.interactive) {
+        console.error(
+          chalk.red(
+            "Error: Clearing saved authentication requires confirmation.",
+          ),
+        );
+        console.error(
+          chalk.gray(
+            "Re-run with --interactive to confirm, or use --force to skip confirmation.",
+          ),
+        );
+        console.error(chalk.gray("Try 'axusage --help' for details."));
+        process.exitCode = 1;
+        return;
+      }
+
+      if (!resolvePromptCapability()) {
+        console.error(
+          chalk.red("Error: --interactive requires a TTY-enabled terminal."),
+        );
+        console.error(
+          chalk.gray("Re-run in a terminal or pass --force instead."),
+        );
+        console.error(chalk.gray("Try 'axusage --help' for details."));
+        process.exitCode = 1;
+        return;
+      }
+
+      let confirmed = false;
+      try {
+        confirmed = await confirm({
+          message: `Remove saved authentication for ${service}?`,
+          default: false,
+        });
+      } catch (error) {
+        if (isPromptCancellation(error)) {
+          console.error(chalk.gray("Aborted."));
+          process.exitCode = 1;
+          return;
+        }
+        throw error;
+      }
+      if (!confirmed) {
+        console.error(chalk.gray("Aborted."));
+        return;
+      }
+    }
+
     await trash(targets, { glob: false });
     console.error(chalk.green(`\n✓ Cleared authentication for ${service}`));
   } catch (error) {

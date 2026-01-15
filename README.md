@@ -12,14 +12,46 @@ npm install -g axusage
 claude
 codex
 gemini
-axusage auth setup github-copilot
+axusage --auth-setup github-copilot --interactive
 
 # Check authentication status
-axusage auth status
+axusage --auth-status
+# For CLI-auth services, this reports CLI availability; use the CLI to confirm login.
 
 # Fetch usage
 axusage
 ```
+
+## Requirements
+
+- `claude` CLI (Claude auth) — `npm install -g @anthropic-ai/claude-code`
+- `codex` CLI (ChatGPT auth) — `npm install -g @openai/codex`
+- `gemini` CLI (Gemini auth) — `npm install -g @google/gemini-cli`
+- Playwright Chromium for GitHub Copilot auth (see "Browser installation" below for global install steps)
+
+### Custom Paths
+
+If the CLIs are not on your `PATH`, override the binaries:
+
+```bash
+export AXUSAGE_CLAUDE_PATH=/path/to/claude
+export AXUSAGE_CODEX_PATH=/path/to/codex
+export AXUSAGE_GEMINI_PATH=/path/to/gemini
+
+# Optional: adjust CLI dependency check timeout (milliseconds)
+export AXUSAGE_CLI_TIMEOUT_MS=5000
+```
+
+For Playwright-managed browsers:
+
+```bash
+export PLAYWRIGHT_BROWSERS_PATH=/path/to/playwright-browsers
+```
+
+### Exit Codes
+
+- `0`: success
+- `1`: errors, including partial failures
 
 ## Authentication
 
@@ -33,13 +65,16 @@ Copilot uses browser-based authentication for persistent, long-lived sessions.
 claude
 codex
 gemini
-axusage auth setup github-copilot
+axusage --auth-setup github-copilot --interactive
 
 # Check authentication status
-axusage auth status
+axusage --auth-status
 ```
 
-When you run `auth setup` for GitHub Copilot, a browser window will open.
+`--auth-status` reports browser-auth status for GitHub Copilot and CLI availability
+for Claude/ChatGPT/Gemini. Use `claude`, `codex`, or `gemini` to confirm CLI login.
+
+When you run `axusage --auth-setup github-copilot --interactive`, a browser window will open.
 Simply log in to GitHub as you normally would. Your authentication will be
 saved and automatically used for future requests.
 
@@ -62,8 +97,12 @@ Security notes:
 - To revoke access for GitHub Copilot, clear saved browser auth:
 
 ```bash
-axusage auth clear github-copilot
+axusage --auth-clear github-copilot --interactive
 ```
+
+This moves the saved browser files to your system Trash/Recycle Bin (recoverable).
+
+Use `--force` to skip confirmation in scripts.
 
 Browser installation:
 
@@ -111,6 +150,9 @@ axusage --service claude --format=json
 
 # TSV output (parseable with cut, awk, sort)
 axusage --format=tsv
+
+# Disable color output
+axusage --no-color
 ```
 
 ## Examples
@@ -169,16 +211,17 @@ Use `axusage` when you need a quick, scriptable snapshot of API usage across Cla
 
 - The CLI shows a countdown while waiting for login.
 - If you have completed login, press Enter in the terminal to continue.
-- If it still fails, run `axusage auth clear <service>` and retry.
+- If it still fails, run `axusage --auth-clear <service> --interactive` and retry.
 
 ### "No saved authentication" error
 
-- Check which services are authenticated: `axusage auth status`.
-- Set up the missing service: `axusage auth setup <service>`.
+- Check which services are authenticated: `axusage --auth-status`.
+- For GitHub Copilot, set up the missing service: `axusage --auth-setup <service> --interactive`.
+- For Claude/ChatGPT/Gemini, run the provider CLI to authenticate.
 
 ### Sessions expire
 
-- Browser sessions can expire based on provider policy. Re-run `auth setup` for the affected service when you see authentication errors.
+- Browser sessions can expire based on provider policy. Re-run `axusage --auth-setup <service> --interactive` for the affected service when you see authentication errors.
 
 ## Remote authentication and Prometheus export
 
@@ -195,14 +238,16 @@ You can perform the interactive login flow on a workstation (for example, a loca
    claude
    codex
    gemini
-   axusage auth setup github-copilot
+   axusage --auth-setup github-copilot --interactive
    ```
 
 2. Confirm the workstation has valid sessions:
 
    ```bash
-   axusage auth status
+   axusage --auth-status
    ```
+
+   For CLI-auth services, run `claude`, `codex`, or `gemini` to confirm login.
 
 3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
 
@@ -211,7 +256,8 @@ You can perform the interactive login flow on a workstation (for example, a loca
    tar czf axusage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
    ```
 
-   Archive structure: `browser-contexts/claude/`, `browser-contexts/chatgpt/`, etc.
+   Archive structure: `browser-contexts/github-copilot-auth.json` plus matching
+   `github-copilot-auth.meta.json` (CLI-auth services do not use browser contexts).
 
 ### 2. Transfer the browser contexts to the Linux server
 
@@ -237,7 +283,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 3. Verify that the sessions are available on the server:
 
    ```bash
-   axusage auth status
+   axusage --auth-status
    ```
 
    If the server does not yet have the tool installed, run `npm install -g axusage` before checking the status.
@@ -245,7 +291,7 @@ You can perform the interactive login flow on a workstation (for example, a loca
 Notes:
 
 - Use `--service <name>` to restrict services.
-- Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `auth setup` as needed.
+- Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `axusage --auth-setup <service> --interactive` as needed.
 - If you transfer browser contexts between machines, ensure the target system is secure and permissions are restricted to the intended user.
 - The CLI stores authentication data in the platform-specific directories listed above; protect that directory to prevent unauthorized access.
 

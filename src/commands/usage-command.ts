@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import {
   formatServiceUsageData,
   formatServiceUsageDataAsJson,
@@ -18,6 +17,7 @@ import {
 } from "./fetch-service-usage.js";
 import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
 import { isAuthFailure } from "./run-auth-setup.js";
+import { chalk } from "../utils/color.js";
 
 /**
  * Fetches usage for services using hybrid strategy:
@@ -130,7 +130,9 @@ export async function usageCommand(
     const list = [...authFailureServices].join(", ");
     console.error(
       chalk.gray(
-        `Authentication required for: ${list}. Run 'axusage auth setup <service>' or re-run with '--interactive' to re-authenticate during fetch.`,
+        `Authentication required for: ${list}. ` +
+          "For GitHub Copilot, run 'axusage --auth-setup github-copilot --interactive'. " +
+          "For CLI-auth services, run the provider CLI (claude/codex/gemini), or re-run with '--interactive' to re-authenticate during fetch.",
       ),
     );
     if (successes.length > 0) {
@@ -201,6 +203,6 @@ export async function usageCommand(
   }
 
   if (hasPartialFailures) {
-    process.exitCode = 2;
+    process.exitCode = 1;
   }
 }

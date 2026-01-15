@@ -1,7 +1,9 @@
-import chalk from "chalk";
 import { BrowserAuthManager } from "../services/browser-auth-manager.js";
 import type { SupportedService } from "../services/supported-service.js";
 import type { ApiError, Result, ServiceUsageData } from "../types/domain.js";
+import { resolveAuthCliDependencyOrReport } from "../utils/check-cli-dependency.js";
+import { chalk } from "../utils/color.js";
+import { resolvePromptCapability } from "../utils/resolve-prompt-capability.js";
 
 /** Timeout for authentication setup (5 minutes) */
 const AUTH_SETUP_TIMEOUT_MS = 300_000;
@@ -58,13 +60,15 @@ export async function runAuthSetup(
 ): Promise<boolean> {
   // CLI-based auth cannot use browser auth flow
   if (service === "gemini") {
+    const cliPath = resolveAuthCliDependencyOrReport("gemini");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow(
         "\nGemini uses CLI-based authentication managed by the Gemini CLI.",
       ),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  gemini"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray(
         "\nThe Gemini CLI will guide you through the OAuth login process.\n",
@@ -74,13 +78,15 @@ export async function runAuthSetup(
   }
 
   if (service === "claude") {
+    const cliPath = resolveAuthCliDependencyOrReport("claude");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow(
         "\nClaude uses CLI-based authentication managed by Claude Code.",
       ),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  claude"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nClaude Code will guide you through authentication.\n"),
     );
@@ -88,19 +94,34 @@ export async function runAuthSetup(
   }
 
   if (service === "chatgpt") {
+    const cliPath = resolveAuthCliDependencyOrReport("chatgpt");
+    if (!cliPath) return false;
     console.error(
       chalk.yellow("\nChatGPT uses CLI-based authentication managed by Codex."),
     );
     console.error(chalk.gray("\nTo re-authenticate, run:"));
-    console.error(chalk.cyan("  codex"));
+    console.error(chalk.cyan(`  ${cliPath}`));
     console.error(
       chalk.gray("\nCodex will guide you through authentication.\n"),
     );
     return false;
   }
 
+  if (!resolvePromptCapability()) {
+    console.error(
+      chalk.red("Error: Interactive authentication requires a TTY terminal."),
+    );
+    console.error(
+      chalk.gray(
+        "Re-run in a TTY terminal (avoid piping stdin/stdout) with --interactive to complete authentication.",
+      ),
+    );
+    return false;
+  }
+
   const manager = new BrowserAuthManager({ headless: false });
 
+  let setupPromise: Promise<void> | undefined;
   let timeoutId: NodeJS.Timeout | undefined;
 
   try {
@@ -108,7 +129,7 @@ export async function runAuthSetup(
       chalk.blue(`\nOpening browser for ${service} authentication...\n`),
     );
 
-    const setupPromise = manager.setupAuth(service);
+    setupPromise = manager.setupAuth(service);
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error("Authentication setup timed out after 5 minutes"));
@@ -130,6 +151,10 @@ export async function runAuthSetup(
     return false;
   } finally {
     clearTimeout(timeoutId);
+    if (setupPromise) {
+      // Avoid unhandled rejections if the timeout wins the race.
+      void setupPromise.catch(() => {});
+    }
     await manager.close();
   }
 }
