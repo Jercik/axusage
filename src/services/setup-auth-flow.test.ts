@@ -49,7 +49,7 @@ describe("setupAuthInContext", () => {
 
     await expect(
       setupAuthInContext("github-copilot", context, "/tmp/state.json"),
-    ).rejects.toThrow(
+    ).rejects.toThrowError(
       "Login was not confirmed after manual continuation. Authentication was not saved.",
     );
     expect(mockWriteAtomicJson).not.toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe("setupAuthInContext", () => {
 
     await expect(
       setupAuthInContext("github-copilot", context, "/tmp/state.json"),
-    ).rejects.toThrow(
+    ).rejects.toThrowError(
       "Unable to verify session via https://example.com/verify after login timeout. Authentication was not saved.",
     );
     expect(mockWriteAtomicJson).not.toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe("setupAuthInContext", () => {
 
     await expect(
       setupAuthInContext("github-copilot", context, "/tmp/state.json"),
-    ).rejects.toThrow(
+    ).rejects.toThrowError(
       "Authentication was canceled. Authentication was not saved.",
     );
     expect(mockWriteAtomicJson).not.toHaveBeenCalled();

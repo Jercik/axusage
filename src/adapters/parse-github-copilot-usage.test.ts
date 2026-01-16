@@ -14,11 +14,11 @@ describe("github-copilot parsing", () => {
     });
 
     it("throws on invalid format", () => {
-      expect(() => parseResetDate("2025/11/01")).toThrow();
-      expect(() => parseResetDate("2025-13-01")).toThrow();
-      expect(() => parseResetDate("2025-00-10")).toThrow();
-      expect(() => parseResetDate("2025-11-32")).toThrow();
-      expect(() => parseResetDate("2025-11")).toThrow();
+      expect(() => parseResetDate("2025/11/01")).toThrowError();
+      expect(() => parseResetDate("2025-13-01")).toThrowError();
+      expect(() => parseResetDate("2025-00-10")).toThrowError();
+      expect(() => parseResetDate("2025-11-32")).toThrowError();
+      expect(() => parseResetDate("2025-11")).toThrowError();
     });
   });
 
@@ -62,13 +62,14 @@ describe("github-copilot parsing", () => {
       expect(data.windows).toHaveLength(1);
       const w = data.windows[0];
       expect(w).toBeDefined();
-      if (!w) return;
-      expect(w.name).toBe("Monthly Premium Interactions");
+      // Type assertion: we've verified w is defined above
+      const window = w as NonNullable<typeof w>;
+      expect(window.name).toBe("Monthly Premium Interactions");
       // (1500 - 1392)/1500*100 = 7.2
-      expect(w.utilization).toBeCloseTo(7.2, 5);
-      expect(w.resetsAt).toBeDefined();
-      expect(w.resetsAt?.toISOString()).toBe("2025-11-01T00:00:00.000Z");
-      expect(w.periodDurationMs).toBeGreaterThan(0);
+      expect(window.utilization).toBeCloseTo(7.2, 5);
+      expect(window.resetsAt).toBeDefined();
+      expect(window.resetsAt?.toISOString()).toBe("2025-11-01T00:00:00.000Z");
+      expect(window.periodDurationMs).toBeGreaterThan(0);
     });
   });
 });

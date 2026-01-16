@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import type { BrowserContext, Browser } from "playwright";
 import {
   createAuthContext,
   loadStoredUserAgent,
@@ -89,14 +90,12 @@ describe("createAuthContext", () => {
       const fakeBrowser: unknown = {
         newContext: (options: { storageState: string; userAgent?: string }) => {
           calls.push(options);
-          return Promise.resolve(
-            {} as unknown as import("playwright").BrowserContext,
-          );
+          return Promise.resolve({} as unknown as BrowserContext);
         },
       } as const;
 
       const contextResult = await createAuthContext(
-        fakeBrowser as import("playwright").Browser,
+        fakeBrowser as Browser,
         directory,
         "claude",
       );

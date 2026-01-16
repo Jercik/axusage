@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { BrowserContext } from "playwright";
 
 vi.mock("./fetch-json-with-context.js", () => ({
   fetchJsonWithContext: vi.fn((_context: unknown, url: string) =>
@@ -9,8 +10,7 @@ vi.mock("./fetch-json-with-context.js", () => ({
 import { requestService } from "./request-service.js";
 import { fetchJsonWithContext } from "./fetch-json-with-context.js";
 
-const getContext = () =>
-  Promise.resolve({} as unknown as import("playwright").BrowserContext);
+const getContext = () => Promise.resolve({} as unknown as BrowserContext);
 
 describe("requestService", () => {
   beforeEach(() => {

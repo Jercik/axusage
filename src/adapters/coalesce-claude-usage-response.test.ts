@@ -31,10 +31,11 @@ describe("coalesceClaudeUsageResponse", () => {
 
     const parseResult = UsageResponseSchema.safeParse(result);
     expect(parseResult.success).toBe(true);
-    if (!parseResult.success) {
-      throw new Error("Expected coalesced usage response to match schema");
-    }
-    const parsed = parseResult.data;
+    // Type assertion: we've verified success above
+    const parsed = parseResult.data as Exclude<
+      typeof parseResult,
+      { success: false }
+    >["data"];
     expect(parsed.five_hour.resets_at).toBeUndefined();
     expect(parsed.seven_day.resets_at).toBeUndefined();
     expect(parsed.seven_day_opus?.resets_at).toBeUndefined();

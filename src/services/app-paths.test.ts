@@ -2,6 +2,7 @@ import path from "node:path";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { mkdtempSync, existsSync, statSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import type * as AppPaths from "./app-paths.js";
 
 const environmentPathsMock = vi.fn(() => ({ data: "/tmp/axusage" }));
 
@@ -10,7 +11,7 @@ vi.mock("env-paths", () => ({
   default: environmentPathsMock,
 }));
 
-const loadModule = async (): Promise<typeof import("./app-paths.js")> => {
+const loadModule = async (): Promise<typeof AppPaths> => {
   vi.resetModules();
   return import("./app-paths.js");
 };
