@@ -1,9 +1,13 @@
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("writeAtomicJson", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
   it("writes JSON data with secure permissions", async () => {
     const { writeAtomicJson } = await import("./write-atomic-json.js");
     const base = await mkdtemp(path.join(tmpdir(), "axusage-test-"));
@@ -20,8 +24,6 @@ describe("writeAtomicJson", () => {
   });
 
   it("cleans up the temporary file when rename fails", async () => {
-    vi.resetModules();
-
     const writeFile = vi.fn(() => Promise.resolve());
     const chmod = vi.fn(() => Promise.resolve());
     const rename = vi.fn(() => Promise.reject(new Error("rename failed")));
@@ -41,7 +43,7 @@ describe("writeAtomicJson", () => {
 
     await expect(
       writeAtomicJson("/tmp/target.json", { ok: true }, 0o600),
-    ).rejects.toThrow("rename failed");
+    ).rejects.toThrowError("rename failed");
 
     expect(writeFile).toHaveBeenCalledWith(
       "/tmp/target.json.unit-test.tmp",
@@ -49,14 +51,9 @@ describe("writeAtomicJson", () => {
       { encoding: "utf8", mode: 0o600 },
     );
     expect(unlink).toHaveBeenCalledWith("/tmp/target.json.unit-test.tmp");
-
-    vi.unmock("node:fs/promises");
-    vi.unmock("node:crypto");
   });
 
   it("falls back to a backup swap when rename errors match Windows cases", async () => {
-    vi.resetModules();
-
     const writeFile = vi.fn(() => Promise.resolve());
     const chmod = vi.fn(() => Promise.resolve());
     const unlink = vi.fn(() => Promise.resolve());
@@ -102,8 +99,5 @@ describe("writeAtomicJson", () => {
       "/tmp/target.json",
     );
     expect(unlink).toHaveBeenCalledWith("/tmp/target.json.backup.bak");
-
-    vi.unmock("node:fs/promises");
-    vi.unmock("node:crypto");
   });
 });

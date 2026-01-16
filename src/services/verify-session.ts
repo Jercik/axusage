@@ -24,7 +24,9 @@ export async function verifySessionByFetching(
       // Wait a bit and try again; tokens/cookies may not be settled yet
       // Skip the delay after the final attempt to avoid unnecessary wait
       if (attempt < maxAttempts - 1) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
       }
     }
   }

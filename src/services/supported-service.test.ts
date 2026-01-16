@@ -15,12 +15,14 @@ describe("validateService", () => {
   });
 
   it("throws for missing service", () => {
-    expect(() => validateService(undefined as unknown as string)).toThrow(
+    expect(() => validateService(undefined as unknown as string)).toThrowError(
       /Service is required/iu,
     );
   });
 
   it("throws for unsupported service", () => {
-    expect(() => validateService("unknown")).toThrow(/Unsupported service/iu);
+    expect(() => validateService("unknown")).toThrowError(
+      /Unsupported service/iu,
+    );
   });
 });

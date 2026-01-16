@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { BrowserContext } from "playwright";
 
 vi.mock("./fetch-json-with-context.js", () => ({
   fetchJsonWithContext: vi.fn(() => Promise.resolve("ok")),
@@ -15,7 +16,7 @@ describe("verifySessionByFetching", () => {
       fetchJsonWithContext as unknown as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce("ok");
     const ok = await verifySessionByFetching(
-      {} as unknown as import("playwright").BrowserContext,
+      {} as unknown as BrowserContext,
       "https://example",
       1,
       1,
@@ -29,7 +30,7 @@ describe("verifySessionByFetching", () => {
       fetchJsonWithContext as unknown as ReturnType<typeof vi.fn>
     ).mockRejectedValue(new Error("fail"));
     const ok = await verifySessionByFetching(
-      {} as unknown as import("playwright").BrowserContext,
+      {} as unknown as BrowserContext,
       "https://example",
       2,
       1,
