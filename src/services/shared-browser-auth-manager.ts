@@ -29,9 +29,9 @@ export async function releaseAuthManager(): Promise<void> {
     manager = undefined;
     try {
       await closingManager.close();
-    } catch {
-      // Best-effort cleanup: don't let close failures propagate to callers
-      // (matches forceClose semantics and prevents masking prior errors in finally blocks)
+    } catch (error) {
+      // Best-effort cleanup: log but don't propagate (prevents masking prior errors in finally blocks)
+      console.warn("Failed to close browser auth manager:", error);
     }
   }
 }
@@ -45,8 +45,12 @@ async function forceClose(): Promise<void> {
     manager = undefined;
     try {
       await closingManager.close();
-    } catch {
-      // Best-effort cleanup: ignore close failures during shutdown
+    } catch (error) {
+      // Best-effort cleanup: log but don't propagate during shutdown
+      console.warn(
+        "Failed to close browser auth manager during shutdown:",
+        error,
+      );
     }
   }
 }
