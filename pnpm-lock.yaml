@@ -17,6 +17,9 @@ importers:
       axauth:
         specifier: ^1.11.2
         version: 1.11.2(@types/node@25.0.8)
+      axshared:
+        specifier: ^2.0.0
+        version: 2.0.0
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
@@ -1252,6 +1255,11 @@ packages:
 
   axshared@1.9.0:
     resolution: {integrity: sha512-Fxe1eDmmM7jcS06VhekTshOVvfSjA5NdRvBWxMWgnA6vRreimw5S7NLtNXHkhNsArPXPO4eGz+Umjhvn4YqiCA==}
+    engines: {node: '>=22.14.0'}
+    hasBin: true
+
+  axshared@2.0.0:
+    resolution: {integrity: sha512-soCG3vc9UMrITEN6XUKMpUdO7luN+t7M5yBeWhGVVrhHg3rXXF/h31UNp9eVDbr/S/+Fc6sH0ca512eeNWUbfA==}
     engines: {node: '>=22.14.0'}
     hasBin: true
 
@@ -4051,6 +4059,12 @@ snapshots:
       commander: 14.0.2
 
   axshared@1.9.0:
+    dependencies:
+      '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
+      commander: 14.0.2
+      zod: 4.3.5
+
+  axshared@2.0.0:
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
       commander: 14.0.2

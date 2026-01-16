@@ -85,17 +85,13 @@ async function fetchFromVault(
       agentId,
       name: credentialName,
     });
-    const result:
-      | {
-          ok: true;
-          credentials: { type: string; data: Record<string, unknown> };
-        }
-      | { ok: false; reason: string } = rawResult as unknown as
+    type AxauthResult =
       | {
           ok: true;
           credentials: { type: string; data: Record<string, unknown> };
         }
       | { ok: false; reason: string };
+    const result: AxauthResult = rawResult as unknown as AxauthResult;
     /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     if (!result.ok) {

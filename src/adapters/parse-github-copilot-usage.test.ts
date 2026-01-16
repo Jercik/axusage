@@ -61,9 +61,10 @@ describe("github-copilot parsing", () => {
       expect(data.planType).toBe("pro_plus");
       expect(data.windows).toHaveLength(1);
       const w = data.windows[0];
-      expect(w).toBeDefined();
-      // Type assertion: we've verified w is defined above
-      const window = w as NonNullable<typeof w>;
+      if (!w) {
+        throw new Error("Expected at least one usage window in data.windows");
+      }
+      const window = w;
       expect(window.name).toBe("Monthly Premium Interactions");
       // (1500 - 1392)/1500*100 = 7.2
       expect(window.utilization).toBeCloseTo(7.2, 5);

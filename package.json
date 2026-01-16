@@ -56,6 +56,7 @@
     "@commander-js/extra-typings": "^14.0.0",
     "@inquirer/prompts": "^8.2.0",
     "axauth": "^1.11.2",
+    "axshared": "^2.0.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "conf": "^15.0.2",
