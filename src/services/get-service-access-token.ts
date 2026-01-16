@@ -80,19 +80,10 @@ async function fetchFromVault(
   credentialName: string,
 ): Promise<string | undefined> {
   try {
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- axauth has error-typed return values */
-    const rawResult = await fetchVaultCredentials({
+    const result = await fetchVaultCredentials({
       agentId,
       name: credentialName,
     });
-    type AxauthResult =
-      | {
-          ok: true;
-          credentials: { type: string; data: Record<string, unknown> };
-        }
-      | { ok: false; reason: string };
-    const result: AxauthResult = rawResult as unknown as AxauthResult;
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     if (!result.ok) {
       // Log warning for debugging, but don't fail hard
@@ -127,9 +118,7 @@ async function fetchFromVault(
  */
 async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- axauth has error-typed return values
-    const rawToken = await getAgentAccessToken(agentId);
-    return rawToken as unknown as string;
+    return await getAgentAccessToken(agentId);
   } catch (error) {
     console.error(
       `[axusage] Local credential fetch error for ${agentId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -161,7 +150,6 @@ async function getServiceAccessToken(
   const configRaw = getServiceSourceConfig(service as ServiceId);
   const config: { source: "local" | "vault" | "auto"; name?: string } =
     configRaw as { source: "local" | "vault" | "auto"; name?: string };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- SERVICE_TO_AGENT may have error-typed values
   const agentId = SERVICE_TO_AGENT[service];
 
   switch (config.source) {
@@ -190,10 +178,7 @@ async function getServiceAccessToken(
 
     case "auto": {
       // Auto mode: try vault first if configured and name provided
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- axauth has error-typed return values
-      const rawConfigured = isVaultConfigured();
-      const vaultConfigured = rawConfigured as unknown as boolean;
-      if (config.name && vaultConfigured) {
+      if (config.name && isVaultConfigured()) {
         const vaultToken = await fetchFromVault(agentId, config.name);
         if (vaultToken) {
           return vaultToken;
