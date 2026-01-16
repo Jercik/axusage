@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, assert } from "vitest";
 import {
   parseResetDate,
   calculatePeriodDuration,
@@ -61,9 +61,7 @@ describe("github-copilot parsing", () => {
       expect(data.planType).toBe("pro_plus");
       expect(data.windows).toHaveLength(1);
       const w = data.windows[0];
-      if (!w) {
-        throw new Error("Expected at least one usage window in data.windows");
-      }
+      assert(w);
       const window = w;
       expect(window.name).toBe("Monthly Premium Interactions");
       // (1500 - 1392)/1500*100 = 7.2

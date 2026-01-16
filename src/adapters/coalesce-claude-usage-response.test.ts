@@ -29,11 +29,7 @@ describe("coalesceClaudeUsageResponse", () => {
     expect(result?.seven_day.resets_at).toBeNull();
     expect(result?.seven_day_opus?.resets_at).toBeNull();
 
-    const parseResult = UsageResponseSchema.safeParse(result);
-    if (!parseResult.success) {
-      throw new Error("Expected parseResult.success to be true");
-    }
-    const parsed = parseResult.data;
+    const parsed = UsageResponseSchema.parse(result);
     expect(parsed.five_hour.resets_at).toBeUndefined();
     expect(parsed.seven_day.resets_at).toBeUndefined();
     expect(parsed.seven_day_opus?.resets_at).toBeUndefined();
