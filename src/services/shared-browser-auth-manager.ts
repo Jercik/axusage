@@ -41,13 +41,12 @@ async function forceClose(): Promise<void> {
   closing = true;
   references = 0;
   if (manager) {
+    const closingManager = manager;
+    manager = undefined;
     try {
-      await manager.close();
+      await closingManager.close();
     } catch {
-      // ignore
-    } finally {
-      // eslint-disable-next-line require-atomic-updates -- intentional singleton pattern
-      manager = undefined;
+      // Best-effort cleanup: ignore close failures during shutdown
     }
   }
 }
