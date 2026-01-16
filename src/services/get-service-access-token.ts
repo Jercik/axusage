@@ -147,9 +147,7 @@ async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
 async function getServiceAccessToken(
   service: VaultSupportedServiceId,
 ): Promise<string | undefined> {
-  const configRaw = getServiceSourceConfig(service as ServiceId);
-  const config: { source: "local" | "vault" | "auto"; name?: string } =
-    configRaw as { source: "local" | "vault" | "auto"; name?: string };
+  const config = getServiceSourceConfig(service as ServiceId);
   const agentId = SERVICE_TO_AGENT[service];
 
   switch (config.source) {
