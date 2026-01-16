@@ -60,9 +60,8 @@ describe("github-copilot parsing", () => {
       expect(data.service).toBe("GitHub Copilot");
       expect(data.planType).toBe("pro_plus");
       expect(data.windows).toHaveLength(1);
-      const w = data.windows[0];
-      assert(w);
-      const window = w;
+      const window = data.windows[0];
+      assert(window);
       expect(window.name).toBe("Monthly Premium Interactions");
       // (1500 - 1392)/1500*100 = 7.2
       expect(window.utilization).toBeCloseTo(7.2, 5);
