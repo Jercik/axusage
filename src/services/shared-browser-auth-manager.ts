@@ -27,7 +27,12 @@ export async function releaseAuthManager(): Promise<void> {
   if (references === 0 && manager) {
     const closingManager = manager;
     manager = undefined;
-    await closingManager.close();
+    try {
+      await closingManager.close();
+    } catch {
+      // Best-effort cleanup: don't let close failures propagate to callers
+      // (matches forceClose semantics and prevents masking prior errors in finally blocks)
+    }
   }
 }
 
