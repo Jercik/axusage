@@ -31,7 +31,10 @@ export async function releaseAuthManager(): Promise<void> {
       await closingManager.close();
     } catch (error) {
       // Best-effort cleanup: log but don't propagate (prevents masking prior errors in finally blocks)
-      console.warn("Failed to close browser auth manager:", error);
+      console.warn(
+        "Failed to close browser auth manager:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 }
@@ -49,7 +52,7 @@ async function forceClose(): Promise<void> {
       // Best-effort cleanup: log but don't propagate during shutdown
       console.warn(
         "Failed to close browser auth manager during shutdown:",
-        error,
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
