@@ -25,9 +25,9 @@ export async function releaseAuthManager(): Promise<void> {
   }
   references -= 1;
   if (references === 0 && manager) {
-    await manager.close();
-    // eslint-disable-next-line require-atomic-updates -- intentional singleton pattern
+    const closingManager = manager;
     manager = undefined;
+    await closingManager.close();
   }
 }
 
