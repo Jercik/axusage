@@ -158,4 +158,8 @@ function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
 }
 
 export type { ServiceId, VaultSupportedServiceId };
-export { getServiceSourceConfig };
+export { getServiceSourceConfig, getCredentialSourcesPath };
+
+function getCredentialSourcesPath(): string {
+  return getConfig().path;
+}
