@@ -8,6 +8,8 @@
  */
 
 import Conf from "conf";
+import envPaths from "env-paths";
+import path from "node:path";
 import { z } from "zod";
 
 /** Credential source type */
@@ -157,5 +159,17 @@ function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
   return { source: serviceConfig.source, name: serviceConfig.name };
 }
 
+/**
+ * Get the credential sources config file path.
+ *
+ * This computes the path using env-paths directly instead of instantiating
+ * Conf, which avoids all filesystem side effects (Conf creates the config
+ * directory during construction).
+ */
+function getCredentialSourcesPath(): string {
+  const configDirectory = envPaths("axusage", { suffix: "" }).config;
+  return path.resolve(configDirectory, "config.json");
+}
+
 export type { ServiceId, VaultSupportedServiceId };
-export { getServiceSourceConfig };
+export { getServiceSourceConfig, getCredentialSourcesPath };

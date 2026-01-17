@@ -61,148 +61,6 @@ Use concise prompts for quick facts and focused questions for deeper topics. If 
 
 ---
 
-# a╳kit Branding
-
-## Etymology
-
-**ax** = **A**gent e**X**tra
-
-Tools that give you extra capabilities when working with AI coding agents.
-
-### What the X Implies
-
-- **Extra capabilities** — enhanced tooling beyond what agents provide alone
-- **Multiplication of productivity** — composing tools and agents
-
-### One-liner
-
-> "ax is an agent toolkit: extra tools, one interface, many agents."
-
----
-
-## Logo
-
-### Primary Mark
-
-The logo uses a rotated X (╳) to represent the exchange/crossroads concept:
-
-```
-a╳
-```
-
-### Full Name Treatment
-
-```
-a╳kit
-```
-
-Use the rotated X character (╳, U+2573) in contexts that support Unicode. Fall back to lowercase `x` in ASCII-only environments.
-
-### Fallback Rules
-
-| Context                        | Use                       | Example                    |
-| ------------------------------ | ------------------------- | -------------------------- |
-| Display text, headings, docs   | `╳` (U+2573)              | a╳kit                      |
-| Code, file paths, URLs         | lowercase `x`             | axkit, axkit.dev           |
-| Help header                    | tool first, brand in parens | axrun (a╳kit) v1.2.3     |
-
-### Website
-
-```
-axkit.dev
-```
-
----
-
-## Naming Conventions
-
-### Executable Names
-
-All CLI tools in a╳kit follow these rules:
-
-- **Lowercase ASCII only**: `run`, `auth`, `config`, `agent`, `doctor`
-- **3–10 characters**, obvious meaning
-- **No separators**: no `ax-run`, no `ax_run`, no unicode
-- **Prefix pattern**: `ax` + postfix (e.g., `axrun`, `axauth`)
-
-### Postfix Guidelines
-
-| Type   | Use For              | Examples                        |
-| ------ | -------------------- | ------------------------------- |
-| Verbs  | Actions              | `run`, `sync`, `test`           |
-| Nouns  | Areas/domains        | `auth`, `config`, `agents`      |
-
-### Reserved Words (Avoid as Postfix)
-
-These conflict with standard CLI conventions:
-
-- `help`
-- `version`
-- `completion`
-- `install`
-- `update`
-
-### Avoid Near-Duplicates
-
-Pick one and stay consistent:
-
-- `config` vs `cfg` → pick `config`
-- `auth` vs `authenticate` → pick `auth`
-
----
-
-## Usage Examples
-
-### Terminal Help Output
-
-```
-$ axrun --help
-axrun (a╳kit) v1.2.3
-
-Execute agent workflows in a unified environment.
-
-USAGE:
-    axrun <workflow> [OPTIONS]
-
-EXAMPLES:
-    axrun deploy.yml --agent claude
-    axrun test.py --parallel --agents gemini,codex
-
-SEE ALSO:
-    axconfig(1), axauth(1)
-```
-
-### Feature Grid (Documentation/Website)
-
-```
-┌─────────┐    ┌─────────┐    ┌───────────┐
-│  axrun  │ →  │  axauth │ →  │ axconfig  │
-└─────────┘    └─────────┘    └───────────┘
-      ↓              ↓              ↓
-   Execute     Authenticate    Configure
-```
-
-### README Header
-
-```markdown
-# a╳kit
-
-The universal toolkit for AI coding agents.
-```
-
----
-
-## Asset Checklist
-
-When creating new tools or documentation, ensure:
-
-- [ ] Tool name follows `ax` + postfix pattern
-- [ ] Postfix is 3–10 lowercase ASCII characters
-- [ ] Help output includes `<tool> (a╳kit) v<version>` header
-
-
----
-
 # a╳kit
 
 **One interface, many agents.**
@@ -211,200 +69,48 @@ a╳kit is a unified ecosystem of CLI tools for managing multiple AI coding agen
 
 ---
 
-## The Ecosystem
+## Tools
 
-a╳kit is not a single tool, but a suite of composable utilities designed to work together.
+| Tool | Purpose |
+|------|---------|
+| **axshared** | Shared types, agent metadata, and core utilities |
+| **axconfig** | Unified permission management across agents |
+| **axauth** | Credential management, token retrieval, export/import |
+| **axinstall** | Auto-detect package manager and install agents |
+| **axrun** | Headless agent execution for CI/CD (never prompts) |
+| **axexec** | Core execution engine library (`axexec.runAgent()`) |
+| **axvault** | Encrypted credential server with OAuth refresh |
+| **axusage** | API usage quotas in text/TSV/JSON/Prometheus |
 
-```
-              ┌─────────────────────────────────┐
-              │            axshared             │
-              │   (types, agent metadata, CLI)  │
-              └───┬─────────┬─────────┬─────────┘
-                  │         │         │
-                  ▼         │         ▼
-              axconfig      │     axinstall
-          (permissions)     │   (installation)
-                  │         │
-          ┌───────┼─────────┤
-          │       │         │
-          ▼       ▼         ▼
-       axrun   axusage   axauth
-     (runner) (metrics) (credentials)
-```
-
-## Project Goals
-
-Each tool in the a╳kit suite has a specific responsibility:
-
-### **axshared**
-*   **Goal**: Provide the shared type definitions, agent metadata, and core utilities that power the entire ecosystem.
-*   **Role**: Ensures consistency across all tools. If an agent definition changes, it changes here.
-
-### **axconfig**
-*   **Goal**: Unify configuration and permission management across disparate agents.
-*   **Role**: Manages what agents are allowed to do (file access, network requests, shell commands) using a standardized permission model, translating abstract permissions into agent-specific flags.
-
-### **axauth**
-*   **Goal**: Simplify credential management and token retrieval.
-*   **Role**: Securely installs and retrieves API keys and session tokens, providing a unified interface for authentication checks (`axauth list`), token retrieval (`axauth token`), and portable credential export/import.
-
-### **axinstall**
-*   **Goal**: Make setting up AI agents effortless.
-*   **Role**: Auto-detects the user's package manager (npm, pnpm, yarn, brew, bun) and system environment to install agents correctly.
-
-### **axrun**
-*   **Goal**: Execute agent workflows headlessly in CI/CD and automation pipelines.
-*   **Role**: The primary runner, designed for **non-interactive environments**. It normalizes input prompts and streams output events (JSONL/TSV), acting as a "driver" that makes different agents behave consistently. **axrun never prompts for user input**—all permissions, credentials, and configuration must be provided upfront via flags or environment variables.
-
-### **axusage**
-*   **Goal**: Provide visibility into API usage quotas.
-*   **Role**: Aggregates usage utilization percentages and quota reset times across providers, exporting them in standard formats (text, TSV, JSON, Prometheus) for monitoring.
-
-## Supported Agents
-
-| Agent | CLI | Package | Provider |
-|-------|-----|---------|----------|
-| Claude Code | `claude` | @anthropic-ai/claude-code | Anthropic |
-| Codex CLI | `codex` | @openai/codex | OpenAI |
-| Gemini CLI | `gemini` | @google/gemini-cli | Google |
-| OpenCode | `opencode` | opencode-ai | Sst |
-| Copilot CLI | `copilot` | @github/copilot | GitHub |
-
-### Environment Variables
-
-| Agent | API Key | OAuth Token |
-|-------|---------|-------------|
-| Claude | `ANTHROPIC_API_KEY` | `CLAUDE_CODE_OAUTH_TOKEN` |
-| Codex | `OPENAI_API_KEY` | — |
-| Gemini | `GEMINI_API_KEY` | — |
-| OpenCode | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` | — |
-| Copilot | — | `COPILOT_GITHUB_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN` |
-
-### CI/CD Credentials
-
-For CI/CD pipelines, credentials can be exported and passed via environment variables:
-
-| Agent | Credential Env Var |
-|-------|--------------------|
-| Claude | `AX_CLAUDE_CREDENTIALS` |
-| Codex | `AX_CODEX_CREDENTIALS` |
-| Gemini | `AX_GEMINI_CREDENTIALS` |
-| OpenCode | `AX_OPENCODE_CREDENTIALS` |
-| Copilot | `AX_COPILOT_CREDENTIALS` |
-
-When `axrun` detects these variables, it automatically installs credentials to a temporary directory before running the agent.
-
-#### Claude: Long-Lasting OAuth Token (Recommended)
-
-Claude Code supports a long-lasting OAuth token for CI/CD, generated via `claude setup-token`. This is simpler than `AX_CLAUDE_CREDENTIALS` since it doesn't require credential file installation:
+## Usage
 
 ```bash
-claude setup-token  # One-time setup, opens browser
-```
-
-Then use `CLAUDE_CODE_OAUTH_TOKEN` in your workflow:
-
-```yaml
-- name: Run Claude Review
-  env:
-    CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-  run: axrun --agent claude --prompt "Review the changes"
-```
-
-## Workflow Examples
-
-### 1. Installation & Setup
-```bash
-# Install agents (auto-detects pnpm/bun/yarn/npm/brew)
+# Install an agent
 axinstall claude
-axinstall codex --with npm
 
-# Verify what's installed
-axinstall --status
-```
-
-### 2. Configuration & Auth
-```bash
-# Configure permissions (unified syntax)
+# Configure permissions
 axconfig set --agent claude allow "read,glob,bash:git *"
 
-# Check authenticated agents
-axauth list
-
-# Get a token for programmatic use
-axauth token --agent claude
-
-# Export credentials for backup or transfer
-axauth export --agent gemini --output creds.json --no-password
-
-# Install credentials on another machine or in CI/CD
-axauth install-credentials --agent gemini --input creds.json \
-  --config-dir /tmp/test/.gemini
-
-# CI/CD: pass credentials via conventional env var (auto-detected)
-export AX_GEMINI_CREDENTIALS=$(cat creds.json)
-axauth install-credentials --agent gemini --config-dir /tmp/test/.gemini
+# Run headlessly in CI/CD
+axrun --agent claude --vault-credential ci-oauth-token --prompt "Review this PR"
 ```
 
-### 3. Execution (The "Pipe" Dream)
-All tools produce machine-readable output by default for Unix pipeline integration.
+### CI/CD Integration
 
-```bash
-# Run an agent and parse its output
-axrun --agent claude "Fix the type error" --format jsonl | jq '.type'
-
-# Filter available agents by provider
-axshared agents list | awk -F'	' '$4 == "Anthropic"'
-
-# Export usage metrics to Prometheus
-axusage --format prometheus
-```
-
-### 4. CI/CD Integration (Primary Use Case)
-axrun is designed primarily for headless environments like GitHub Actions, GitLab CI, Jenkins, and other CI/CD systems. In these environments, there's no terminal to prompt users—everything must be pre-configured:
-
-```bash
-# Export credentials locally (one-time setup)
-axauth export --agent claude --output creds.json --no-password
-
-# Store creds.json contents as a repository secret (e.g., AX_CLAUDE_CREDENTIALS)
-
-# In CI/CD, axrun automatically detects and installs credentials
-axrun --agent claude --model opus \
-  --allow 'read,glob,grep,bash:git *' \
-  --prompt "Review this PR"
-```
-
-Example GitHub Actions workflow:
 ```yaml
 - name: Run Claude Review
   env:
-    AX_CLAUDE_CREDENTIALS: ${{ secrets.AX_CLAUDE_CREDENTIALS }}
-  run: |
-    npm install -g axrun @anthropic-ai/claude-code
-    axrun --agent claude --prompt "Review the changes"
+    AXVAULT: ${{ secrets.AXVAULT }}
+  run: axrun --agent claude --vault-credential ci-oauth-token --prompt "Review the changes"
 ```
 
 ## Repositories
 
-| Project | Repository |
-|---------|------------|
-| axshared | [github.com/Jercik/axshared](https://github.com/Jercik/axshared) |
-| axconfig | [github.com/Jercik/axconfig](https://github.com/Jercik/axconfig) |
-| axauth | [github.com/Jercik/axauth](https://github.com/Jercik/axauth) |
-| axinstall | [github.com/Jercik/axinstall](https://github.com/Jercik/axinstall) |
-| axrun | [github.com/Jercik/axrun](https://github.com/Jercik/axrun) |
-| axusage | [github.com/Jercik/axusage](https://github.com/Jercik/axusage) |
+All repositories: [github.com/Jercik](https://github.com/Jercik?tab=repositories&q=ax)
 
-## Standards & Principles
+## Standards
 
-a╳kit is built on four core pillars:
-1.  **Unified Experience**: One set of conventions everywhere.
-2.  **Agent Agnostic**: Neutral exchange, no favorites.
-3.  **Composability**: Tools that chain together naturally.
-4.  **Transparency**: No magic, just clear operations.
-
-For detailed design rules, coding standards, and architectural guidelines, see **[STANDARDS.md](./STANDARDS.md)**.
+For design principles, CLI conventions, and architectural guidelines, see **[STANDARDS.md](./STANDARDS.md)**.
 
 ---
 
@@ -430,25 +136,31 @@ Users should always understand what's happening. No magic, no hidden state, no s
 
 ---
 
+## Naming & Branding
+
+**ax** = **A**gent e**X**tra — tools that give you extra capabilities when working with AI coding agents.
+
+The logo uses a rotated X (╳, U+2573) to represent exchange/crossroads:
+
+| Context | Use | Example |
+|---------|-----|---------|
+| Display text, headings, docs | `╳` (U+2573) | a╳kit |
+| Code, file paths, URLs | lowercase `x` | axkit, axkit.dev |
+| Help header | tool first, brand in parens | `axrun (a╳kit) v1.2.3` |
+
+### Executable Names
+
+- **Pattern**: `ax` + postfix (e.g., `axrun`, `axauth`)
+- **Postfix**: 3–10 lowercase ASCII characters
+- **No separators**: no `ax-run`, no `ax_run`, no unicode
+
+**Reserved postfixes** (conflict with CLI conventions): `help`, `version`, `completion`, `install`, `update`
+
+---
+
 ## CLI Design Rules
 
-All command-line tools in a╳kit must follow these rules.
-
-### Naming
-See [BRANDING.md](./BRANDING.md) for complete naming conventions.
-
-- Pattern: `ax` + postfix (e.g., `axrun`, `axauth`)
-- Postfix: 3–10 lowercase ASCII characters
-- No separators, no unicode in executable names
-
 ### Output Behavior
-
-#### TTY-Aware Defaults
-Output format adapts automatically based on context:
-- **TTY (interactive terminal)**: Human-readable format (e.g., truncated TSV)
-- **Non-TTY (piped/redirected)**: Machine-readable format (e.g., JSONL)
-
-Users can override with explicit `--format` flag.
 
 #### Streaming Output
 For tools that produce multiple events or long-running operations:
@@ -514,22 +226,9 @@ Let underlying tools and agents handle their own authentication and configuratio
 
 ### Error Handling
 
-#### Error Messages
-- Write to stderr, not stdout
-- Include what went wrong
-- Include why it went wrong (if known)
-- Suggest how to fix it (if possible)
-
-```
-Error: Agent "claude" not authenticated.
-
-Run `claude` to authenticate, then retry.
-```
-
-#### Fail Fast
 - Validate all inputs before starting work
-- Don't leave partial state on failure
 - Clean up temporary resources on error
+- Errors go to stderr with actionable fix suggestions
 
 ### Process Management
 
@@ -562,10 +261,12 @@ The a╳kit tools, especially **axrun**, are designed primarily for headless env
 
 #### axrun: Strictly Non-Interactive
 axrun **must never** prompt for user input. All configuration must be provided upfront:
-- **Credentials**: Via `AX_*_CREDENTIALS` env vars or pre-authenticated agents
+- **Credentials**: Via `--vault-credential` flag, `AX_*_CREDENTIALS` env vars, or pre-authenticated agents
 - **Permissions**: Via `--allow` / `--deny` flags (no runtime approval prompts)
 - **Prompts**: Via `--prompt` flag or stdin (non-interactive)
 - **Confirmation**: Not applicable—axrun runs what you tell it to run
+
+Note: axrun is a thin CLI wrapper that delegates execution to axexec. It handles argument parsing and credential resolution, then passes control to `axexec.runAgent()` for agent subprocess management, event parsing, and output formatting.
 
 If an underlying agent would normally prompt for permission, axrun must either:
 1. Pre-approve via flags (e.g., `--allow 'bash:*'`)
@@ -641,18 +342,6 @@ interface AgentCapabilities {
 }
 ```
 
-**Capability Matrix by Agent:**
-
-| Agent    | Tool Perms | Bash Patterns | Path Restrictions | Can Deny Read |
-|----------|:----------:|:-------------:|:-----------------:|:-------------:|
-| Claude   | ✓          | ✓             | ✓                 | ✓             |
-| Codex    | ✗ (sandbox)| ✓             | ✗                 | ✗             |
-| Gemini   | ✓          | ✓             | ✗                 | ✓             |
-| OpenCode | ✓          | ✓             | ✓                 | ✓             |
-| Copilot  | ✗          | ✗             | ✗                 | ✗             |
-
-*Note: Codex uses sandbox modes (`read-only`, `workspace-write`, `danger-full-access`) instead of per-tool permissions. Copilot uses runtime approval prompts and has no pre-configured permission model.*
-
 #### Permission Translation Behavior
 
 When translating abstract permissions to agent-specific formats, tools handle unsupported features asymmetrically:
@@ -663,6 +352,23 @@ When translating abstract permissions to agent-specific formats, tools handle un
 This asymmetry ensures security constraints are never silently ignored. If you request `deny "bash:rm *"` for an agent that doesn't support bash patterns, axconfig will error rather than proceed without the protection.
 
 Tools validate requested features against capabilities and warn/error appropriately.
+
+#### Bash Pattern Syntax
+
+**Important**: All bash permission patterns MUST end with a trailing `*` wildcard. This is enforced at parse time.
+
+```bash
+# Valid patterns
+bash:git *        # Matches: git status, git commit -m "msg", etc.
+bash:npm run *    # Matches: npm run build, npm run test, etc.
+bash:*            # All commands (use sparingly)
+
+# Invalid patterns (will error)
+bash:git          # Missing trailing wildcard
+bash:npm run test # Missing trailing wildcard
+```
+
+This requirement prevents ambiguity in pattern matching and ensures consistent behavior across all agents.
 
 ### Testing
 - Unit tests for functional core (pure functions)
@@ -700,44 +406,12 @@ type AuthType =
 ```
 Avoid bags of optional properties that allow impossible states.
 
-### Result Types
-For recoverable errors in functional code, return result types instead of throwing:
-
-```typescript
-type Result<T, E extends Error> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
-
-function parseConfig(input: string): Result<Config, ParseError> {
-  try {
-    return { ok: true, value: JSON.parse(input) };
-  } catch (e) {
-    return { ok: false, error: new ParseError(e.message) };
-  }
-}
-```
-Reserve exceptions for unrecoverable errors and framework integration points.
-
 ### Zod Schema Naming
-Use identical names for Zod schemas and their inferred types:
+Use identical names for Zod schemas and their inferred types (TypeScript allows this because types and values exist in separate namespaces):
 ```typescript
 const UsageResponse = z.object({ ... });
 type UsageResponse = z.infer<typeof UsageResponse>;
 ```
-TypeScript allows this because types and values exist in separate namespaces.
-
-### Import Types
-Use `import type` for type-only imports:
-```typescript
-import type { AgentCli, AuthType } from "axshared";
-import { getAgent, AGENTS } from "axshared";
-```
-
-### No Default Exports
-Use named exports exclusively (except where frameworks require default exports).
-
-### No Barrel Files
-Avoid `index.ts` files that only re-export siblings. Import directly from source modules. Exception: library entry points referenced by `package.json` exports.
 
 ---
 
@@ -768,33 +442,16 @@ Name files for their primary responsibility using verb–noun patterns:
 
 ## Versioning
 
-### Semantic Versioning
-All tools use [SemVer](https://semver.org/).
-- **MAJOR**: Breaking changes to CLI interface or behavior
-- **MINOR**: New features, backward compatible
-- **PATCH**: Bug fixes, backward compatible
-
-### Breaking Changes Include
+All tools use [SemVer](https://semver.org/). Breaking changes include:
 - Removing or renaming commands, flags, or arguments
-- Changing exit codes
-- Changing default behavior
+- Changing exit codes or default behavior
 - Changing output structure (JSONL schema, TSV columns)
-
-### Version Synchronization
-Individual tools may version independently, but major versions should stay aligned when tools have tight integration.
 
 ---
 
 ## Security
 
-### Credentials
-- Never log credentials, even in debug mode
-- Pass credentials via environment variables to subprocesses
-- Let underlying tools handle credential storage and retrieval
-- Don't implement custom credential storage unless necessary
-
-### Credential Storage
-When credential storage is necessary (axauth):
+### Credential Storage (axauth)
 - **macOS**: Use Keychain via `security` CLI
 - **All platforms**: JSON files with `0o600` permissions
 - **Directory permissions**: `0o700` for credential directories
@@ -808,30 +465,18 @@ For portable credential export:
 ### CI/CD Credential Flow
 When running agents in CI/CD environments:
 
+#### Option A: Vault-based (Recommended)
+1. **Push**: `axauth vault push --agent <agent> --name <name>`
+2. **Configure**: Set `AXVAULT` secret with `{"url":"https://...","apiKey":"axv_sk_..."}`
+3. **Run**: `axrun --agent <agent> --vault-credential <name> --prompt "..."`
+
+Vault automatically refreshes OAuth credentials approaching expiration, making it ideal for long-running CI/CD setups.
+
+#### Option B: Environment Variables
 1. **Export**: `axauth export --agent <agent> --output creds.json --no-password`
 2. **Store**: Add file contents as repository secret (e.g., `AX_CLAUDE_CREDENTIALS`)
 3. **Install**: `axrun` detects `AX_*_CREDENTIALS` env vars and auto-installs credentials
 
-#### Agent Config Directory Mechanisms
-Different agents use different mechanisms to locate credentials:
-
-| Agent | Config Directory Env Var | Notes |
-|-------|-------------------------|-------|
-| Claude | `CLAUDE_CONFIG_DIR` | Points directly to config dir |
-| Codex | `CODEX_HOME` | Points directly to config dir |
-| Gemini | `HOME` | Looks for `.gemini` subdirectory |
-| OpenCode | `XDG_CONFIG_HOME` | Looks for `opencode` subdirectory |
-| Copilot | None | Requires `COPILOT_GITHUB_TOKEN` env var |
-
-For agents without config directory env vars (like Copilot), axauth adapters must implement `credentialsToEnvironment()` to return the token as an environment variable that gets passed to the child process.
-
-### Input Validation
-- Validate arguments and flags before spawning subprocesses
-- Use schema validation (Zod) for structured input
-- Validate subprocess output schemas before processing
-
-### Shell Injection Prevention
-Use `execFile` with argument arrays, never `exec` with string concatenation.
 
 
 ---
