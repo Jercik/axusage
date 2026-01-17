@@ -158,15 +158,22 @@ function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
 }
 
 /**
- * Get the credential sources config file path without side effects.
- * This is safe to call during help rendering and won't trigger migrations.
+ * Get the credential sources config file path without triggering legacy
+ * migrations or reading/parsing the sources config value.
  */
 function getCredentialSourcesPath(): string {
   try {
-    // Use Conf directly without initializing the full config to avoid side effects
+    // Instantiate Conf without running our migration logic so `--help` avoids
+    // mutating user state or emitting migration warnings.
     const config = new Conf<{ sources?: SourcesConfig }>({
       projectName: "axusage",
       projectSuffix: "",
+      schema: {
+        sources: {
+          type: "object",
+          additionalProperties: true,
+        },
+      },
     });
     return config.path;
   } catch {

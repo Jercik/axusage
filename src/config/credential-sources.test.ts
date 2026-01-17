@@ -5,12 +5,25 @@ const store = new Map<string, Record<string, unknown>>();
 class ConfigMock<T extends Record<string, unknown> = Record<string, unknown>> {
   private readonly key: string;
 
-  constructor(options: { projectName: string; projectSuffix?: string }) {
+  static shouldThrowOnConstruct = false;
+
+  constructor(options: {
+    projectName: string;
+    projectSuffix?: string;
+    schema?: unknown;
+  }) {
+    if (ConfigMock.shouldThrowOnConstruct) {
+      throw new Error("mock construct failure");
+    }
     const suffix = options.projectSuffix ?? "-nodejs";
     this.key = `${options.projectName}${suffix}`;
     if (!store.has(this.key)) {
       store.set(this.key, {});
     }
+  }
+
+  get path(): string {
+    return `/mock/${this.key}/config.json`;
   }
 
   get<K extends keyof T>(key: K): T[K] | undefined {
@@ -32,6 +45,7 @@ vi.mock("conf", () => ({
 describe("credential sources migration", () => {
   beforeEach(() => {
     store.clear();
+    ConfigMock.shouldThrowOnConstruct = false;
     vi.resetModules();
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -67,5 +81,18 @@ describe("credential sources migration", () => {
       source: "local",
       name: undefined,
     });
+  });
+
+  it("returns the config file path without throwing", async () => {
+    const { getCredentialSourcesPath } =
+      await import("./credential-sources.js");
+    expect(getCredentialSourcesPath()).toBe("/mock/axusage/config.json");
+  });
+
+  it("returns a fallback path if Conf throws", async () => {
+    ConfigMock.shouldThrowOnConstruct = true;
+    const { getCredentialSourcesPath } =
+      await import("./credential-sources.js");
+    expect(getCredentialSourcesPath()).toBe("(error reading config path)");
   });
 });
