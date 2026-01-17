@@ -8,6 +8,8 @@
  */
 
 import Conf from "conf";
+import envPaths from "env-paths";
+import path from "node:path";
 import { z } from "zod";
 
 /** Credential source type */
@@ -158,28 +160,15 @@ function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
 }
 
 /**
- * Get the credential sources config file path without triggering legacy
- * migrations or reading/parsing the sources config value.
+ * Get the credential sources config file path.
+ *
+ * This computes the path using env-paths directly instead of instantiating
+ * Conf, which avoids all filesystem side effects (Conf creates the config
+ * directory during construction).
  */
 function getCredentialSourcesPath(): string {
-  try {
-    // Instantiate Conf without running our migration logic so `--help` avoids
-    // mutating user state or emitting migration warnings.
-    const config = new Conf<{ sources?: SourcesConfig }>({
-      projectName: "axusage",
-      projectSuffix: "",
-      schema: {
-        sources: {
-          type: "object",
-          additionalProperties: true,
-        },
-      },
-    });
-    return config.path;
-  } catch {
-    // If we can't determine the path (e.g., permission errors), return a fallback
-    return "(error reading config path)";
-  }
+  const configDirectory = envPaths("axusage", { suffix: "" }).config;
+  return path.resolve(configDirectory, "config.json");
 }
 
 export type { ServiceId, VaultSupportedServiceId };

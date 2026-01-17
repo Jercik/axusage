@@ -42,6 +42,12 @@ vi.mock("conf", () => ({
   default: ConfigMock,
 }));
 
+vi.mock("env-paths", () => ({
+  default: (name: string, options?: { suffix?: string }) => ({
+    config: `/mock/${name}${options?.suffix ?? "-nodejs"}`,
+  }),
+}));
+
 describe("credential sources migration", () => {
   beforeEach(() => {
     store.clear();
@@ -83,16 +89,10 @@ describe("credential sources migration", () => {
     });
   });
 
-  it("returns the config file path without throwing", async () => {
+  it("returns the config file path using env-paths", async () => {
     const { getCredentialSourcesPath } =
       await import("./credential-sources.js");
+    // env-paths mock returns /mock/axusage (with empty suffix)
     expect(getCredentialSourcesPath()).toBe("/mock/axusage/config.json");
-  });
-
-  it("returns a fallback path if Conf throws", async () => {
-    ConfigMock.shouldThrowOnConstruct = true;
-    const { getCredentialSourcesPath } =
-      await import("./credential-sources.js");
-    expect(getCredentialSourcesPath()).toBe("(error reading config path)");
   });
 });
