@@ -157,8 +157,22 @@ function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
   return { source: serviceConfig.source, name: serviceConfig.name };
 }
 
+/**
+ * Get the credential sources config file path without side effects.
+ * This is safe to call during help rendering and won't trigger migrations.
+ */
 function getCredentialSourcesPath(): string {
-  return getConfig().path;
+  try {
+    // Use Conf directly without initializing the full config to avoid side effects
+    const config = new Conf<{ sources?: SourcesConfig }>({
+      projectName: "axusage",
+      projectSuffix: "",
+    });
+    return config.path;
+  } catch {
+    // If we can't determine the path (e.g., permission errors), return a fallback
+    return "(error reading config path)";
+  }
 }
 
 export type { ServiceId, VaultSupportedServiceId };
