@@ -40,11 +40,11 @@ jobs:
             model: gpt-5.2
             vault_credential: ci-oauth-token
           - agent: opencode
-            display_name: Opencode
+            display_name: Opencode GLM 4.7
             model: opencode/glm-4.7-free
             vault_credential: ci-api-key
           - agent: opencode
-            display_name: Opencode
+            display_name: Opencode Kimi K2
             model: opencode/kimi-k2-thinking
             vault_credential: ci-api-key
     name: review (${{ matrix.agent }}, ${{ matrix.model }})
@@ -155,7 +155,7 @@ jobs:
 
           For each significant change, ask: **"Is this the best way to solve this problem?"**
 
-          If you identify a clearly better solution (simpler, more maintainable, more efficient, or more idiomatic), post it in your review. Don't just say "there might be a better way"—show the alternative code or approach.
+          If you identify a clearly better solution (simpler, more maintainable, more efficient, or more idiomatic), include it in your review. Don't just say "there might be a better way"—show the alternative code or approach.
 
           **When to suggest alternatives:**
           - The current solution is overly complex for the problem
