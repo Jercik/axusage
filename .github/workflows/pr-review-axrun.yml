@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  AXRUN_ALLOW: "read,glob,grep,bash:gh api*,bash:gh pr comment*,bash:gh pr diff*,bash:gh pr view*,bash:npx -y askpplx*,bash:ls*,bash:cat*,bash:grep*,bash:tree*,bash:pwd*,bash:head*,bash:tail*,bash:jq*,bash:wc*,bash:sort*,bash:uniq*,bash:cut*,bash:git diff*,bash:git log*,bash:git show*,bash:git status*,bash:git rev-parse*"
+  AXRUN_ALLOW: "read,write,glob,grep,bash:gh api*,bash:gh pr comment*,bash:gh pr diff*,bash:gh pr view*,bash:npx -y askpplx*,bash:ls*,bash:cat*,bash:grep*,bash:tree*,bash:pwd*,bash:head*,bash:tail*,bash:jq*,bash:wc*,bash:sort*,bash:uniq*,bash:cut*,bash:git diff*,bash:git log*,bash:git show*,bash:git status*,bash:git rev-parse*"
 
 jobs:
   review:
@@ -33,12 +33,20 @@ jobs:
             vault_credential: ci-oauth-credentials
           - agent: codex
             display_name: Codex
-            model: gpt-5.2-codex
+            model: gpt-5.2
             vault_credential: ci-oauth-credentials
           - agent: copilot
             display_name: Copilot
             model: gpt-5.2
             vault_credential: ci-oauth-token
+          - agent: opencode
+            display_name: Opencode GLM 4.7
+            model: opencode/glm-4.7-free
+            vault_credential: ci-api-key
+          - agent: opencode
+            display_name: Opencode Kimi K2
+            model: opencode/kimi-k2-thinking
+            vault_credential: ci-api-key
     name: review (${{ matrix.agent }}, ${{ matrix.model }})
     steps:
       - name: Checkout PR head
@@ -82,6 +90,8 @@ jobs:
           1. **Inline comments** on specific lines (via GitHub Reviews API)
           2. **A summary comment** with the overall assessment
 
+          **Understand the codebase first, then review the diff.** The diff shows _what_ changed, but you need codebase context to understand _why_ it matters. Explore related files, check how changed code is used elsewhere, and verify the changes fit the existing architecture.
+
           Focus on impactful issues: security vulnerabilities, logic errors, and architectural problems.
 
           ## Context
@@ -112,6 +122,7 @@ jobs:
           3. **Error Handling:** Missing try-catch, unchecked response.ok, unhandled promises
           4. **Architecture:** Separation of concerns, proper abstractions
           5. **Documentation:** Outdated README, incorrect CLI help, stale comments
+          6. **Integration:** How changes affect callers, importers, and downstream code
 
           ## Severity Levels
 
@@ -139,6 +150,23 @@ jobs:
           - Suggestions to use different libraries
 
           ## Review Guidelines
+
+          ### Question the Approach
+
+          For each significant change, ask: **"Is this the best way to solve this problem?"**
+
+          If you identify a clearly better solution (simpler, more maintainable, more efficient, or more idiomatic), include it in your review. Don't just say "there might be a better way"—show the alternative code or approach.
+
+          **When to suggest alternatives:**
+          - The current solution is overly complex for the problem
+          - There's a standard library function or well-known pattern that does the same thing
+          - The approach will cause maintenance burden or scaling issues
+          - The solution works but misses an obvious simplification
+
+          **When NOT to suggest alternatives:**
+          - The current approach is reasonable and your alternative is just a different style preference
+          - You'd need to restructure significant parts of the codebase
+          - The alternative has trade-offs that aren't clearly better
 
           ### Be Specific
 
@@ -189,6 +217,18 @@ jobs:
           - Make confident claims based only on reading code
 
           If uncertain, state it explicitly and lower the severity.
+
+          ### Explore Beyond the Diff
+
+          The diff alone doesn't tell the full story. Before forming opinions about the changes:
+
+          1. **Read entire modified files** - understand the full context, not just changed lines
+          2. **Find all callers** - grep for function/class names to see how they're used
+          3. **Check type definitions** - changes to types may break callers not in the diff
+          4. **Review related tests** - understand expected behavior and edge cases
+          5. **Look for similar patterns** - see how the codebase handles similar problems elsewhere
+
+          Issues often arise from how changed code interacts with unchanged code. A function that looks correct in isolation may break its callers or violate assumptions made elsewhere.
 
           ### Check Documentation Consistency
 
@@ -315,13 +355,18 @@ jobs:
 
           ## Execution Steps
 
-          1. Run `gh pr view` to get the HEAD commit SHA
-          2. Run `gh pr diff` to analyze the changes
-          3. Identify issues and their exact line numbers
-          4. For each line-specific issue, add an entry to `comments`
-          5. Write complete review JSON to `/tmp/review.json`
-          6. Run `gh api ... --input /tmp/review.json` once
-          7. If output contains `"id":`, stop—review posted successfully
+          1. Run `gh pr view` to get the HEAD commit SHA and PR description
+          2. Run `gh pr diff` to see what files and lines changed
+          3. **Explore the codebase for context:**
+             - Read the full content of modified files (not just the diff hunks)
+             - Find callers/importers of changed functions using grep
+             - Check related files (tests, types, configs) that might be affected
+             - Read README and relevant docs to understand intended behavior
+          4. Analyze changes with full context—identify issues and their exact line numbers
+          5. For each line-specific issue, add an entry to `comments`
+          6. Write complete review JSON to `/tmp/review.json`
+          7. Run `gh api ... --input /tmp/review.json` once
+          8. If output contains `"id":`, stop—review posted successfully
           PROMPT_EOF
 
           # Harden npm: force registry, enforce TLS, ignore user config, clear proxy settings
