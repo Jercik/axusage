@@ -24,6 +24,8 @@ axusage
 
 ## Requirements
 
+- Node.js 22.14.0+
+- pnpm (recommended) or npm with `npx` for one-off runs
 - `claude` CLI (Claude auth) — `npm install -g @anthropic-ai/claude-code`
 - `codex` CLI (ChatGPT auth) — `npm install -g @openai/codex`
 - `gemini` CLI (Gemini auth) — `npm install -g @google/gemini-cli`
@@ -132,6 +134,8 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
 
 ## Usage
 
+Prefer space-separated long flags (e.g., `--format json`, `--service claude`). Output formats are `text`, `tsv`, `json`, and `prometheus`. Use `--force` with `--auth-clear` to skip its confirmation prompt when scripting.
+
 ```bash
 # Query all services
 axusage
@@ -145,11 +149,14 @@ axusage --service chatgpt
 axusage --service github-copilot
 
 # JSON output
-axusage --format=json
-axusage --service claude --format=json
+axusage --format json
+axusage --service claude --format json
 
 # TSV output (parseable with cut, awk, sort)
-axusage --format=tsv
+axusage --format tsv
+
+# Prometheus output
+axusage --format prometheus
 
 # Disable color output
 axusage --no-color
@@ -160,25 +167,25 @@ axusage --no-color
 ### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
 ```
 
 ### Count windows by service (TSV + cut/sort/uniq)
 
 ```bash
-axusage --format=tsv | tail -n +2 | cut -f1 | sort | uniq -c
+axusage --format tsv | tail -n +2 | cut -f1 | sort | uniq -c
 ```
 
 ### Filter by utilization threshold (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
 ```
 
 ### Extract utilization as JSON (JSON + jq)
 
 ```bash
-axusage --format=json \
+axusage --format json \
   | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .windows[] | [.name, (.utilization|tostring)] | @tsv'
 ```
 
@@ -191,7 +198,15 @@ Human-readable format shows:
 - Reset times
 - Color coding: 🟢 on track | 🟡 over budget | 🔴 significantly over
 
+Output formats: `text` (default), `tsv`, `json`, `prometheus`.
+
 JSON format returns structured data for programmatic use.
+
+TSV format prints a header row:
+
+```
+SERVICE	PLAN	WINDOW	UTILIZATION	RATE	RESETS_AT
+```
 
 ## Agent Rule
 
@@ -202,7 +217,7 @@ Add to your `CLAUDE.md` or `AGENTS.md`:
 
 Run `npx -y axusage --help` to learn available options.
 
-Use `axusage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, GitHub Copilot, and Gemini. It standardizes output (text, JSON, Prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
+Use `axusage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, GitHub Copilot, and Gemini. It standardizes output (text, tsv, json, prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
 ```
 
 ## Troubleshooting
