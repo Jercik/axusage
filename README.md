@@ -134,7 +134,7 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
 
 ## Usage
 
-Prefer long flags (e.g., `--format json`, `--service claude`). Output formats are `text`, `tsv`, `json`, and `prometheus`. Use `--force` with `--auth-clear` to skip its confirmation prompt when scripting.
+Prefer space-separated long flags (e.g., `--format json`, `--service claude`). Output formats are `text`, `tsv`, `json`, and `prometheus`. Use `--force` with `--auth-clear` to skip its confirmation prompt when scripting.
 
 ```bash
 # Query all services
