@@ -24,7 +24,7 @@ axusage
 
 ## Requirements
 
-- Node.js 22+
+- Node.js 22.14.0+
 - pnpm (recommended) or npm with `npx` for one-off runs
 - `claude` CLI (Claude auth) — `npm install -g @anthropic-ai/claude-code`
 - `codex` CLI (ChatGPT auth) — `npm install -g @openai/codex`
@@ -134,7 +134,7 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
 
 ## Usage
 
-Prefer long flags (e.g., `--format json`, `--service claude`). Output formats are `text`, `tsv`, `json`, and `prometheus`. Use `--force` to skip confirmation prompts when scripting.
+Prefer long flags (e.g., `--format json`, `--service claude`). Output formats are `text`, `tsv`, `json`, and `prometheus`. Use `--force` with `--auth-clear` to skip its confirmation prompt when scripting.
 
 ```bash
 # Query all services
@@ -167,19 +167,19 @@ axusage --no-color
 ### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
 ```
 
 ### Count windows by service (TSV + cut/sort/uniq)
 
 ```bash
-axusage --format=tsv | tail -n +2 | cut -f1 | sort | uniq -c
+axusage --format tsv | tail -n +2 | cut -f1 | sort | uniq -c
 ```
 
 ### Filter by utilization threshold (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
 ```
 
 ### Extract utilization as JSON (JSON + jq)
