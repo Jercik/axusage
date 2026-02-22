@@ -31,8 +31,8 @@ export async function serveCommand(
     console.error(
       `Unknown service "${config.service}". Supported: ${availableServices.join(", ")}.`,
     );
-    // eslint-disable-next-line unicorn/no-process-exit -- CLI user error, fail fast
-    process.exit(1);
+    if (process.exitCode === undefined) process.exitCode = 1;
+    return;
   }
 
   const servicesToQuery = selectServicesToQuery(config.service);

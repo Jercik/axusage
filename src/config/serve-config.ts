@@ -34,7 +34,7 @@ export function getServeConfig(
     "AXUSAGE_INTERVAL",
   );
 
-  const service = overrides.service;
+  const service = overrides.service ?? process.env.AXUSAGE_SERVICE;
 
   return {
     port,
@@ -61,7 +61,7 @@ function parsePositiveInt(
   if (!value) return defaultValue;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) {
-    console.warn(
+    console.error(
       `Invalid ${name} value "${value}", using default ${String(defaultValue)}`,
     );
     return defaultValue;

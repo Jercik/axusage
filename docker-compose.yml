@@ -55,6 +55,7 @@ services:
       # Container always listens on 3848; use ports mapping for host port
       AXUSAGE_PORT: "3848"
       AXUSAGE_INTERVAL: ${AXUSAGE_INTERVAL:-300}
+      AXUSAGE_SERVICE: ${AXUSAGE_SERVICE:-}
       # Credential sources (JSON) — configures how each service authenticates
       AXUSAGE_SOURCES: ${AXUSAGE_SOURCES:-}
       # Vault connection (if using vault-based credential sources)

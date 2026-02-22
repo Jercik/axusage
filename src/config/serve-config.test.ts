@@ -6,6 +6,7 @@ describe("getServeConfig", () => {
     AXUSAGE_PORT: string | undefined;
     AXUSAGE_HOST: string | undefined;
     AXUSAGE_INTERVAL: string | undefined;
+    AXUSAGE_SERVICE: string | undefined;
   };
 
   beforeEach(() => {
@@ -13,10 +14,12 @@ describe("getServeConfig", () => {
       AXUSAGE_PORT: process.env.AXUSAGE_PORT,
       AXUSAGE_HOST: process.env.AXUSAGE_HOST,
       AXUSAGE_INTERVAL: process.env.AXUSAGE_INTERVAL,
+      AXUSAGE_SERVICE: process.env.AXUSAGE_SERVICE,
     };
     delete process.env.AXUSAGE_PORT;
     delete process.env.AXUSAGE_HOST;
     delete process.env.AXUSAGE_INTERVAL;
+    delete process.env.AXUSAGE_SERVICE;
   });
 
   afterEach(() => {
@@ -34,6 +37,11 @@ describe("getServeConfig", () => {
       delete process.env.AXUSAGE_INTERVAL;
     } else {
       process.env.AXUSAGE_INTERVAL = savedEnvironment.AXUSAGE_INTERVAL;
+    }
+    if (savedEnvironment.AXUSAGE_SERVICE === undefined) {
+      delete process.env.AXUSAGE_SERVICE;
+    } else {
+      process.env.AXUSAGE_SERVICE = savedEnvironment.AXUSAGE_SERVICE;
     }
   });
 
@@ -71,6 +79,11 @@ describe("getServeConfig", () => {
   it("reads interval from AXUSAGE_INTERVAL env var", () => {
     process.env.AXUSAGE_INTERVAL = "120";
     expect(getServeConfig().intervalMs).toBe(120_000);
+  });
+
+  it("reads service from AXUSAGE_SERVICE env var", () => {
+    process.env.AXUSAGE_SERVICE = "claude";
+    expect(getServeConfig().service).toBe("claude");
   });
 
   it("CLI overrides take precedence over env vars", () => {
