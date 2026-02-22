@@ -5,8 +5,6 @@ import {
   getServiceAdapter,
 } from "../services/service-adapter-registry.js";
 
-const ALL_SERVICES = ["claude", "codex", "copilot", "gemini"] as const;
-
 export type UsageCommandOptions = {
   readonly service?: string;
   readonly format?: "text" | "tsv" | "json" | "prometheus";
@@ -14,7 +12,7 @@ export type UsageCommandOptions = {
 
 export function selectServicesToQuery(service?: string): string[] {
   const normalized = service?.toLowerCase();
-  if (!service || normalized === "all") return [...ALL_SERVICES];
+  if (!service || normalized === "all") return getAvailableServices();
   return [service];
 }
 

@@ -46,6 +46,11 @@ export function getAuthCliDependency(service: AuthCliService): CliDependency {
   return CLI_DEPENDENCIES[service];
 }
 
+export function getAuthHint(service: AuthCliService, cliPath: string): string {
+  if (service === "copilot") return `${cliPath} auth status`;
+  return `run ${cliPath} to check/login`;
+}
+
 function resolveCliDependencyPath(dep: CliDependency): string {
   const environmentValue = process.env[dep.envVar]?.trim();
   // Treat empty env vars as unset to fall back to the default command.

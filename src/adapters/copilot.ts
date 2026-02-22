@@ -8,6 +8,8 @@ import { CopilotUsageResponse as CopilotUsageResponseSchema } from "../types/cop
 import { toServiceUsageData } from "./parse-copilot-usage.js";
 import { getServiceAccessToken } from "../services/get-service-access-token.js";
 
+// Internal/undocumented GitHub API used by VS Code, JetBrains, and other
+// first-party Copilot integrations. May change without notice.
 const API_URL = "https://api.github.com/copilot_internal/user";
 
 /**

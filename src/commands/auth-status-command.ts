@@ -7,6 +7,7 @@ import {
   AUTH_CLI_SERVICES,
   checkCliDependency,
   getAuthCliDependency,
+  getAuthHint,
 } from "../utils/check-cli-dependency.js";
 import { chalk } from "../utils/color.js";
 
@@ -35,9 +36,8 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       console.log(`${chalk.bold(service)}: ${status}`);
       console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
       if (result.ok) {
-        console.log(
-          `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${result.path} to check/login`)}`,
-        );
+        const hint = getAuthHint(service as AuthCliService, result.path);
+        console.log(`  ${chalk.dim("Auth:")} ${chalk.dim(hint)}`);
       } else {
         console.log(
           `  ${chalk.dim("Install:")} ${chalk.dim(dependency.installHint)}`,
