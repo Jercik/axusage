@@ -27,7 +27,7 @@ export function getServeConfig(
   overrides: ServeConfigOverrides = {},
 ): ServeConfig {
   const port = parsePort(overrides.port ?? process.env.AXUSAGE_PORT);
-  const host = overrides.host ?? process.env.AXUSAGE_HOST ?? DEFAULT_HOST;
+  const host = overrides.host || process.env.AXUSAGE_HOST || DEFAULT_HOST;
   const intervalSeconds = parsePositiveInt(
     overrides.interval ?? process.env.AXUSAGE_INTERVAL,
     DEFAULT_INTERVAL_SECONDS,

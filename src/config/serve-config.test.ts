@@ -91,6 +91,11 @@ describe("getServeConfig", () => {
     expect(getServeConfig().service).toBeUndefined();
   });
 
+  it("treats empty AXUSAGE_HOST as default (127.0.0.1)", () => {
+    process.env.AXUSAGE_HOST = "";
+    expect(getServeConfig().host).toBe("127.0.0.1");
+  });
+
   it("CLI overrides take precedence over env vars", () => {
     process.env.AXUSAGE_PORT = "5000";
     process.env.AXUSAGE_HOST = "192.168.1.1";
