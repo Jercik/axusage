@@ -30,8 +30,7 @@ const CLI_DEPENDENCIES = {
   },
 } as const satisfies Record<string, CliDependency>;
 
-const AUTH_CLI_SERVICES = ["claude", "codex", "copilot", "gemini"] as const;
-type AuthCliService = (typeof AUTH_CLI_SERVICES)[number];
+type AuthCliService = "claude" | "codex" | "copilot" | "gemini";
 
 function resolveCliDependencyTimeout(): number {
   const raw = process.env.AXUSAGE_CLI_TIMEOUT_MS;
@@ -44,11 +43,6 @@ function resolveCliDependencyTimeout(): number {
 export function getAuthCliDependency(service: AuthCliService): CliDependency {
   if (service === "copilot") return CLI_DEPENDENCIES.gh;
   return CLI_DEPENDENCIES[service];
-}
-
-export function getAuthHint(service: AuthCliService, cliPath: string): string {
-  if (service === "copilot") return `${cliPath} auth status`;
-  return `run ${cliPath} to check/login`;
 }
 
 function resolveCliDependencyPath(dep: CliDependency): string {
@@ -116,6 +110,3 @@ function reportMissingCliDependency(
     chalk.gray("Try 'axusage --help' for requirements and overrides."),
   );
 }
-
-export { AUTH_CLI_SERVICES };
-export type { AuthCliService };
