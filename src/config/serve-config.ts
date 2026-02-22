@@ -46,8 +46,8 @@ export function getServeConfig(
 
 function parsePort(value: string | undefined): number {
   if (!value) return DEFAULT_PORT;
-  const port = Number.parseInt(value, 10);
-  if (Number.isNaN(port) || port < 1 || port > 65_535) {
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
     throw new Error(`Invalid port: ${value}`);
   }
   return port;
@@ -59,8 +59,8 @@ function parsePositiveInt(
   name: string,
 ): number {
   if (!value) return defaultValue;
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isNaN(parsed) || parsed < 1) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
     console.warn(
       `Invalid ${name} value "${value}", using default ${String(defaultValue)}`,
     );

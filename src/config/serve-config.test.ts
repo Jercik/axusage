@@ -98,6 +98,17 @@ describe("getServeConfig", () => {
     expect(() => getServeConfig({ port: "abc" })).toThrowError("Invalid port");
   });
 
+  it("throws on a partially numeric port string", () => {
+    expect(() => getServeConfig({ port: "3848abc" })).toThrowError(
+      "Invalid port",
+    );
+  });
+
+  it("falls back to default interval for partially numeric interval string", () => {
+    process.env.AXUSAGE_INTERVAL = "60sec";
+    expect(getServeConfig().intervalMs).toBe(300_000);
+  });
+
   it("falls back to default interval when AXUSAGE_INTERVAL is invalid", () => {
     process.env.AXUSAGE_INTERVAL = "abc";
     expect(getServeConfig().intervalMs).toBe(300_000);
