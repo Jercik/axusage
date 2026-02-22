@@ -26,6 +26,7 @@ const program = new Command()
   .showHelpAfterError("(add --help for additional information)")
   .showSuggestionAfterError()
   .helpCommand(false)
+  .enablePositionalOptions()
   .option("--no-color", "disable color output")
   .option(
     "-s, --service <service>",
