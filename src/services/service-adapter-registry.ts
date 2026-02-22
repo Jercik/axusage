@@ -1,16 +1,16 @@
 import type { ServiceAdapter } from "../types/domain.js";
-import { chatGPTAdapter } from "../adapters/chatgpt.js";
+import { codexAdapter } from "../adapters/codex.js";
 import { claudeAdapter } from "../adapters/claude.js";
 import { geminiAdapter } from "../adapters/gemini.js";
-import { githubCopilotAdapter } from "../adapters/github-copilot.js";
+import { copilotAdapter } from "../adapters/copilot.js";
 
 /**
  * Registry of available service adapters
  */
 export const SERVICE_ADAPTERS = {
   claude: claudeAdapter,
-  chatgpt: chatGPTAdapter,
-  "github-copilot": githubCopilotAdapter,
+  codex: codexAdapter,
+  copilot: copilotAdapter,
   gemini: geminiAdapter,
 } as const satisfies Record<string, ServiceAdapter>;
 

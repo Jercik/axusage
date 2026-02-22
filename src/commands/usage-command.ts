@@ -15,69 +15,20 @@ import {
   fetchServiceUsage,
   selectServicesToQuery,
 } from "./fetch-service-usage.js";
-import { fetchServiceUsageWithAutoReauth } from "./fetch-service-usage-with-reauth.js";
 import { isAuthFailure } from "./run-auth-setup.js";
 import { chalk } from "../utils/color.js";
 
 /**
- * Fetches usage for services using hybrid strategy:
- * 1. Try all services in parallel first (fast path for valid credentials)
- * 2. If any service fails with auth error, retry those sequentially with re-auth
- *
- * This maintains ~2s response time when credentials are valid while gracefully
- * handling authentication failures that require interactive prompts.
+ * Fetches usage for all requested services in parallel.
  */
-export async function fetchServicesWithHybridStrategy(
+export async function fetchServicesInParallel(
   servicesToQuery: string[],
-  interactive: boolean,
 ): Promise<ServiceResult[]> {
-  // First attempt: fetch all services in parallel
-  const parallelResults = await Promise.all(
+  return await Promise.all(
     servicesToQuery.map(async (serviceName): Promise<ServiceResult> => {
       const result = await fetchServiceUsage(serviceName);
       return { service: serviceName, result };
     }),
-  );
-
-  // Check for auth errors
-  const authFailures = parallelResults.filter(({ result }) =>
-    isAuthFailure(result),
-  );
-
-  // If no auth failures, return parallel results
-  if (authFailures.length === 0 || !interactive) {
-    return parallelResults;
-  }
-
-  const shouldShowProgress = process.stderr.isTTY;
-
-  // Retry auth failures sequentially with re-authentication
-  const retryResults: ServiceResult[] = [];
-  for (const [index, { service }] of authFailures.entries()) {
-    if (shouldShowProgress) {
-      console.error(
-        chalk.dim(
-          `[${String(index + 1)}/${String(authFailures.length)}] Re-authenticating ${service}...`,
-        ),
-      );
-    }
-    const result = await fetchServiceUsageWithAutoReauth(service, interactive);
-    retryResults.push(result);
-  }
-
-  if (shouldShowProgress) {
-    console.error(
-      chalk.green(
-        `✓ Completed ${String(retryResults.length)} re-authentication${retryResults.length === 1 ? "" : "s"}\n`,
-      ),
-    );
-  }
-
-  // Merge results: keep successful parallel results, replace auth failures with retries
-  // Build a map for O(1) lookups instead of O(n²) find() calls
-  const retryMap = new Map(retryResults.map((r) => [r.service, r]));
-  return parallelResults.map(
-    (parallelResult) => retryMap.get(parallelResult.service) ?? parallelResult,
   );
 }
 
@@ -88,13 +39,7 @@ export async function usageCommand(
   options: UsageCommandOptions,
 ): Promise<void> {
   const servicesToQuery = selectServicesToQuery(options.service);
-  const interactive = options.interactive ?? false;
-
-  // Fetch usage data using hybrid parallel/sequential strategy
-  const results = await fetchServicesWithHybridStrategy(
-    servicesToQuery,
-    interactive,
-  );
+  const results = await fetchServicesInParallel(servicesToQuery);
 
   // Collect successful results and errors
   const successes: ServiceUsageData[] = [];
@@ -126,13 +71,13 @@ export async function usageCommand(
     }
   }
 
-  if (!interactive && authFailureServices.size > 0) {
+  if (authFailureServices.size > 0) {
     const list = [...authFailureServices].join(", ");
     console.error(
       chalk.gray(
         `Authentication required for: ${list}. ` +
-          "For GitHub Copilot, run 'axusage --auth-setup github-copilot --interactive'. " +
-          "For CLI-auth services, run the provider CLI (claude/codex/gemini), or re-run with '--interactive' to re-authenticate during fetch.",
+          "Run 'axusage --auth-setup <service>' for setup instructions, " +
+          "or authenticate directly with provider CLIs (claude/codex/gemini/gh auth login).",
       ),
     );
     if (successes.length > 0) {

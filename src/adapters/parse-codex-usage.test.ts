@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { toUsageWindow, toServiceUsageData } from "./parse-chatgpt-usage.js";
+import { toUsageWindow, toServiceUsageData } from "./parse-codex-usage.js";
 import type {
-  ChatGPTRateLimitWindow,
-  ChatGPTUsageResponse,
-} from "../types/chatgpt.js";
+  CodexRateLimitWindow,
+  CodexUsageResponse,
+} from "../types/codex.js";
 
-describe("chatgpt parsing", () => {
+describe("codex parsing", () => {
   it("converts a rate limit window correctly", () => {
     const win = toUsageWindow("Primary", {
       used_percent: 12,
       limit_window_seconds: 18_000,
       reset_after_seconds: 3600,
       reset_at: 1_761_750_000,
-    } satisfies ChatGPTRateLimitWindow);
+    } satisfies CodexRateLimitWindow);
     expect(win.name).toBe("Primary");
     expect(win.utilization).toBe(12);
     expect(win.periodDurationMs).toBe(18_000 * 1000);
@@ -20,7 +20,7 @@ describe("chatgpt parsing", () => {
   });
 
   it("maps response to domain model with metadata", () => {
-    const resp: ChatGPTUsageResponse = {
+    const resp: CodexUsageResponse = {
       plan_type: "pro",
       rate_limit: {
         allowed: true,

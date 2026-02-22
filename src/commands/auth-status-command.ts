@@ -1,16 +1,10 @@
-import { existsSync } from "node:fs";
+import { checkAuth } from "axauth";
+
 import {
   SUPPORTED_SERVICES,
   validateService,
 } from "../services/supported-service.js";
-import { getStorageStatePathFor } from "../services/auth-storage-path.js";
-import { getBrowserContextsDirectory } from "../services/app-paths.js";
-import type { AuthCliService } from "../utils/check-cli-dependency.js";
-import {
-  AUTH_CLI_SERVICES,
-  checkCliDependency,
-  getAuthCliDependency,
-} from "../utils/check-cli-dependency.js";
+import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
 import { chalk } from "../utils/color.js";
 
 type AuthStatusOptions = { readonly service?: string };
@@ -20,65 +14,38 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     ? [validateService(options.service)]
     : SUPPORTED_SERVICES;
 
-  const cliAuthServices = new Set(AUTH_CLI_SERVICES);
-  const dataDirectory = getBrowserContextsDirectory();
   let hasFailures = false;
 
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
   for (const service of servicesToCheck) {
-    if (cliAuthServices.has(service)) {
-      const dependency = getAuthCliDependency(service as AuthCliService);
-      const result = checkCliDependency(dependency);
-      const status = result.ok
-        ? chalk.green("↪ CLI-managed")
-        : chalk.red("✗ CLI missing");
-      if (!result.ok) {
-        hasFailures = true;
+    let result = checkAuth(service);
+
+    if (service === "copilot" && !result.authenticated) {
+      const tokenFromOverride = getCopilotTokenFromCustomGhPath();
+      if (tokenFromOverride) {
+        result = {
+          ...result,
+          authenticated: true,
+          method: "GitHub CLI (AXUSAGE_GH_PATH)",
+        };
       }
-      console.log(`${chalk.bold(service)}: ${status}`);
-      console.log(`  ${chalk.dim("CLI:")} ${chalk.dim(result.path)}`);
-      if (result.ok) {
-        console.log(
-          `  ${chalk.dim("Auth:")} ${chalk.dim(`run ${result.path} to check/login`)}`,
-        );
-      } else {
-        console.log(
-          `  ${chalk.dim("Install:")} ${chalk.dim(dependency.installHint)}`,
-        );
-        console.log(
-          `  ${chalk.dim("Override:")} ${chalk.dim(`${dependency.envVar}=/path/to/${dependency.command}`)}`,
-        );
-      }
-      continue;
     }
 
-    const storagePath = getStorageStatePathFor(dataDirectory, service);
-    const hasAuth = existsSync(storagePath);
-    const status = hasAuth
-      ? chalk.green("✓ Authenticated")
-      : chalk.gray("✗ Not authenticated");
-    if (!hasAuth) {
+    const status = result.authenticated
+      ? chalk.green("✓ authenticated")
+      : chalk.red("✗ not authenticated");
+
+    if (!result.authenticated) {
       hasFailures = true;
     }
+
     console.log(`${chalk.bold(service)}: ${status}`);
-    console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
+    if (result.method) {
+      console.log(`  ${chalk.dim("Method:")} ${chalk.dim(result.method)}`);
+    }
   }
 
-  const browserServices = servicesToCheck.filter(
-    (service) => !cliAuthServices.has(service),
-  );
-  const copilotService = "github-copilot";
-  const needsCopilotSetup =
-    browserServices.includes(copilotService) &&
-    !existsSync(getStorageStatePathFor(dataDirectory, copilotService));
-  if (needsCopilotSetup) {
-    console.error(
-      chalk.gray(
-        `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup github-copilot --interactive")}`,
-      ),
-    );
-  }
   if (hasFailures) {
     process.exitCode = 1;
   }

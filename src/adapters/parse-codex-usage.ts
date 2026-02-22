@@ -1,15 +1,15 @@
 import type { ServiceUsageData } from "../types/domain.js";
 import type {
-  ChatGPTUsageResponse,
-  ChatGPTRateLimitWindow,
-} from "../types/chatgpt.js";
+  CodexUsageResponse,
+  CodexRateLimitWindow,
+} from "../types/codex.js";
 
 /**
  * Converts a ChatGPT rate limit window to common usage window
  */
 export function toUsageWindow(
   name: string,
-  window: ChatGPTRateLimitWindow,
+  window: CodexRateLimitWindow,
 ): {
   name: string;
   utilization: number;
@@ -28,7 +28,7 @@ export function toUsageWindow(
  * Converts ChatGPT response to common domain model
  */
 export function toServiceUsageData(
-  response: ChatGPTUsageResponse,
+  response: CodexUsageResponse,
 ): ServiceUsageData {
   return {
     service: "ChatGPT",

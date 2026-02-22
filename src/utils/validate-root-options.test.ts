@@ -8,17 +8,7 @@ describe("getRootOptionsError", () => {
       authStatus: true,
     });
 
-    expect(message).toBe(
-      "Use only one of --auth-setup, --auth-status, or --auth-clear.",
-    );
-  });
-
-  it("rejects --force without --auth-clear", () => {
-    const message = getRootOptionsError({
-      force: true,
-    });
-
-    expect(message).toBe("--force is only supported with --auth-clear.");
+    expect(message).toBe("Use only one of --auth-setup or --auth-status.");
   });
 
   it("rejects auth operations combined with usage options", () => {

@@ -49,7 +49,7 @@ describe("formatPrometheusMetrics", () => {
         ],
       },
       {
-        service: "chatgpt",
+        service: "codex",
         windows: [
           {
             name: "3-hour",
@@ -65,7 +65,7 @@ describe("formatPrometheusMetrics", () => {
       'axusage_utilization_percent{service="claude",window="5-hour"} 12.34',
     );
     expect(text).toContain(
-      'axusage_utilization_percent{service="chatgpt",window="3-hour"} 56.78',
+      'axusage_utilization_percent{service="codex",window="3-hour"} 56.78',
     );
   });
 

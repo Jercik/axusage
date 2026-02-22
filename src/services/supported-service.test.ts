@@ -10,8 +10,8 @@ describe("validateService", () => {
 
   it("normalizes case", () => {
     expect(validateService("ClAuDe")).toBe("claude");
-    expect(validateService("CHATGPT")).toBe("chatgpt");
-    expect(validateService("GitHub-Copilot")).toBe("github-copilot");
+    expect(validateService("CODEX")).toBe("codex");
+    expect(validateService("Copilot")).toBe("copilot");
   });
 
   it("throws for missing service", () => {

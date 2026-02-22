@@ -66,12 +66,15 @@ export const claudeAdapter: ServiceAdapter = {
     }
 
     try {
-      const response = await fetch(USAGE_API_URL, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "anthropic-beta": ANTHROPIC_BETA_HEADER,
-        },
-      });
+      const [response, planType] = await Promise.all([
+        fetch(USAGE_API_URL, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "anthropic-beta": ANTHROPIC_BETA_HEADER,
+          },
+        }),
+        fetchPlanType(accessToken),
+      ]);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
@@ -106,9 +109,6 @@ export const claudeAdapter: ServiceAdapter = {
           ),
         };
       }
-
-      // Fetch plan type (best effort, don't fail if unavailable)
-      const planType = await fetchPlanType(accessToken);
 
       const usageData = toServiceUsageData(parseResult.data);
       return {

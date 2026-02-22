@@ -43,8 +43,8 @@ describe("check-cli-dependency", () => {
     }
   });
 
-  it("maps chatgpt to the codex dependency", () => {
-    const dependency = getAuthCliDependency("chatgpt");
+  it("maps codex to the codex dependency", () => {
+    const dependency = getAuthCliDependency("codex");
     expect(dependency.command).toBe("codex");
     expect(dependency.envVar).toBe("AXUSAGE_CODEX_PATH");
   });

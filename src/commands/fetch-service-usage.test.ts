@@ -5,14 +5,14 @@ describe("fetch-service-usage helpers", () => {
   it("selectServicesToQuery handles all, undefined, specific", () => {
     expect(selectServicesToQuery()).toEqual([
       "claude",
-      "chatgpt",
-      "github-copilot",
+      "codex",
+      "copilot",
       "gemini",
     ]);
     expect(selectServicesToQuery("all")).toEqual([
       "claude",
-      "chatgpt",
-      "github-copilot",
+      "codex",
+      "copilot",
       "gemini",
     ]);
     expect(selectServicesToQuery("claude")).toEqual(["claude"]);
