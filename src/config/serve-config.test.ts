@@ -86,6 +86,11 @@ describe("getServeConfig", () => {
     expect(getServeConfig().service).toBe("claude");
   });
 
+  it("treats empty AXUSAGE_SERVICE as undefined", () => {
+    process.env.AXUSAGE_SERVICE = "";
+    expect(getServeConfig().service).toBeUndefined();
+  });
+
   it("CLI overrides take precedence over env vars", () => {
     process.env.AXUSAGE_PORT = "5000";
     process.env.AXUSAGE_HOST = "192.168.1.1";

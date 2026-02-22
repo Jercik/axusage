@@ -34,7 +34,8 @@ export function getServeConfig(
     "AXUSAGE_INTERVAL",
   );
 
-  const service = overrides.service ?? process.env.AXUSAGE_SERVICE;
+  const service =
+    (overrides.service ?? process.env.AXUSAGE_SERVICE) || undefined;
 
   return {
     port,
