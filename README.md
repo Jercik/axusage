@@ -175,7 +175,7 @@ AXUSAGE_PORT=9090 AXUSAGE_INTERVAL=60 axusage serve
 | `--port <port>`        | `AXUSAGE_PORT`     | `3848`      | Port to listen on           |
 | `--host <host>`        | `AXUSAGE_HOST`     | `127.0.0.1` | Host to bind to             |
 | `--interval <seconds>` | `AXUSAGE_INTERVAL` | `300`       | Polling interval in seconds |
-| `--service <service>`  | —                  | all         | Service to monitor          |
+| `--service <service>`  | `AXUSAGE_SERVICE`  | all         | Service to monitor          |
 
 ### Endpoints
 
