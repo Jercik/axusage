@@ -1,0 +1,193 @@
+name: Publish Container Image
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to build"
+        required: true
+        type: string
+    secrets:
+      REGISTRY_PASSWORD:
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g., 1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.repository }}-publish-image
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  REGISTRY: registry.j4k.dev
+  IMAGE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Validate version
+        id: ver
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VERSION_INPUT" ]]; then
+            echo "::error::No version provided."
+            exit 1
+          fi
+          if [[ ! "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Invalid version format: '$VERSION_INPUT'. Expected semver (e.g., 1.2.3 or 1.2.3-beta.1)."
+            exit 1
+          fi
+          echo "version=$VERSION_INPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Validate secrets
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
+        run: |
+          if [[ -z "$REGISTRY_PASSWORD" ]]; then
+            echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
+          if [[ -z "$REGISTRY_USERNAME" ]]; then
+            echo "::error::REGISTRY_USERNAME variable is not set. Configure it in repository settings."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          echo "image=$REGISTRY/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "created=$(git show -s --format=%cI "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
+          echo "source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" >> "$GITHUB_OUTPUT"
+
+      - name: Login to registry
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
+        run: |
+          printf '%s' "$REGISTRY_PASSWORD" | \
+            podman login "${{ env.REGISTRY }}" \
+              --username "$REGISTRY_USERNAME" \
+              --password-stdin
+
+      - name: Build and push
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          CREATED: ${{ steps.meta.outputs.created }}
+          REVISION: ${{ github.sha }}
+          SOURCE: ${{ steps.meta.outputs.source }}
+        run: |
+          set -euo pipefail
+
+          podman build \
+            -f Containerfile \
+            --platform "${{ matrix.platform }}" \
+            --build-arg "VERSION=${VERSION}" \
+            --label "org.opencontainers.image.version=${VERSION}" \
+            --label "org.opencontainers.image.created=${CREATED}" \
+            --label "org.opencontainers.image.revision=${REVISION}" \
+            --annotation "org.opencontainers.image.version=${VERSION}" \
+            --annotation "org.opencontainers.image.created=${CREATED}" \
+            --annotation "org.opencontainers.image.revision=${REVISION}" \
+            --annotation "org.opencontainers.image.source=${SOURCE}" \
+            --annotation "org.opencontainers.image.url=${SOURCE}" \
+            -t "${IMAGE}:${VERSION}-${{ matrix.arch }}" \
+            .
+
+          podman push "${IMAGE}:${VERSION}-${{ matrix.arch }}"
+
+  manifest:
+    name: Push Manifest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version
+        id: ver
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VERSION_INPUT" ]]; then
+            echo "::error::No version provided."
+            exit 1
+          fi
+          if [[ ! "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Invalid version format: '$VERSION_INPUT'. Expected semver (e.g., 1.2.3 or 1.2.3-beta.1)."
+            exit 1
+          fi
+          echo "version=$VERSION_INPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Validate secrets
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
+        run: |
+          if [[ -z "$REGISTRY_PASSWORD" ]]; then
+            echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
+          if [[ -z "$REGISTRY_USERNAME" ]]; then
+            echo "::error::REGISTRY_USERNAME variable is not set. Configure it in repository settings."
+            exit 1
+          fi
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          echo "image=$REGISTRY/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Login to registry
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
+        run: |
+          printf '%s' "$REGISTRY_PASSWORD" | \
+            podman login "${{ env.REGISTRY }}" \
+              --username "$REGISTRY_USERNAME" \
+              --password-stdin
+
+      - name: Create and push manifest
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          podman manifest create "${IMAGE}:${VERSION}" \
+            "docker://${IMAGE}:${VERSION}-amd64" \
+            "docker://${IMAGE}:${VERSION}-arm64"
+
+          podman manifest push --all "${IMAGE}:${VERSION}" "docker://${IMAGE}:${VERSION}"
+          echo "Pushed: ${IMAGE}:${VERSION}"
