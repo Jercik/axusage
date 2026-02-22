@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.github
+.githooks
+
+# Build artifacts (rebuilt in container)
+dist
+*.tsbuildinfo
+
+# Dependencies (installed in container)
+node_modules
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+coverage
+.nyc_output
+
+# IDE/Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation
+*.md
+!README.md
+
+# Development config
+.eslintcache
+.prettierignore
+knip.json
+vitest.config.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (secrets should come from env vars)
+.env
+.env.*
+!.env.example
+
+# Plan files
+plans

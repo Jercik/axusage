@@ -1,0 +1,81 @@
+# ==============================================================================
+# axusage Docker Compose / Podman Compose Configuration
+#
+# Compatible with both Docker Compose and podman-compose.
+# Image is built from the npm-published axusage package.
+#
+# Usage:
+#   # Create .env file with required variables (see .env.example)
+#   cp .env.example .env
+#   # Edit .env and configure credential sources
+#
+#   # Build and run (latest version)
+#   docker compose up -d --build
+#
+#   # Build specific version
+#   AXUSAGE_VERSION=1.2.3 docker compose up -d --build
+#
+#   # Podman Compose
+#   podman-compose up -d
+#
+#   # Or use Docker Compose with Podman socket (full compatibility)
+#   export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+#   docker compose up -d
+#
+# Notes:
+#   - Image fetches axusage from npm registry during build
+#   - Stateless — no volumes needed
+#   - For ports 80/443, use host port mapping: "80:3848" or a reverse proxy
+# ==============================================================================
+
+services:
+  axusage:
+    build:
+      context: .
+      dockerfile: Containerfile
+      args:
+        VERSION: ${AXUSAGE_VERSION:-latest}
+    image: axusage:${AXUSAGE_VERSION:-latest}
+    container_name: axusage
+    restart: unless-stopped
+
+    # Run as non-root user (orchestrator provides UID per external UID pattern)
+    user: "${AXUSAGE_UID:-1000}:${AXUSAGE_GID:-1000}"
+
+    # Port mapping: host:container
+    # Container always listens on 3848; set AXUSAGE_PORT to change host port
+    ports:
+      - "${AXUSAGE_PORT:-3848}:3848"
+
+    # Environment variables
+    # Note: Using explicit key:value syntax for Podman Compose compatibility
+    environment:
+      # Server configuration
+      AXUSAGE_HOST: ${AXUSAGE_HOST:-0.0.0.0}
+      # Container always listens on 3848; use ports mapping for host port
+      AXUSAGE_PORT: "3848"
+      AXUSAGE_INTERVAL: ${AXUSAGE_INTERVAL:-300}
+      # Credential sources (JSON) — configures how each service authenticates
+      AXUSAGE_SOURCES: ${AXUSAGE_SOURCES:-}
+      # Vault connection (if using vault-based credential sources)
+      AXVAULT_URL: ${AXVAULT_URL:-}
+      AXVAULT_API_KEY: ${AXVAULT_API_KEY:-}
+
+    # Health check (defined here for OCI compliance - not in Containerfile)
+    # Uses node's native fetch since image doesn't have wget/curl
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3848/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+    # Security options for production
+    security_opt:
+      - no-new-privileges:true

@@ -151,6 +151,73 @@ Human-readable output includes:
 JSON output provides structured data for automation.
 Prometheus output emits text metrics suitable for scraping.
 
+## Serve Mode
+
+`axusage serve` starts an HTTP server that exposes Prometheus metrics at `/metrics` for scraping, with automatic polling.
+
+### Usage
+
+```bash
+# Start with defaults (port 3848, poll every 5 minutes)
+axusage serve
+
+# Custom configuration
+axusage serve --port 9090 --interval 60 --service claude
+
+# With environment variables
+AXUSAGE_PORT=9090 AXUSAGE_INTERVAL=60 axusage serve
+```
+
+### Options
+
+| Flag                   | Env Var            | Default     | Description                 |
+| ---------------------- | ------------------ | ----------- | --------------------------- |
+| `--port <port>`        | `AXUSAGE_PORT`     | `3848`      | Port to listen on           |
+| `--host <host>`        | `AXUSAGE_HOST`     | `127.0.0.1` | Host to bind to             |
+| `--interval <seconds>` | `AXUSAGE_INTERVAL` | `300`       | Polling interval in seconds |
+| `--service <service>`  | —                  | all         | Service to monitor          |
+
+### Endpoints
+
+- `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Returns 503 if no data has been fetched yet.
+- `GET /health` — JSON health status with version, last refresh time, tracked services, and errors.
+
+### Container Deployment
+
+```bash
+# Build image
+podman build -t axusage .
+
+# Run (configure credential sources via AXUSAGE_SOURCES)
+podman run -p 3848:3848 --user 1000:1000 \
+  -e AXUSAGE_SOURCES='{"claude":{"source":"vault","name":"claude-oauth"}}' \
+  -e AXVAULT_URL=http://axvault:3847 \
+  -e AXVAULT_API_KEY=axv_sk_... \
+  axusage
+```
+
+### Docker Compose
+
+```bash
+cp .env.example .env
+# Edit .env with credential sources and vault config
+docker compose up -d --build
+```
+
+### Publishing
+
+Container publishing is part of CI/CD:
+
+- Pushes to `main` run the `Release` workflow.
+- If `semantic-release` creates a new version tag, CI builds and publishes a multi-arch image to `registry.j4k.dev/axusage:<version>`.
+
+For manual publishing:
+
+```bash
+./scripts/publish-image.sh --dry-run
+./scripts/publish-image.sh --version 1.0.0
+```
+
 ## Troubleshooting
 
 ### "Required dependency '... not found'"

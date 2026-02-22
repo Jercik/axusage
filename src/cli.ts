@@ -5,6 +5,7 @@ import packageJson from "../package.json" with { type: "json" };
 import { authSetupCommand } from "./commands/auth-setup-command.js";
 import { authStatusCommand } from "./commands/auth-status-command.js";
 import type { UsageCommandOptions } from "./commands/fetch-service-usage.js";
+import { serveCommand } from "./commands/serve-command.js";
 import { usageCommand } from "./commands/usage-command.js";
 import { getCredentialSourcesPath } from "./config/credential-sources.js";
 import { getAvailableServices } from "./services/service-adapter-registry.js";
@@ -45,6 +46,17 @@ const program = new Command()
     () =>
       `\nExamples:\n  # Fetch usage for all services\n  ${packageJson.name}\n\n  # JSON output for a single service\n  ${packageJson.name} --service claude --format json\n\n  # TSV output for piping to cut, awk, sort\n  ${packageJson.name} --format tsv | tail -n +2 | awk -F'\\t' '{print $1, $4"%"}'\n\n  # Filter Prometheus metrics with standard tools\n  ${packageJson.name} --format prometheus | grep axusage_utilization_percent\n\n  # Check authentication status for all services\n  ${packageJson.name} --auth-status\n\nSources config file: ${getCredentialSourcesPath()}\n(or set AXUSAGE_SOURCES to JSON to bypass file)\n\nRequires: claude, codex (ChatGPT), gemini, gh (Copilot) CLIs for auth\nOverride CLI paths: AXUSAGE_CLAUDE_PATH, AXUSAGE_CODEX_PATH, AXUSAGE_GEMINI_PATH, AXUSAGE_GH_PATH\n`,
   );
+
+program
+  .command("serve")
+  .description("Start HTTP server exposing Prometheus metrics at /metrics")
+  .option("-p, --port <port>", "Port to listen on")
+  .option("-H, --host <host>", "Host to bind to")
+  .option("--interval <seconds>", "Polling interval in seconds")
+  .option("-s, --service <service>", "Service to monitor (default: all)")
+  .action(async (options) => {
+    await serveCommand(options);
+  });
 
 function fail(message: string): void {
   console.error(`Error: ${message}`);
