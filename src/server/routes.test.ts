@@ -42,6 +42,7 @@ describe("createHealthRouter", () => {
         lastRefreshTime: now,
         services: ["claude", "gemini"],
         errors: [],
+        hasMetrics: true,
       })),
     );
 
@@ -59,13 +60,37 @@ describe("createHealthRouter", () => {
     }
   });
 
+  it("returns 503 with degraded status when no metrics are available", async () => {
+    const app = express();
+    app.use(
+      createHealthRouter(() => ({
+        lastRefreshTime: new Date(),
+        services: ["claude"],
+        errors: ["claude: fetch failed (HTTP 401)"],
+        hasMetrics: false,
+      })),
+    );
+
+    const { url, close } = await startTestApp(app);
+    try {
+      const response = await fetch(`${url}/health`);
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as Record<string, unknown>;
+      expect(body.status).toBe("degraded");
+      expect(body.errors).toEqual(["claude: fetch failed (HTTP 401)"]);
+    } finally {
+      await close();
+    }
+  });
+
   it("omits lastRefresh when lastRefreshTime is undefined", async () => {
     const app = express();
     app.use(
       createHealthRouter(() => ({
         lastRefreshTime: undefined,
         services: ["claude"],
-        errors: ["claude: auth failed"],
+        errors: ["claude: fetch failed"],
+        hasMetrics: false,
       })),
     );
 
@@ -74,7 +99,7 @@ describe("createHealthRouter", () => {
       const response = await fetch(`${url}/health`);
       const body = (await response.json()) as Record<string, unknown>;
       expect(body.lastRefresh).toBeUndefined();
-      expect(body.errors).toEqual(["claude: auth failed"]);
+      expect(body.errors).toEqual(["claude: fetch failed"]);
     } finally {
       await close();
     }

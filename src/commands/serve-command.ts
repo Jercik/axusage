@@ -52,7 +52,11 @@ export async function serveCommand(
       if (result.ok) {
         successes.push(result.value);
       } else {
-        errors.push(`${service}: ${result.error.message}`);
+        const statusSuffix =
+          result.error.status === undefined
+            ? ""
+            : ` (HTTP ${String(result.error.status)})`;
+        errors.push(`${service}: fetch failed${statusSuffix}`);
         console.error(
           `Warning: Failed to fetch ${service}: ${result.error.message}`,
         );
@@ -79,6 +83,7 @@ export async function serveCommand(
     lastRefreshTime,
     services: servicesToQuery,
     errors: lastRefreshErrors,
+    hasMetrics: cachedMetrics !== undefined,
   }));
 
   const metricsRouter = createMetricsRouter(() => ({

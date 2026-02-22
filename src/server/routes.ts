@@ -10,6 +10,7 @@ type HealthStatus = {
   readonly lastRefreshTime: Date | undefined;
   readonly services: readonly string[];
   readonly errors: readonly string[];
+  readonly hasMetrics: boolean;
 };
 
 type MetricsStatus = {
@@ -22,8 +23,9 @@ export function createHealthRouter(getStatus: () => HealthStatus): Router {
 
   router.get("/health", (_request, response) => {
     const status = getStatus();
-    response.json({
-      status: "ok",
+    const healthy = status.hasMetrics;
+    response.status(healthy ? 200 : 503).json({
+      status: healthy ? "ok" : "degraded",
       version: packageJson.version,
       lastRefresh: status.lastRefreshTime?.toISOString(),
       services: status.services,
