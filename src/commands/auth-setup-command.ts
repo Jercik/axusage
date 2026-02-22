@@ -10,6 +10,10 @@ type AuthSetupOptions = {
   readonly service?: string;
 };
 
+function assertNever(value: never): never {
+  throw new Error(`Unhandled service: ${String(value)}`);
+}
+
 function printCliAuthInstructions(
   service: SupportedService,
   cliPath: string,
@@ -70,6 +74,9 @@ function printCliAuthInstructions(
         ),
       );
       break;
+    }
+    default: {
+      assertNever(service);
     }
   }
 }

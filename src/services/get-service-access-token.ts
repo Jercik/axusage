@@ -16,6 +16,7 @@ import type { AgentCli } from "axauth";
 
 import type { SupportedService } from "./supported-service.js";
 import { getServiceSourceConfig } from "../config/credential-sources.js";
+import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
 
 /**
  * Extract access token from vault credentials.
@@ -108,13 +109,19 @@ async function fetchFromVault(
  */
 async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
   try {
-    return await getAgentAccessToken(agentId);
+    const token = await getAgentAccessToken(agentId);
+    if (token) return token;
   } catch (error) {
     console.error(
       `[axusage] Local credential fetch error for ${agentId}: ${error instanceof Error ? error.message : String(error)}`,
     );
-    return undefined;
   }
+
+  if (agentId === "copilot") {
+    return getCopilotTokenFromCustomGhPath();
+  }
+
+  return undefined;
 }
 
 /**

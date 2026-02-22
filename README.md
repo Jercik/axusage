@@ -17,7 +17,7 @@ gh auth login
 # Optional: print service-specific auth instructions
 axusage --auth-setup copilot
 
-# Check auth dependencies
+# Check auth status
 axusage --auth-status
 
 # Fetch usage for all services
@@ -45,6 +45,9 @@ export AXUSAGE_GH_PATH=/path/to/gh
 export AXUSAGE_CLI_TIMEOUT_MS=5000
 ```
 
+`AXUSAGE_GH_PATH` is also used as a Copilot fallback when resolving a token
+via `gh auth token`.
+
 ## Authentication
 
 Authentication is managed by provider CLIs for all services.
@@ -62,14 +65,15 @@ axusage --auth-setup <service>
 
 to print the correct command for a given service.
 
-Check auth dependencies with:
+Check auth status with:
 
 ```bash
 axusage --auth-status
 axusage --auth-status claude
 ```
 
-`--auth-status` verifies CLI availability and path. It does not validate token freshness; run the provider CLI to verify login state.
+`--auth-status` checks whether each service is authenticated and reports the
+detected auth method. It does not validate API token freshness.
 
 ## Usage
 
@@ -155,7 +159,7 @@ Install the missing CLI or set the corresponding override env var (for example, 
 
 ### Authentication errors (401 / unauthorized / no saved authentication)
 
-1. Run `axusage --auth-status` to see which CLI dependency is missing.
+1. Run `axusage --auth-status` to see which services are not authenticated.
 2. Re-authenticate in the provider CLI (`claude`, `codex`, `gemini`, `gh auth login`).
 3. Retry `axusage`.
 

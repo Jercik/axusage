@@ -4,6 +4,7 @@ import {
   SUPPORTED_SERVICES,
   validateService,
 } from "../services/supported-service.js";
+import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
 import { chalk } from "../utils/color.js";
 
 type AuthStatusOptions = { readonly service?: string };
@@ -18,7 +19,19 @@ export function authStatusCommand(options: AuthStatusOptions): void {
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
   for (const service of servicesToCheck) {
-    const result = checkAuth(service);
+    let result = checkAuth(service);
+
+    if (service === "copilot" && !result.authenticated) {
+      const tokenFromOverride = getCopilotTokenFromCustomGhPath();
+      if (tokenFromOverride) {
+        result = {
+          ...result,
+          authenticated: true,
+          method: "GitHub CLI (AXUSAGE_GH_PATH)",
+        };
+      }
+    }
+
     const status = result.authenticated
       ? chalk.green("✓ authenticated")
       : chalk.red("✗ not authenticated");
