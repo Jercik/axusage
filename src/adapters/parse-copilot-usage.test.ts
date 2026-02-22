@@ -3,7 +3,10 @@ import {
   calculatePeriodDuration,
   toServiceUsageData,
 } from "./parse-copilot-usage.js";
-import type { CopilotUsageResponse } from "../types/copilot.js";
+import {
+  CopilotUsageResponse as CopilotUsageResponseSchema,
+  type CopilotUsageResponse,
+} from "../types/copilot.js";
 
 describe("copilot parsing", () => {
   describe("calculatePeriodDuration", () => {
@@ -19,6 +22,23 @@ describe("copilot parsing", () => {
       const resetDate = new Date(0);
       const ms = calculatePeriodDuration(resetDate);
       expect(ms).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("schema validation", () => {
+    it("rejects invalid date strings", () => {
+      const result = CopilotUsageResponseSchema.safeParse({
+        quota_reset_date_utc: "not-a-date",
+        copilot_plan: "individual_pro",
+        quota_snapshots: {
+          premium_interactions: {
+            entitlement: 1500,
+            remaining: 500,
+            percent_remaining: 33.33,
+          },
+        },
+      });
+      expect(result.success).toBe(false);
     });
   });
 
@@ -73,6 +93,26 @@ describe("copilot parsing", () => {
       expect(window.utilization).toBe(0);
       expect(window.resetsAt).toBeUndefined();
       expect(window.periodDurationMs).toBe(0);
+    });
+
+    it("returns zero utilization when entitlement is zero", () => {
+      const resp: CopilotUsageResponse = {
+        quota_reset_date_utc: "2026-03-01T00:00:00.000Z",
+        copilot_plan: "individual",
+        quota_snapshots: {
+          premium_interactions: {
+            entitlement: 0,
+            remaining: 0,
+            percent_remaining: 0,
+          },
+        },
+      };
+
+      const data = toServiceUsageData(resp);
+      const window = data.windows[0];
+      assert(window);
+      expect(window.utilization).toBe(0);
+      expect(Number.isFinite(window.utilization)).toBe(true);
     });
 
     it("parses reset date from quota_reset_date_utc", () => {

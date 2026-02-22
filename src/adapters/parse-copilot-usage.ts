@@ -65,7 +65,10 @@ export function toServiceUsageData(
 
   const used =
     premium_interactions.entitlement - premium_interactions.remaining;
-  const utilization = (used / premium_interactions.entitlement) * 100;
+  const utilization =
+    premium_interactions.entitlement === 0
+      ? 0
+      : (used / premium_interactions.entitlement) * 100;
 
   return {
     service: "GitHub Copilot",

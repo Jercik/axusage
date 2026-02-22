@@ -17,7 +17,9 @@ const QuotaSnapshots = z.object({
 });
 
 export const CopilotUsageResponse = z.object({
-  quota_reset_date_utc: z.string(),
+  quota_reset_date_utc: z
+    .string()
+    .refine((s) => !Number.isNaN(new Date(s).getTime()), "Invalid date"),
   copilot_plan: z.string(),
   quota_snapshots: QuotaSnapshots,
 });
