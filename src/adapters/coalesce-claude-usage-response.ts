@@ -65,11 +65,18 @@ const resolveUtilization = (candidate: UsageWindowCandidate): number => {
 const selectMetric = (
   candidates: readonly UsageWindowCandidate[],
   matchers: readonly string[],
+  exclude: readonly string[] = [],
 ): UsageMetricInput | undefined => {
   for (const candidate of candidates) {
     const label = normalizeLabel(candidate);
     if (!label) continue;
     const tokens = tokenizeLabel(label);
+
+    const hasExcludedToken = exclude.some(
+      (ex) => tokens.has(ex) || label.includes(ex),
+    );
+    if (hasExcludedToken) continue;
+
     const matches =
       matchers.includes(label) ||
       matchers.some((matcher) => tokens.has(matcher));
@@ -107,12 +114,11 @@ export function coalesceClaudeUsageResponse(
     "5",
     "5hour",
   ]);
-  const sevenDay = selectMetric(candidates, [
-    "seven_day",
-    "seven",
-    "7",
-    "week",
-  ]);
+  const sevenDay = selectMetric(
+    candidates,
+    ["seven_day", "seven", "7", "week"],
+    ["opus", "sonnet", "oauth"],
+  );
   const sevenDayOpus = selectMetric(candidates, ["seven_day_opus", "opus"]);
   const sevenDaySonnet = selectMetric(candidates, [
     "seven_day_sonnet",

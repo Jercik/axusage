@@ -14,18 +14,8 @@ import {
 } from "axauth";
 import type { AgentCli } from "axauth";
 
-import {
-  getServiceSourceConfig,
-  type ServiceId,
-  type VaultSupportedServiceId,
-} from "../config/credential-sources.js";
-
-/** Map service IDs to agent IDs for axauth/vault */
-const SERVICE_TO_AGENT: Record<VaultSupportedServiceId, AgentCli> = {
-  claude: "claude",
-  chatgpt: "codex", // ChatGPT and Codex both use OpenAI API credentials
-  gemini: "gemini",
-};
+import type { SupportedService } from "./supported-service.js";
+import { getServiceSourceConfig } from "../config/credential-sources.js";
 
 /**
  * Extract access token from vault credentials.
@@ -135,7 +125,7 @@ async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
  * - "vault": Fetch from axvault server (requires credential name)
  * - "auto": Try vault if configured and name provided, fallback to local
  *
- * @param service - Service ID (e.g., "claude", "chatgpt", "gemini")
+ * @param service - Service ID (e.g., "claude", "codex", "gemini")
  * @returns Access token string or undefined if not available
  *
  * @example
@@ -145,10 +135,10 @@ async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
  * }
  */
 async function getServiceAccessToken(
-  service: VaultSupportedServiceId,
+  service: SupportedService,
 ): Promise<string | undefined> {
-  const config = getServiceSourceConfig(service as ServiceId);
-  const agentId = SERVICE_TO_AGENT[service];
+  const config = getServiceSourceConfig(service);
+  const agentId: AgentCli = service;
 
   switch (config.source) {
     case "local": {

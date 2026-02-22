@@ -12,6 +12,8 @@ import envPaths from "env-paths";
 import path from "node:path";
 import { z } from "zod";
 
+import type { SupportedService } from "../services/supported-service.js";
+
 /** Credential source type */
 const CredentialSourceType = z.enum(["auto", "local", "vault"]);
 type CredentialSourceType = z.infer<typeof CredentialSourceType>;
@@ -35,16 +37,6 @@ interface ResolvedSourceConfig {
   source: CredentialSourceType;
   name: string | undefined;
 }
-
-/** Service IDs that support vault credentials (API-based services) */
-type VaultSupportedServiceId = "claude" | "chatgpt" | "gemini";
-
-/**
- * All service IDs.
- * Note: github-copilot uses GitHub token auth, not vault credentials,
- * so it's excluded from VaultSupportedServiceId.
- */
-type ServiceId = VaultSupportedServiceId | "github-copilot";
 
 // Lazy-initialized config instance
 let configInstance: Conf<{ sources?: SourcesConfig }> | undefined;
@@ -138,10 +130,12 @@ function getCredentialSourceConfig(): SourcesConfig {
 /**
  * Get the resolved source config for a specific service.
  *
- * @param service - Service ID (e.g., "claude", "chatgpt", "gemini")
+ * @param service - Service ID (e.g., "claude", "codex", "gemini")
  * @returns Resolved config with source type and optional credential name
  */
-function getServiceSourceConfig(service: ServiceId): ResolvedSourceConfig {
+function getServiceSourceConfig(
+  service: SupportedService,
+): ResolvedSourceConfig {
   const config = getCredentialSourceConfig();
   const serviceConfig = config[service];
 
@@ -171,5 +165,4 @@ function getCredentialSourcesPath(): string {
   return path.resolve(configDirectory, "config.json");
 }
 
-export type { ServiceId, VaultSupportedServiceId };
 export { getServiceSourceConfig, getCredentialSourcesPath };

@@ -137,7 +137,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
         ],
       },
       {
-        service: "chatgpt",
+        service: "codex",
         planType: "pro",
         windows: [
           { name: "Primary", utilization: 30, resetsAt, periodDurationMs },
@@ -149,7 +149,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     expect(lines).toHaveLength(4); // header + 3 data rows
     expect(lines[1]?.startsWith("claude")).toBe(true);
     expect(lines[2]?.startsWith("claude")).toBe(true);
-    expect(lines[3]?.startsWith("chatgpt")).toBe(true);
+    expect(lines[3]?.startsWith("codex")).toBe(true);
   });
 
   it("can be parsed by splitting on tabs", () => {

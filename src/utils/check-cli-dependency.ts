@@ -18,6 +18,11 @@ const CLI_DEPENDENCIES = {
     envVar: "AXUSAGE_CODEX_PATH",
     installHint: "npm install -g @openai/codex",
   },
+  gh: {
+    command: "gh",
+    envVar: "AXUSAGE_GH_PATH",
+    installHint: "https://cli.github.com/ or brew install gh",
+  },
   gemini: {
     command: "gemini",
     envVar: "AXUSAGE_GEMINI_PATH",
@@ -25,7 +30,7 @@ const CLI_DEPENDENCIES = {
   },
 } as const satisfies Record<string, CliDependency>;
 
-const AUTH_CLI_SERVICES = ["claude", "chatgpt", "gemini"] as const;
+const AUTH_CLI_SERVICES = ["claude", "codex", "copilot", "gemini"] as const;
 type AuthCliService = (typeof AUTH_CLI_SERVICES)[number];
 
 function resolveCliDependencyTimeout(): number {
@@ -37,7 +42,7 @@ function resolveCliDependencyTimeout(): number {
 }
 
 export function getAuthCliDependency(service: AuthCliService): CliDependency {
-  if (service === "chatgpt") return CLI_DEPENDENCIES.codex;
+  if (service === "copilot") return CLI_DEPENDENCIES.gh;
   return CLI_DEPENDENCIES[service];
 }
 

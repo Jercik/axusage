@@ -3,11 +3,8 @@ import type { UsageCommandOptions } from "../commands/fetch-service-usage.js";
 export type RootOptions = {
   readonly authSetup?: string;
   readonly authStatus?: string | boolean;
-  readonly authClear?: string;
-  readonly force?: boolean;
   readonly service?: UsageCommandOptions["service"];
   readonly format?: UsageCommandOptions["format"];
-  readonly interactive?: UsageCommandOptions["interactive"];
 };
 
 export function getRootOptionsError(
@@ -17,15 +14,10 @@ export function getRootOptionsError(
   // Commander sets optional args to `true` when provided without a value.
   const authSelectionCount =
     Number(Boolean(options.authSetup)) +
-    Number(options.authStatus !== undefined) +
-    Number(Boolean(options.authClear));
+    Number(options.authStatus !== undefined);
 
   if (authSelectionCount > 1) {
-    return "Use only one of --auth-setup, --auth-status, or --auth-clear.";
-  }
-
-  if (options.force && !options.authClear) {
-    return "--force is only supported with --auth-clear.";
+    return "Use only one of --auth-setup or --auth-status.";
   }
 
   const hasExplicitFormat = formatSource === "cli";

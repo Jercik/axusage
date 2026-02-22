@@ -46,4 +46,16 @@ describe("coalesceClaudeUsageResponse", () => {
     expect(result?.seven_day.utilization).toBe(55);
     expect(result?.seven_day_opus?.utilization).toBe(65);
   });
+
+  it("does not incorrectly match specific windows as generic windows regardless of order", () => {
+    const result = coalesceClaudeUsageResponse([
+      { name: "Five Hour Usage", percent: 25 },
+      { name: "Seven Day Opus Usage", utilization: 65 },
+      { name: "Seven Day Usage", percentage: 55 },
+    ]);
+
+    expect(result?.five_hour.utilization).toBe(25);
+    expect(result?.seven_day.utilization).toBe(55);
+    expect(result?.seven_day_opus?.utilization).toBe(65);
+  });
 });

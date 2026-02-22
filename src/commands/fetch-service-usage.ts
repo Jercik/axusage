@@ -5,12 +5,11 @@ import {
   getServiceAdapter,
 } from "../services/service-adapter-registry.js";
 
-const ALL_SERVICES = ["claude", "chatgpt", "github-copilot", "gemini"] as const;
+const ALL_SERVICES = ["claude", "codex", "copilot", "gemini"] as const;
 
 export type UsageCommandOptions = {
   readonly service?: string;
   readonly format?: "text" | "tsv" | "json" | "prometheus";
-  readonly interactive?: boolean;
 };
 
 export function selectServicesToQuery(service?: string): string[] {

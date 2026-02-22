@@ -1,10 +1,7 @@
-import { existsSync } from "node:fs";
 import {
   SUPPORTED_SERVICES,
   validateService,
 } from "../services/supported-service.js";
-import { getStorageStatePathFor } from "../services/auth-storage-path.js";
-import { getBrowserContextsDirectory } from "../services/app-paths.js";
 import type { AuthCliService } from "../utils/check-cli-dependency.js";
 import {
   AUTH_CLI_SERVICES,
@@ -21,7 +18,6 @@ export function authStatusCommand(options: AuthStatusOptions): void {
     : SUPPORTED_SERVICES;
 
   const cliAuthServices = new Set(AUTH_CLI_SERVICES);
-  const dataDirectory = getBrowserContextsDirectory();
   let hasFailures = false;
 
   console.log(chalk.blue("\nAuthentication Status:\n"));
@@ -52,33 +48,8 @@ export function authStatusCommand(options: AuthStatusOptions): void {
       }
       continue;
     }
-
-    const storagePath = getStorageStatePathFor(dataDirectory, service);
-    const hasAuth = existsSync(storagePath);
-    const status = hasAuth
-      ? chalk.green("✓ Authenticated")
-      : chalk.gray("✗ Not authenticated");
-    if (!hasAuth) {
-      hasFailures = true;
-    }
-    console.log(`${chalk.bold(service)}: ${status}`);
-    console.log(`  ${chalk.dim("Storage:")} ${chalk.dim(storagePath)}`);
   }
 
-  const browserServices = servicesToCheck.filter(
-    (service) => !cliAuthServices.has(service),
-  );
-  const copilotService = "github-copilot";
-  const needsCopilotSetup =
-    browserServices.includes(copilotService) &&
-    !existsSync(getStorageStatePathFor(dataDirectory, copilotService));
-  if (needsCopilotSetup) {
-    console.error(
-      chalk.gray(
-        `\nTo set up authentication, run: ${chalk.cyan("axusage --auth-setup github-copilot --interactive")}`,
-      ),
-    );
-  }
   if (hasFailures) {
     process.exitCode = 1;
   }

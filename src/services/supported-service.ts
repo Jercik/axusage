@@ -1,18 +1,17 @@
-/**
- * Supported service names for usage tracking
- */
-export type SupportedService =
-  | "claude"
-  | "chatgpt"
-  | "github-copilot"
-  | "gemini";
+import type { AgentCli } from "axauth";
+import { AGENT_CLIS } from "axauth";
 
-export const SUPPORTED_SERVICES: SupportedService[] = [
-  "claude",
-  "chatgpt",
-  "github-copilot",
-  "gemini",
-];
+/**
+ * Supported service names for usage tracking.
+ *
+ * Derived from the canonical AGENT_CLIS list, excluding agents
+ * that axusage doesn't yet support (opencode).
+ */
+export type SupportedService = Exclude<AgentCli, "opencode">;
+
+export const SUPPORTED_SERVICES: SupportedService[] = AGENT_CLIS.filter(
+  (cli): cli is SupportedService => cli !== "opencode",
+);
 
 export function validateService(service: string | undefined): SupportedService {
   if (!service) {

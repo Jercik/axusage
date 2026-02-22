@@ -5,8 +5,8 @@ import type {
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
 import { getServiceAccessToken } from "../services/get-service-access-token.js";
-import { ChatGPTUsageResponse as ChatGPTUsageResponseSchema } from "../types/chatgpt.js";
-import { toServiceUsageData } from "./parse-chatgpt-usage.js";
+import { CodexUsageResponse as CodexUsageResponseSchema } from "../types/codex.js";
+import { toServiceUsageData } from "./parse-codex-usage.js";
 
 const API_URL = "https://chatgpt.com/backend-api/wham/usage";
 
@@ -16,11 +16,11 @@ const API_URL = "https://chatgpt.com/backend-api/wham/usage";
  * Uses the OAuth token from Codex CLI's credential store (~/.codex/auth.json)
  * to make direct API calls to ChatGPT's usage endpoint.
  */
-export const chatGPTAdapter: ServiceAdapter = {
+export const codexAdapter: ServiceAdapter = {
   name: "ChatGPT",
 
   async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getServiceAccessToken("chatgpt");
+    const accessToken = await getServiceAccessToken("codex");
 
     if (!accessToken) {
       return {
@@ -50,7 +50,7 @@ export const chatGPTAdapter: ServiceAdapter = {
       }
 
       const data: unknown = await response.json();
-      const parseResult = ChatGPTUsageResponseSchema.safeParse(data);
+      const parseResult = CodexUsageResponseSchema.safeParse(data);
 
       if (!parseResult.success) {
         return {

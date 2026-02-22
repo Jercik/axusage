@@ -8,127 +8,68 @@ Monitor API usage across Claude, ChatGPT, GitHub Copilot, and Gemini from a sing
 # Install globally
 npm install -g axusage
 
-# Set up authentication (one-time setup per service)
+# One-time authentication per provider
 claude
 codex
 gemini
-axusage --auth-setup github-copilot --interactive
+gh auth login
 
-# Check authentication status
+# Optional: print service-specific auth instructions
+axusage --auth-setup copilot
+
+# Check auth dependencies
 axusage --auth-status
-# For CLI-auth services, this reports CLI availability; use the CLI to confirm login.
 
-# Fetch usage
+# Fetch usage for all services
 axusage
 ```
 
 ## Requirements
 
-- `claude` CLI (Claude auth) — `npm install -g @anthropic-ai/claude-code`
-- `codex` CLI (ChatGPT auth) — `npm install -g @openai/codex`
-- `gemini` CLI (Gemini auth) — `npm install -g @google/gemini-cli`
-- Playwright Chromium for GitHub Copilot auth (see "Browser installation" below for global install steps)
+- `claude` CLI (Claude auth) - `npm install -g @anthropic-ai/claude-code`
+- `codex` CLI (ChatGPT auth) - `npm install -g @openai/codex`
+- `gemini` CLI (Gemini auth) - `npm install -g @google/gemini-cli`
+- `gh` CLI (GitHub Copilot auth) - `https://cli.github.com/` or `brew install gh`
 
 ### Custom Paths
 
-If the CLIs are not on your `PATH`, override the binaries:
+If CLIs are not on your `PATH`, override binary paths:
 
 ```bash
 export AXUSAGE_CLAUDE_PATH=/path/to/claude
 export AXUSAGE_CODEX_PATH=/path/to/codex
 export AXUSAGE_GEMINI_PATH=/path/to/gemini
+export AXUSAGE_GH_PATH=/path/to/gh
 
-# Optional: adjust CLI dependency check timeout (milliseconds)
+# Optional: dependency check timeout (milliseconds, default: 5000)
 export AXUSAGE_CLI_TIMEOUT_MS=5000
 ```
 
-For Playwright-managed browsers:
-
-```bash
-export PLAYWRIGHT_BROWSERS_PATH=/path/to/playwright-browsers
-```
-
-### Exit Codes
-
-- `0`: success
-- `1`: errors, including partial failures
-
 ## Authentication
 
-Claude, ChatGPT, and Gemini use their respective CLI OAuth sessions. GitHub
-Copilot uses browser-based authentication for persistent, long-lived sessions.
+Authentication is managed by provider CLIs for all services.
 
-**Setup (one-time per service):**
+- Claude: `claude`
+- ChatGPT: `codex`
+- Gemini: `gemini`
+- GitHub Copilot: `gh auth login`
+
+Use:
 
 ```bash
-# Set up authentication for each service
-claude
-codex
-gemini
-axusage --auth-setup github-copilot --interactive
+axusage --auth-setup <service>
+```
 
-# Check authentication status
+to print the correct command for a given service.
+
+Check auth dependencies with:
+
+```bash
 axusage --auth-status
+axusage --auth-status claude
 ```
 
-`--auth-status` reports browser-auth status for GitHub Copilot and CLI availability
-for Claude/ChatGPT/Gemini. Use `claude`, `codex`, or `gemini` to confirm CLI login.
-
-When you run `axusage --auth-setup github-copilot --interactive`, a browser window will open.
-Simply log in to GitHub as you normally would. Your authentication will be
-saved and automatically used for future requests.
-
-**Authenticated sessions directory (via [`env-paths`](https://github.com/sindresorhus/env-paths)):**
-
-- Linux: `~/.local/share/axusage/browser-contexts/` (or `$XDG_DATA_HOME/axusage/browser-contexts/`)
-- macOS: `~/Library/Application Support/axusage/browser-contexts/`
-- Windows: `%LOCALAPPDATA%\axusage\Data\browser-contexts\`
-
-You can override the location by providing `BrowserAuthConfig.dataDir`, but the CLI defaults to these platform-appropriate directories.
-
-> **Migration from `agent-usage`:** If upgrading from the old `agent-usage` package, copy your authentication contexts:
->
-> - Linux/macOS: `mkdir -p ~/.local/share/axusage/ && cp -r ~/.local/share/agent-usage/* ~/.local/share/axusage/`
-> - Windows: Copy from `%LOCALAPPDATA%\agent-usage\` to `%LOCALAPPDATA%\axusage\`
-
-Security notes:
-
-- Files in this directory contain sensitive session data. They are created with owner-only permissions (0600 for files, 0700 for the directory) where possible.
-- To revoke access for GitHub Copilot, clear saved browser auth:
-
-```bash
-axusage --auth-clear github-copilot --interactive
-```
-
-This moves the saved browser files to your system Trash/Recycle Bin (recoverable).
-
-Use `--force` to skip confirmation in scripts.
-
-Browser installation:
-
-- Playwright Chromium is installed automatically on `pnpm install` via a postinstall script. If this fails in your environment, install manually:
-
-```bash
-pnpm exec playwright install chromium --with-deps
-```
-
-**Global installation with pnpm:**
-
-pnpm blocks postinstall scripts for global packages by default (npm runs them automatically). After installing globally, approve and run the postinstall script:
-
-```bash
-pnpm add -g axusage
-pnpm approve-builds -g          # Select axusage when prompted
-pnpm add -g axusage             # Reinstall to run postinstall
-```
-
-Alternatively, install the browser manually after global installation. Use the Playwright binary that ships with the global package so the browser is installed in the right location:
-
-```bash
-pnpm add -g axusage
-PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
-"$PLAYWRIGHT_BIN" install chromium --with-deps
-```
+`--auth-status` verifies CLI availability and path. It does not validate token freshness; run the provider CLI to verify login state.
 
 ## Usage
 
@@ -136,65 +77,91 @@ PLAYWRIGHT_BIN="$(pnpm root -g)/axusage/node_modules/.bin/playwright"
 # Query all services
 axusage
 
-# Allow interactive re-authentication during usage fetch
-axusage --interactive      # or: -i
+# Query a single service
+axusage --service claude
+axusage -s codex
+axusage -s copilot
 
-# Single service
-axusage --service claude   # or: -s claude
-axusage -s chatgpt
-axusage -s github-copilot
+# Output formats
+axusage --format text
+axusage --format tsv
+axusage --format json
+axusage --format prometheus
 
-# JSON output
-axusage --format=json      # or: -o json
-axusage -s claude -o json
-
-# TSV output (parseable with cut, awk, sort)
-axusage -o tsv
-
-# Skip confirmation when clearing saved browser auth
-axusage --auth-clear github-copilot --force
+# Auth utilities
+axusage --auth-setup claude
+axusage --auth-status
 
 # Disable color output
 axusage --no-color
 ```
+
+### Exit Codes
+
+- `0`: Success
+- `1`: One or more failures (including partial failures)
+
+## Credential Sources
+
+Credential source config is read from:
+
+- Config file path shown in `axusage --help`
+- `AXUSAGE_SOURCES` environment variable (JSON), which overrides file config
 
 ## Examples
 
 ### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
 ```
 
 ### Count windows by service (TSV + cut/sort/uniq)
 
 ```bash
-axusage --format=tsv | tail -n +2 | cut -f1 | sort | uniq -c
+axusage --format tsv | tail -n +2 | cut -f1 | sort | uniq -c
 ```
 
 ### Filter by utilization threshold (TSV + awk)
 
 ```bash
-axusage --format=tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
 ```
 
 ### Extract utilization as JSON (JSON + jq)
 
 ```bash
-axusage --format=json \
+axusage --format json \
   | jq -r '(.results? // .) | (if type=="array" then . else [.] end) | .[] | .windows[] | [.name, (.utilization|tostring)] | @tsv'
 ```
 
 ## Output
 
-Human-readable format shows:
+Human-readable output includes:
 
-- Utilization percentage per window (5-hour, 7-day, monthly)
+- Utilization percentage per window
 - Usage rate vs expected rate
 - Reset times
-- Color coding: 🟢 on track | 🟡 over budget | 🔴 significantly over
+- Color coding: on track / over budget / significantly over
 
-JSON format returns structured data for programmatic use.
+JSON output provides structured data for automation.
+Prometheus output emits text metrics suitable for scraping.
+
+## Troubleshooting
+
+### "Required dependency '... not found'"
+
+Install the missing CLI or set the corresponding override env var (for example, `AXUSAGE_GH_PATH`).
+
+### Authentication errors (401 / unauthorized / no saved authentication)
+
+1. Run `axusage --auth-status` to see which CLI dependency is missing.
+2. Re-authenticate in the provider CLI (`claude`, `codex`, `gemini`, `gh auth login`).
+3. Retry `axusage`.
+
+### Partial failures
+
+`axusage` exits with code `1` if any service fails, even when other services succeed. Check warnings in stderr for the failed service(s).
 
 ## Agent Rule
 
@@ -207,96 +174,6 @@ Run `npx -y axusage --help` to learn available options.
 
 Use `axusage` when you need a quick, scriptable snapshot of API usage across Claude, ChatGPT, GitHub Copilot, and Gemini. It standardizes output (text, JSON, Prometheus) so you can alert, dashboard, or pipe it into other Unix tools.
 ```
-
-## Troubleshooting
-
-### Authentication setup hangs
-
-- The CLI shows a countdown while waiting for login.
-- If you have completed login, press Enter in the terminal to continue.
-- If it still fails, run `axusage --auth-clear <service> --interactive` and retry.
-
-### "No saved authentication" error
-
-- Check which services are authenticated: `axusage --auth-status`.
-- For GitHub Copilot, set up the missing service: `axusage --auth-setup <service> --interactive`.
-- For Claude/ChatGPT/Gemini, run the provider CLI to authenticate.
-
-### Sessions expire
-
-- Browser sessions can expire based on provider policy. Re-run `axusage --auth-setup <service> --interactive` for the affected service when you see authentication errors.
-
-## Remote authentication and Prometheus export
-
-You can perform the interactive login flow on a workstation (for example, a local macOS laptop) and reuse the resulting browser session on a headless Linux server that collects usage and exports it for Prometheus.
-
-### 1. Authenticate on a workstation
-
-1. Install globally and authenticate the CLIs you need, then set up browser
-   auth for GitHub Copilot:
-
-   ```bash
-   npm install -g axusage
-
-   claude
-   codex
-   gemini
-   axusage --auth-setup github-copilot --interactive
-   ```
-
-2. Confirm the workstation has valid sessions:
-
-   ```bash
-   axusage --auth-status
-   ```
-
-   For CLI-auth services, run `claude`, `codex`, or `gemini` to confirm login.
-
-3. Package the saved contexts so they can be transferred. Set `CONTEXT_DIR` to the path for your platform (see the table above):
-
-   ```bash
-   CONTEXT_DIR="$HOME/.local/share/axusage/browser-contexts"  # Linux default; adjust on macOS/Windows
-   tar czf axusage-contexts.tgz -C "$(dirname "$CONTEXT_DIR")" "$(basename "$CONTEXT_DIR")"
-   ```
-
-   Archive structure: `browser-contexts/github-copilot-auth.json` plus matching
-   `github-copilot-auth.meta.json` (CLI-auth services do not use browser contexts).
-
-### 2. Transfer the browser contexts to the Linux server
-
-1. Copy the archive to the server with `scp` (replace `user@server` with your login):
-
-   ```bash
-   scp axusage-contexts.tgz user@server:~/
-   ```
-
-2. On the server, create the target directory if it does not already exist, unpack the archive, and lock down the permissions:
-
-   ```bash
-   ssh user@server
-   CONTEXT_DIR="$HOME/.local/share/axusage/browser-contexts"  # Linux default; adjust per platform
-   AXUSAGE_DIR="$(dirname "$CONTEXT_DIR")"
-   mkdir -p "$CONTEXT_DIR"
-   tar xzf ~/axusage-contexts.tgz -C "$AXUSAGE_DIR"
-   # Directories 700, files 600
-   find "$AXUSAGE_DIR" -type d -exec chmod 700 {} +
-   find "$CONTEXT_DIR" -type f -exec chmod 600 {} +
-   ```
-
-3. Verify that the sessions are available on the server:
-
-   ```bash
-   axusage --auth-status
-   ```
-
-   If the server does not yet have the tool installed, run `npm install -g axusage` before checking the status.
-
-Notes:
-
-- Use `--service <name>` to restrict services.
-- Sessions may expire or become invalid if you change your password or log out of the service in another browser. Re-run `axusage --auth-setup <service> --interactive` as needed.
-- If you transfer browser contexts between machines, ensure the target system is secure and permissions are restricted to the intended user.
-- The CLI stores authentication data in the platform-specific directories listed above; protect that directory to prevent unauthorized access.
 
 ## Development
 
