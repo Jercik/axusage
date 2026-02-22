@@ -41,37 +41,44 @@ export async function serveCommand(
   let cachedMetrics: string | undefined;
   let lastRefreshTime: Date | undefined;
   let lastRefreshErrors: string[] = [];
+  let refreshing = false;
 
   async function refreshMetrics(): Promise<void> {
-    const results = await fetchServicesInParallel(servicesToQuery);
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      const results = await fetchServicesInParallel(servicesToQuery);
 
-    const successes = [];
-    const errors: string[] = [];
+      const successes = [];
+      const errors: string[] = [];
 
-    for (const { service, result } of results) {
-      if (result.ok) {
-        successes.push(result.value);
-      } else {
-        const statusSuffix =
-          result.error.status === undefined
-            ? ""
-            : ` (HTTP ${String(result.error.status)})`;
-        errors.push(`${service}: fetch failed${statusSuffix}`);
-        console.error(
-          `Warning: Failed to fetch ${service}: ${result.error.message}`,
-        );
+      for (const { service, result } of results) {
+        if (result.ok) {
+          successes.push(result.value);
+        } else {
+          const statusSuffix =
+            result.error.status === undefined
+              ? ""
+              : ` (HTTP ${String(result.error.status)})`;
+          errors.push(`${service}: fetch failed${statusSuffix}`);
+          console.error(
+            `Warning: Failed to fetch ${service}: ${result.error.message}`,
+          );
+        }
       }
+
+      lastRefreshErrors = errors;
+      lastRefreshTime = new Date();
+
+      // All services failed → clear cache so /metrics returns 503 instead of
+      // serving stale data that could mask outages in Prometheus alerting.
+      cachedMetrics =
+        successes.length > 0
+          ? await formatPrometheusMetrics(successes)
+          : undefined;
+    } finally {
+      refreshing = false; // eslint-disable-line require-atomic-updates -- single-threaded guard, no race
     }
-
-    lastRefreshErrors = errors;
-    lastRefreshTime = new Date();
-
-    // All services failed → clear cache so /metrics returns 503 instead of
-    // serving stale data that could mask outages in Prometheus alerting.
-    cachedMetrics =
-      successes.length > 0
-        ? await formatPrometheusMetrics(successes)
-        : undefined;
   }
 
   // Initial fetch
