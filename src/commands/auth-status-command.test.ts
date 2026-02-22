@@ -1,8 +1,7 @@
-import { checkAuth } from "axauth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("axauth", () => ({
-  checkAuth: vi.fn(),
+vi.mock("../services/service-diagnostics.js", () => ({
+  getServiceDiagnostic: vi.fn(),
 }));
 
 vi.mock("../services/supported-service.js", () => ({
@@ -10,39 +9,32 @@ vi.mock("../services/supported-service.js", () => ({
   validateService: vi.fn((service: string) => service),
 }));
 
-vi.mock("../utils/copilot-gh-token.js", () => ({
-  getCopilotTokenFromCustomGhPath: vi.fn(),
-}));
-
 const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
+import { getServiceDiagnostic } from "../services/service-diagnostics.js";
 import { authStatusCommand } from "./auth-status-command.js";
 
-const mockCheckAuth = vi.mocked(checkAuth);
-const mockGetCopilotTokenFromCustomGhPath = vi.mocked(
-  getCopilotTokenFromCustomGhPath,
-);
+const mockGetServiceDiagnostic = vi.mocked(getServiceDiagnostic);
 
 describe("authStatusCommand", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     consoleLogSpy.mockImplementation(() => {});
-    mockGetCopilotTokenFromCustomGhPath.mockReset();
     process.exitCode = undefined;
   });
 
   it("marks copilot authenticated when AXUSAGE_GH_PATH provides a token", () => {
-    mockCheckAuth.mockReturnValue({
-      agentId: "copilot",
-      authenticated: false,
+    mockGetServiceDiagnostic.mockReturnValue({
+      service: "copilot",
+      cliAvailable: true,
+      cliPath: "/usr/local/bin/gh",
+      authenticated: true,
+      authMethod: "GitHub CLI (AXUSAGE_GH_PATH)",
     });
-    mockGetCopilotTokenFromCustomGhPath.mockReturnValue("ghu_custom_token");
 
     authStatusCommand({ service: "copilot" });
 
-    expect(mockCheckAuth).toHaveBeenCalledWith("copilot");
-    expect(mockGetCopilotTokenFromCustomGhPath).toHaveBeenCalledTimes(1);
+    expect(mockGetServiceDiagnostic).toHaveBeenCalledWith("copilot");
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining("✓ authenticated"),
     );
@@ -53,9 +45,12 @@ describe("authStatusCommand", () => {
   });
 
   it("sets exit code when service is not authenticated", () => {
-    mockCheckAuth.mockReturnValue({
-      agentId: "copilot",
+    mockGetServiceDiagnostic.mockReturnValue({
+      service: "copilot",
+      cliAvailable: true,
+      cliPath: "/usr/local/bin/gh",
       authenticated: false,
+      authMethod: undefined,
     });
 
     authStatusCommand({ service: "copilot" });
@@ -66,17 +61,24 @@ describe("authStatusCommand", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("does not use AXUSAGE_GH_PATH fallback for non-copilot services", () => {
-    mockCheckAuth.mockReturnValue({
-      agentId: "claude",
+  it("shows auth method for authenticated services", () => {
+    mockGetServiceDiagnostic.mockReturnValue({
+      service: "claude",
+      cliAvailable: true,
+      cliPath: "/usr/local/bin/claude",
       authenticated: true,
-      method: "OAuth (file)",
+      authMethod: "OAuth (file)",
     });
 
     authStatusCommand({ service: "claude" });
 
-    expect(mockCheckAuth).toHaveBeenCalledWith("claude");
-    expect(mockGetCopilotTokenFromCustomGhPath).not.toHaveBeenCalled();
+    expect(mockGetServiceDiagnostic).toHaveBeenCalledWith("claude");
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining("✓ authenticated"),
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining("OAuth (file)"),
+    );
     expect(process.exitCode).toBeUndefined();
   });
 });
