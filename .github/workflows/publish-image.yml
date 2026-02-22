@@ -62,9 +62,14 @@ jobs:
       - name: Validate secrets
         env:
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
         run: |
           if [[ -z "$REGISTRY_PASSWORD" ]]; then
             echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
+          if [[ -z "$REGISTRY_USERNAME" ]]; then
+            echo "::error::REGISTRY_USERNAME variable is not set. Configure it in repository settings."
             exit 1
           fi
 
@@ -77,9 +82,9 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
-          echo "created=$(git show -s --format=%cI ${{ github.sha }})" >> "$GITHUB_OUTPUT"
-          echo "source=${{ github.server_url }}/${{ github.repository }}" >> "$GITHUB_OUTPUT"
+          echo "image=$REGISTRY/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "created=$(git show -s --format=%cI "$GITHUB_SHA")" >> "$GITHUB_OUTPUT"
+          echo "source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" >> "$GITHUB_OUTPUT"
 
       - name: Login to registry
         env:
@@ -138,9 +143,14 @@ jobs:
       - name: Validate secrets
         env:
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_USERNAME: ${{ vars.REGISTRY_USERNAME }}
         run: |
           if [[ -z "$REGISTRY_PASSWORD" ]]; then
             echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
+          if [[ -z "$REGISTRY_USERNAME" ]]; then
+            echo "::error::REGISTRY_USERNAME variable is not set. Configure it in repository settings."
             exit 1
           fi
 
@@ -148,7 +158,7 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=$REGISTRY/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Login to registry
         env:
