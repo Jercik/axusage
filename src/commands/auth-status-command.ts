@@ -1,10 +1,8 @@
-import { checkAuth } from "axauth";
-
+import { getServiceDiagnostic } from "../services/service-diagnostics.js";
 import {
   SUPPORTED_SERVICES,
   validateService,
 } from "../services/supported-service.js";
-import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
 import { chalk } from "../utils/color.js";
 
 type AuthStatusOptions = { readonly service?: string };
@@ -19,30 +17,21 @@ export function authStatusCommand(options: AuthStatusOptions): void {
   console.log(chalk.blue("\nAuthentication Status:\n"));
 
   for (const service of servicesToCheck) {
-    let result = checkAuth(service);
+    const diagnostic = getServiceDiagnostic(service);
 
-    if (service === "copilot" && !result.authenticated) {
-      const tokenFromOverride = getCopilotTokenFromCustomGhPath();
-      if (tokenFromOverride) {
-        result = {
-          ...result,
-          authenticated: true,
-          method: "GitHub CLI (AXUSAGE_GH_PATH)",
-        };
-      }
-    }
-
-    const status = result.authenticated
+    const status = diagnostic.authenticated
       ? chalk.green("✓ authenticated")
       : chalk.red("✗ not authenticated");
 
-    if (!result.authenticated) {
+    if (!diagnostic.authenticated) {
       hasFailures = true;
     }
 
     console.log(`${chalk.bold(service)}: ${status}`);
-    if (result.method) {
-      console.log(`  ${chalk.dim("Method:")} ${chalk.dim(result.method)}`);
+    if (diagnostic.authMethod) {
+      console.log(
+        `  ${chalk.dim("Method:")} ${chalk.dim(diagnostic.authMethod)}`,
+      );
     }
   }
 

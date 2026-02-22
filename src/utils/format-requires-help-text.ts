@@ -1,14 +1,7 @@
-import { checkAuth } from "axauth";
-
-import {
-  SUPPORTED_SERVICES,
-  type SupportedService,
-} from "../services/supported-service.js";
-import {
-  checkCliDependency,
-  getAuthCliDependency,
-} from "./check-cli-dependency.js";
-import { getCopilotTokenFromCustomGhPath } from "./copilot-gh-token.js";
+import type { SupportedService } from "../services/supported-service.js";
+import { getAllServiceDiagnostics } from "../services/service-diagnostics.js";
+import type { ServiceDiagnostic } from "../services/service-diagnostics.js";
+import { getAuthCliDependency } from "./check-cli-dependency.js";
 
 type RuntimeRequirement =
   | { readonly label: string; readonly status: "ok" }
@@ -34,14 +27,13 @@ const AUTH_FIX_COMMANDS: Record<SupportedService, string> = {
   copilot: "Run: gh auth login",
 };
 
-function checkServiceRequirement(
-  service: SupportedService,
+function diagnosticToRequirement(
+  diagnostic: ServiceDiagnostic,
 ): RuntimeRequirement {
-  const label = SERVICE_LABELS[service];
-  const dependency = getAuthCliDependency(service);
-  const cliResult = checkCliDependency(dependency);
+  const label = SERVICE_LABELS[diagnostic.service];
 
-  if (!cliResult.ok) {
+  if (!diagnostic.cliAvailable) {
+    const dependency = getAuthCliDependency(diagnostic.service);
     return {
       label,
       status: "missing",
@@ -51,19 +43,11 @@ function checkServiceRequirement(
     };
   }
 
-  let authResult = checkAuth(service);
-  if (service === "copilot" && !authResult.authenticated) {
-    const tokenFromOverride = getCopilotTokenFromCustomGhPath();
-    if (tokenFromOverride) {
-      authResult = { ...authResult, authenticated: true };
-    }
-  }
-
-  if (!authResult.authenticated) {
+  if (!diagnostic.authenticated) {
     return {
       label,
       status: "not-authorized",
-      fix: AUTH_FIX_COMMANDS[service],
+      fix: AUTH_FIX_COMMANDS[diagnostic.service],
     };
   }
 
@@ -74,8 +58,8 @@ let cachedRequirements: RuntimeRequirement[] | undefined;
 
 function getRuntimeRequirementsStatus(): RuntimeRequirement[] {
   if (cachedRequirements) return cachedRequirements;
-  cachedRequirements = SUPPORTED_SERVICES.map((service) =>
-    checkServiceRequirement(service),
+  cachedRequirements = getAllServiceDiagnostics().map((d) =>
+    diagnosticToRequirement(d),
   );
   return cachedRequirements;
 }
