@@ -103,12 +103,23 @@ export async function serveCommand(
   const shutdown = (): void => {
     console.error("\nShutting down...");
     if (poll.intervalId !== undefined) clearInterval(poll.intervalId);
+
+    // Force-exit if server.stop() hangs (e.g. keep-alive connections not closing)
+    const forceExit = setTimeout(() => {
+      console.error("Shutdown timed out, forcing exit");
+      // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
+      process.exit(1);
+    }, 5000);
+    forceExit.unref();
+
     server.stop().then(
       () => {
+        clearTimeout(forceExit);
         // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
         process.exit(0);
       },
       (error: unknown) => {
+        clearTimeout(forceExit);
         console.error("Error during shutdown:", error);
         // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
         process.exit(1);
