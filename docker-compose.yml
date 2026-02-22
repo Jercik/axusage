@@ -62,14 +62,15 @@ services:
       AXVAULT_API_KEY: ${AXVAULT_API_KEY:-}
 
     # Health check (defined here for OCI compliance - not in Containerfile)
-    # Uses node's native fetch since image doesn't have wget/curl
+    # Uses node's http module since the image doesn't have wget/curl.
+    # Explicit timeout + error handler avoids silent hangs.
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3848/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "const h=require('http');const r=h.get('http://127.0.0.1:3848/health',res=>{process.exit(res.statusCode===200?0:1)});r.setTimeout(4000,()=>{r.destroy();process.exit(1)});r.on('error',()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 5s

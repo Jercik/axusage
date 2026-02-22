@@ -59,6 +59,15 @@ jobs:
           fi
           echo "version=$VERSION_INPUT" >> "$GITHUB_OUTPUT"
 
+      - name: Validate secrets
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          if [[ -z "$REGISTRY_PASSWORD" ]]; then
+            echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -125,6 +134,15 @@ jobs:
             exit 1
           fi
           echo "version=$VERSION_INPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Validate secrets
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          if [[ -z "$REGISTRY_PASSWORD" ]]; then
+            echo "::error::REGISTRY_PASSWORD secret is not set. Configure it in repository settings."
+            exit 1
+          fi
 
       - name: Compute image metadata
         id: meta

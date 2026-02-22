@@ -47,19 +47,17 @@ export async function serveCommand(
     lastRefreshErrors = errors;
     lastRefreshTime = new Date();
 
-    if (successes.length > 0) {
-      cachedMetrics = await formatPrometheusMetrics(successes);
-    }
+    // All services failed → clear cache so /metrics returns 503 instead of
+    // serving stale data that could mask outages in Prometheus alerting.
+    cachedMetrics =
+      successes.length > 0
+        ? await formatPrometheusMetrics(successes)
+        : undefined;
   }
 
   // Initial fetch
   console.error(`Fetching initial metrics for: ${servicesToQuery.join(", ")}`);
   await refreshMetrics();
-
-  // Start polling
-  const intervalId = setInterval(() => {
-    void refreshMetrics();
-  }, config.intervalMs);
 
   // Create server
   const healthRouter = createHealthRouter(() => ({
@@ -74,10 +72,17 @@ export async function serveCommand(
 
   const server = createServer(config, [healthRouter, metricsRouter]);
 
-  // Graceful shutdown handler
+  // Graceful shutdown handler — registered before start so signals during
+  // startup are handled. process.once ensures at-most-one invocation per signal.
+  // Object wrapper lets the shutdown closure reference the interval assigned
+  // after server.start(), without needing a reassignable `let`.
+  const poll = {
+    intervalId: undefined as ReturnType<typeof setInterval> | undefined,
+  };
+
   const shutdown = (): void => {
     console.error("\nShutting down...");
-    clearInterval(intervalId);
+    if (poll.intervalId !== undefined) clearInterval(poll.intervalId);
     server.stop().then(
       () => {
         // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
@@ -94,7 +99,16 @@ export async function serveCommand(
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
 
+  // Start server first — if this throws (e.g. EADDRINUSE), no polling interval
+  // is left dangling keeping the process alive.
   await server.start();
+
+  // Start polling only after a successful listen.
+  poll.intervalId = setInterval(() => {
+    void refreshMetrics().catch((error: unknown) => {
+      console.error("Unexpected error during metrics refresh:", error);
+    });
+  }, config.intervalMs);
 
   console.error(
     `Polling every ${String(config.intervalMs / 1000)}s for: ${servicesToQuery.join(", ")}`,
