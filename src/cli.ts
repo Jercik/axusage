@@ -51,10 +51,16 @@ const program = new Command()
 program
   .command("serve")
   .description("Start HTTP server exposing Prometheus metrics at /metrics")
-  .option("-p, --port <port>", "Port to listen on")
-  .option("-H, --host <host>", "Host to bind to")
-  .option("--interval <seconds>", "Polling interval in seconds")
-  .option("-s, --service <service>", "Service to monitor (default: all)")
+  .option("-p, --port <port>", "Port to listen on (env: AXUSAGE_PORT)")
+  .option("-H, --host <host>", "Host to bind to (env: AXUSAGE_HOST)")
+  .option(
+    "--interval <seconds>",
+    "Polling interval in seconds (env: AXUSAGE_INTERVAL)",
+  )
+  .option(
+    "-s, --service <service>",
+    "Service to monitor (env: AXUSAGE_SERVICE, default: all)",
+  )
   .action(async (options) => {
     await serveCommand(options);
   });

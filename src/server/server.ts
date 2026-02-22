@@ -53,6 +53,14 @@ export function createServer(
     app,
 
     start(): Promise<void> {
+      if (server) {
+        return Promise.reject(
+          new Error(
+            "Server is already running. Call stop() before restarting.",
+          ),
+        );
+      }
+
       stopPromise = undefined;
 
       return new Promise((resolve, reject) => {

@@ -34,7 +34,7 @@ ARG VERSION=latest
 WORKDIR /app
 
 # Install axusage from npm registry
-RUN npm install --omit=dev axusage@${VERSION}
+RUN npm install --omit=dev "axusage@${VERSION}"
 
 # ------------------------------------------------------------------------------
 # Stage 2: Production Runtime

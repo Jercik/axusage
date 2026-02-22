@@ -50,4 +50,16 @@ describe("createServer", () => {
     // Second stop() should not throw or reject
     await expect(server.stop()).resolves.toBeUndefined();
   });
+
+  it("start() rejects when server is already running", async () => {
+    const port = await getFreePort();
+    const server = createServer({ port, host: "127.0.0.1" }, []);
+
+    await server.start();
+    try {
+      await expect(server.start()).rejects.toThrowError("already running");
+    } finally {
+      await server.stop();
+    }
+  });
 });
