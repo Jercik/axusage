@@ -10,13 +10,13 @@ import {
 } from "./check-cli-dependency.js";
 import { getCopilotTokenFromCustomGhPath } from "./copilot-gh-token.js";
 
-type RequirementStatus = "ok" | "missing" | "not-authorized";
-
-type RuntimeRequirement = {
-  readonly label: string;
-  readonly status: RequirementStatus;
-  readonly fix: string | undefined;
-};
+type RuntimeRequirement =
+  | { readonly label: string; readonly status: "ok" }
+  | {
+      readonly label: string;
+      readonly status: "missing" | "not-authorized";
+      readonly fix: string;
+    };
 
 export type { RuntimeRequirement };
 
@@ -67,7 +67,7 @@ function checkServiceRequirement(
     };
   }
 
-  return { label, status: "ok", fix: undefined };
+  return { label, status: "ok" };
 }
 
 let cachedRequirements: RuntimeRequirement[] | undefined;

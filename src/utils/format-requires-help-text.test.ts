@@ -5,10 +5,10 @@ import type { RuntimeRequirement } from "./format-requires-help-text.js";
 describe("formatRequiresSection", () => {
   it("renders single compact line when all requirements are ok", () => {
     const requirements: RuntimeRequirement[] = [
-      { label: "claude", status: "ok", fix: undefined },
-      { label: "codex (ChatGPT)", status: "ok", fix: undefined },
-      { label: "gemini", status: "ok", fix: undefined },
-      { label: "gh (Copilot)", status: "ok", fix: undefined },
+      { label: "claude", status: "ok" },
+      { label: "codex (ChatGPT)", status: "ok" },
+      { label: "gemini", status: "ok" },
+      { label: "gh (Copilot)", status: "ok" },
     ];
 
     expect(formatRequiresSection(requirements)).toBe(
@@ -18,14 +18,14 @@ describe("formatRequiresSection", () => {
 
   it("renders multi-line with MISSING tag when a CLI is not found", () => {
     const requirements: RuntimeRequirement[] = [
-      { label: "claude", status: "ok", fix: undefined },
+      { label: "claude", status: "ok" },
       {
         label: "codex (ChatGPT)",
         status: "missing",
         fix: "Install: npm install -g @openai/codex. Or set AXUSAGE_CODEX_PATH=/path/to/codex",
       },
-      { label: "gemini", status: "ok", fix: undefined },
-      { label: "gh (Copilot)", status: "ok", fix: undefined },
+      { label: "gemini", status: "ok" },
+      { label: "gh (Copilot)", status: "ok" },
     ];
 
     expect(formatRequiresSection(requirements)).toBe(
@@ -40,9 +40,9 @@ describe("formatRequiresSection", () => {
   it("renders multi-line with NOT AUTHORIZED tag for auth failures", () => {
     const requirements: RuntimeRequirement[] = [
       { label: "claude", status: "not-authorized", fix: "Run: claude" },
-      { label: "codex (ChatGPT)", status: "ok", fix: undefined },
-      { label: "gemini", status: "ok", fix: undefined },
-      { label: "gh (Copilot)", status: "ok", fix: undefined },
+      { label: "codex (ChatGPT)", status: "ok" },
+      { label: "gemini", status: "ok" },
+      { label: "gh (Copilot)", status: "ok" },
     ];
 
     expect(formatRequiresSection(requirements)).toBe(
@@ -56,14 +56,14 @@ describe("formatRequiresSection", () => {
 
   it("handles mixed statuses", () => {
     const requirements: RuntimeRequirement[] = [
-      { label: "claude", status: "ok", fix: undefined },
+      { label: "claude", status: "ok" },
       {
         label: "codex (ChatGPT)",
         status: "missing",
         fix: "Install: npm install -g @openai/codex",
       },
       { label: "gemini", status: "not-authorized", fix: "Run: gemini" },
-      { label: "gh (Copilot)", status: "ok", fix: undefined },
+      { label: "gh (Copilot)", status: "ok" },
     ];
 
     expect(formatRequiresSection(requirements)).toBe(
