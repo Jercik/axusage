@@ -8,6 +8,10 @@ import { fetchServicesInParallel } from "./usage-command.js";
 import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
 import { createServer } from "../server/server.js";
 import { createHealthRouter, createMetricsRouter } from "../server/routes.js";
+import {
+  SUPPORTED_SERVICES,
+  type SupportedService,
+} from "../services/supported-service.js";
 
 type ServeCommandOptions = {
   readonly port?: string;
@@ -20,6 +24,21 @@ export async function serveCommand(
   options: ServeCommandOptions,
 ): Promise<void> {
   const config = getServeConfig(options);
+
+  if (
+    config.service !== undefined &&
+    config.service.toLowerCase() !== "all" &&
+    !SUPPORTED_SERVICES.includes(
+      config.service.toLowerCase() as SupportedService,
+    )
+  ) {
+    console.error(
+      `Unknown service "${config.service}". Supported: ${SUPPORTED_SERVICES.join(", ")}.`,
+    );
+    // eslint-disable-next-line unicorn/no-process-exit -- CLI user error, fail fast
+    process.exit(1);
+  }
+
   const servicesToQuery = selectServicesToQuery(config.service);
 
   // Cached state
