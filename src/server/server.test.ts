@@ -62,4 +62,21 @@ describe("createServer", () => {
       await server.stop();
     }
   });
+
+  it("start() works again after stop() (full restart lifecycle)", async () => {
+    const port = await getFreePort();
+    const server = createServer({ port, host: "127.0.0.1" }, []);
+
+    await server.start();
+    await server.stop();
+
+    // Restart on the same port after stopping
+    await server.start();
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/any-path`);
+      expect(response.status).toBe(404);
+    } finally {
+      await server.stop();
+    }
+  });
 });

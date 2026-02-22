@@ -65,6 +65,7 @@ export function createServer(
 
       return new Promise((resolve, reject) => {
         const onStartupError = (error: Error): void => {
+          server = undefined;
           reject(error);
         };
 
