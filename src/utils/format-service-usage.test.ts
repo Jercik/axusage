@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   toJsonObject,
   formatServiceUsageAsTsv,
@@ -6,6 +6,7 @@ import {
 import type { ServiceUsageData } from "../types/domain.js";
 
 describe("format-service-usage toJsonObject", () => {
+  afterEach(() => vi.restoreAllMocks());
   const base: ServiceUsageData = {
     service: "X",
     planType: "plan",
@@ -35,7 +36,23 @@ describe("format-service-usage toJsonObject", () => {
     expect(windows[0]?.["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
   });
 
-  it("omits reset timestamps when unavailable", () => {
+  it("includes rate when calculable", () => {
+    // Period: 10 hours, resets 5 hours from now → 50% elapsed
+    // Utilization: 50% → rate = 50 / 50 = 1.0
+    const periodDurationMs = 10 * 60 * 60 * 1000;
+    const now = Date.parse("2025-06-15T12:00:00Z");
+    vi.spyOn(Date, "now").mockReturnValue(now);
+
+    const resetsAt = new Date(now + 5 * 60 * 60 * 1000);
+    const object = toJsonObject({
+      ...base,
+      windows: [{ name: "w", utilization: 50, resetsAt, periodDurationMs }],
+    }) as Record<string, unknown>;
+    const windows = object["windows"] as Array<Record<string, unknown>>;
+    expect(windows[0]?.["rate"]).toBe(1);
+  });
+
+  it("omits reset timestamps and rate when unavailable", () => {
     const object = toJsonObject({
       ...base,
       windows: [
@@ -49,6 +66,7 @@ describe("format-service-usage toJsonObject", () => {
     }) as Record<string, unknown>;
     const windows = object["windows"] as Array<Record<string, unknown>>;
     expect(windows[0]?.["resetsAt"]).toBeUndefined();
+    expect(windows[0]?.["rate"]).toBeUndefined();
   });
 });
 

@@ -1,8 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import type { ServiceUsageData } from "../types/domain.js";
 import { formatPrometheusMetrics } from "./format-prometheus-metrics.js";
 
 describe("formatPrometheusMetrics", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("emits gauge per window with labels", async () => {
     const data: ServiceUsageData[] = [
       {
@@ -73,8 +75,11 @@ describe("formatPrometheusMetrics", () => {
     const text = await formatPrometheusMetrics([]);
     expect(text).toContain("# HELP axusage_utilization_percent");
     expect(text).toContain("# TYPE axusage_utilization_percent gauge");
+    expect(text).toContain("# HELP axusage_usage_rate");
+    expect(text).toContain("# TYPE axusage_usage_rate gauge");
     // No sample lines
     expect(text).not.toMatch(/axusage_utilization_percent\{/u);
+    expect(text).not.toMatch(/axusage_usage_rate\{/u);
   });
 
   it("handles zero utilization values", async () => {
@@ -95,5 +100,57 @@ describe("formatPrometheusMetrics", () => {
     expect(text).toContain(
       'axusage_utilization_percent{service="claude",window="window"} 0',
     );
+  });
+
+  it("emits rate gauge when rate is calculable", async () => {
+    // Period: 10 hours, resets 5 hours from now → 50% elapsed
+    // Utilization: 50% → rate = 50 / 50 = 1.0
+    const periodDurationMs = 10 * 60 * 60 * 1000;
+    const now = Date.parse("2025-06-15T12:00:00Z");
+    vi.spyOn(Date, "now").mockReturnValue(now);
+
+    const resetsAt = new Date(now + 5 * 60 * 60 * 1000); // 5h from now
+
+    const data: ServiceUsageData[] = [
+      {
+        service: "claude",
+        windows: [
+          {
+            name: "5-hour",
+            utilization: 50,
+            resetsAt,
+            periodDurationMs,
+          },
+        ],
+      },
+    ];
+
+    const text = await formatPrometheusMetrics(data);
+    expect(text).toContain(
+      'axusage_usage_rate{service="claude",window="5-hour"} 1',
+    );
+  });
+
+  it("omits rate sample when rate is undefined", async () => {
+    const data: ServiceUsageData[] = [
+      {
+        service: "claude",
+        windows: [
+          {
+            name: "daily",
+            utilization: 10,
+            resetsAt: undefined,
+            periodDurationMs: 24 * 60 * 60 * 1000,
+          },
+        ],
+      },
+    ];
+
+    const text = await formatPrometheusMetrics(data);
+    // Headers should still be present
+    expect(text).toContain("# HELP axusage_usage_rate");
+    expect(text).toContain("# TYPE axusage_usage_rate gauge");
+    // But no sample line
+    expect(text).not.toMatch(/axusage_usage_rate\{/u);
   });
 });

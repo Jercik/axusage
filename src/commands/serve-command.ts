@@ -148,19 +148,22 @@ export async function serveCommand(
     }, 5000);
     forceExit.unref();
 
-    server.stop().then(
-      () => {
+    server
+      .stop()
+      .finally(() => {
         clearTimeout(forceExit);
-        // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
-        process.exit(0);
-      },
-      (error: unknown) => {
-        clearTimeout(forceExit);
-        console.error("Error during shutdown:", error);
-        // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
-        process.exit(1);
-      },
-    );
+      })
+      .then(
+        () => {
+          // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
+          process.exit(0);
+        },
+        (error: unknown) => {
+          console.error("Error during shutdown:", error);
+          // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
+          process.exit(1);
+        },
+      );
   };
 
   process.once("SIGTERM", shutdown);

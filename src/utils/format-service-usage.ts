@@ -45,7 +45,6 @@ function formatUsageWindow(window: UsageWindow): string {
   );
   const coloredUtilization = getUtilizationColor(rate)(utilizationString);
   const resetTime = formatResetTime(window.resetsAt);
-  // Build full display string for rate to keep formatting consistent
   const rateDisplay =
     rate === undefined ? "Not available" : `${rate.toFixed(2)}x rate`;
 
@@ -58,14 +57,17 @@ function formatUsageWindow(window: UsageWindow): string {
  * Formats complete service usage data for human-readable display
  */
 export function formatServiceUsageData(data: ServiceUsageData): string {
+  let statusWarning: string | undefined;
+  if (data.metadata?.limitReached === true) {
+    statusWarning = chalk.red("⚠ Rate limit reached");
+  } else if (data.metadata?.allowed === false) {
+    statusWarning = chalk.red("⚠ Usage not allowed");
+  }
+
   const header = [
     chalk.cyan.bold(`=== ${data.service} Usage ===`),
     data.planType ? chalk.gray(`Plan: ${data.planType}`) : undefined,
-    data.metadata?.limitReached === true
-      ? chalk.red("⚠ Rate limit reached")
-      : data.metadata?.allowed === false
-        ? chalk.red("⚠ Usage not allowed")
-        : undefined,
+    statusWarning,
   ]
     .filter(Boolean)
     .join("\n");
@@ -84,12 +86,20 @@ export function toJsonObject(data: ServiceUsageData): unknown {
   return {
     service: data.service,
     planType: data.planType,
-    windows: data.windows.map((w) => ({
-      name: w.name,
-      utilization: w.utilization,
-      resetsAt: w.resetsAt?.toISOString(),
-      periodDurationMs: w.periodDurationMs,
-    })),
+    windows: data.windows.map((w) => {
+      const rate = calculateUsageRate(
+        w.utilization,
+        w.resetsAt,
+        w.periodDurationMs,
+      );
+      return {
+        name: w.name,
+        utilization: w.utilization,
+        rate,
+        resetsAt: w.resetsAt?.toISOString(),
+        periodDurationMs: w.periodDurationMs,
+      };
+    }),
     metadata: data.metadata,
   };
 }
