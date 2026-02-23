@@ -1,14 +1,19 @@
 /**
- * Serve command handler — starts an HTTP server exposing Prometheus metrics.
+ * Serve command handler — starts an HTTP server exposing usage data.
  */
 
 import { getServeConfig } from "../config/serve-config.js";
 import { selectServicesToQuery } from "./fetch-service-usage.js";
 import { fetchServicesInParallel } from "./usage-command.js";
-import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
 import { createServer } from "../server/server.js";
-import { createHealthRouter, createMetricsRouter } from "../server/routes.js";
+import {
+  createHealthRouter,
+  createMetricsRouter,
+  createUsageRouter,
+  type ServerState,
+} from "../server/routes.js";
 import { getAvailableServices } from "../services/service-adapter-registry.js";
+import type { ServiceResult, ServiceUsageData } from "../types/domain.js";
 
 type ServeCommandOptions = {
   readonly port?: string;
@@ -16,6 +21,91 @@ type ServeCommandOptions = {
   readonly interval?: string;
   readonly service?: string;
 };
+
+type UsageCache = {
+  readonly getState: () => ServerState | undefined;
+  /** Waits for a fresh snapshot before returning. Use for data endpoints where staleness is unacceptable. */
+  readonly getFreshState: () => Promise<ServerState | undefined>;
+  /** Serves the current snapshot immediately; triggers a background refresh when stale.
+   *  Blocks only if no snapshot exists yet (first ever request). Use for Prometheus /metrics
+   *  where scrape latency matters more than strict freshness. */
+  readonly getStateStaleWhileRevalidate: () => Promise<ServerState | undefined>;
+};
+
+/**
+ * Creates an on-demand usage cache. Data is fetched via `doFetch` when a
+ * caller requests fresh state and the cached snapshot is older than `intervalMs`.
+ * Concurrent callers during a refresh all receive the same in-flight promise.
+ * When all services fail, the cache retries after a short backoff (≤5s) rather
+ * than waiting the full interval.
+ */
+export function createUsageCache(
+  doFetch: () => Promise<ServiceResult[]>,
+  intervalMs: number,
+): UsageCache {
+  let state: ServerState | undefined;
+  let refreshPromise: Promise<void> | undefined;
+
+  async function doRefresh(): Promise<void> {
+    const results = await doFetch();
+
+    const usage: ServiceUsageData[] = [];
+    const errors: string[] = [];
+
+    for (const { service, result } of results) {
+      if (result.ok) {
+        usage.push(result.value);
+      } else {
+        const statusSuffix =
+          result.error.status === undefined
+            ? ""
+            : ` (HTTP ${String(result.error.status)})`;
+        errors.push(`${service}: fetch failed${statusSuffix}`);
+        console.error(
+          `Warning: Failed to fetch ${service}: ${result.error.message}`,
+        );
+      }
+    }
+
+    state = { usage, refreshedAt: new Date(), errors };
+  }
+
+  function ensureFresh(): Promise<void> {
+    const age =
+      state === undefined ? Infinity : Date.now() - state.refreshedAt.getTime();
+    // If the last refresh produced no data (all services failed), retry on a
+    // short backoff so the server recovers promptly after transient failures
+    // rather than waiting the full cache interval.
+    const hasData = state !== undefined && state.usage.length > 0;
+    const maxAge = hasData ? intervalMs : Math.min(intervalMs, 5000);
+    if (age < maxAge) return Promise.resolve();
+    refreshPromise ??= doRefresh().finally(() => {
+      refreshPromise = undefined;
+    });
+    return refreshPromise;
+  }
+
+  return {
+    getState: () => state,
+    getFreshState: async () => {
+      await ensureFresh();
+      return state;
+    },
+    getStateStaleWhileRevalidate: async () => {
+      if (state === undefined) {
+        // No snapshot yet — block until we have something to serve.
+        await ensureFresh();
+      } else {
+        // Serve the current snapshot immediately; kick off a background
+        // refresh if stale. Errors are logged; callers are not affected.
+        void ensureFresh().catch((error: unknown) => {
+          console.error("Background metrics refresh failed:", error);
+        });
+      }
+      return state;
+    },
+  };
+}
 
 export async function serveCommand(
   options: ServeCommandOptions,
@@ -37,81 +127,20 @@ export async function serveCommand(
 
   const servicesToQuery = selectServicesToQuery(config.service);
 
-  // Cached state
-  let cachedMetrics: string | undefined;
-  let lastRefreshTime: Date | undefined;
-  let lastRefreshErrors: string[] = [];
-  let refreshing = false;
+  const cache = createUsageCache(
+    () => fetchServicesInParallel(servicesToQuery),
+    config.intervalMs,
+  );
 
-  async function refreshMetrics(): Promise<void> {
-    if (refreshing) return;
-    refreshing = true;
-    try {
-      const results = await fetchServicesInParallel(servicesToQuery);
-
-      const successes = [];
-      const errors: string[] = [];
-
-      for (const { service, result } of results) {
-        if (result.ok) {
-          successes.push(result.value);
-        } else {
-          const statusSuffix =
-            result.error.status === undefined
-              ? ""
-              : ` (HTTP ${String(result.error.status)})`;
-          errors.push(`${service}: fetch failed${statusSuffix}`);
-          console.error(
-            `Warning: Failed to fetch ${service}: ${result.error.message}`,
-          );
-        }
-      }
-
-      lastRefreshErrors = errors;
-      lastRefreshTime = new Date();
-
-      // All services failed → clear cache so /metrics returns 503 instead of
-      // serving stale data that could mask outages in Prometheus alerting.
-      cachedMetrics =
-        successes.length > 0
-          ? await formatPrometheusMetrics(successes)
-          : undefined;
-    } finally {
-      refreshing = false; // eslint-disable-line require-atomic-updates -- single-threaded guard, no race
-    }
-  }
-
-  // Initial fetch
-  console.error(`Fetching initial metrics for: ${servicesToQuery.join(", ")}`);
-  await refreshMetrics();
-
-  // Create server
-  const healthRouter = createHealthRouter(() => ({
-    lastRefreshTime,
-    services: servicesToQuery,
-    errors: lastRefreshErrors,
-    hasMetrics: cachedMetrics !== undefined,
-  }));
-
-  const metricsRouter = createMetricsRouter(() => ({
-    metrics: cachedMetrics,
-  }));
-
-  const server = createServer(config, [healthRouter, metricsRouter]);
-
-  // Graceful shutdown handler — registered before start so signals during
-  // startup are handled. process.once ensures at-most-one invocation per signal.
-  // Object wrapper lets the shutdown closure reference the interval assigned
-  // after server.start(), without needing a reassignable `let`.
-  const poll = {
-    intervalId: undefined as ReturnType<typeof setInterval> | undefined,
-  };
+  const server = createServer(config, [
+    createHealthRouter(servicesToQuery, cache.getState),
+    createMetricsRouter(cache.getStateStaleWhileRevalidate),
+    createUsageRouter(cache.getFreshState),
+  ]);
 
   const shutdown = (): void => {
     console.error("\nShutting down...");
-    if (poll.intervalId !== undefined) clearInterval(poll.intervalId);
 
-    // Force-exit if server.stop() hangs (e.g. keep-alive connections not closing)
     const forceExit = setTimeout(() => {
       console.error("Shutdown timed out, forcing exit");
       // eslint-disable-next-line unicorn/no-process-exit -- CLI graceful shutdown
@@ -137,18 +166,14 @@ export async function serveCommand(
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
 
-  // Start server first — if this throws (e.g. EADDRINUSE), no polling interval
-  // is left dangling keeping the process alive.
+  // Pre-populate the cache before accepting connections so /health returns a
+  // meaningful status immediately (important for container readiness checks).
+  console.error(`Fetching initial data for: ${servicesToQuery.join(", ")}`);
+  await cache.getFreshState();
+
   await server.start();
 
-  // Start polling only after a successful listen.
-  poll.intervalId = setInterval(() => {
-    void refreshMetrics().catch((error: unknown) => {
-      console.error("Unexpected error during metrics refresh:", error);
-    });
-  }, config.intervalMs);
-
   console.error(
-    `Polling every ${String(config.intervalMs / 1000)}s for: ${servicesToQuery.join(", ")}`,
+    `Serving usage for: ${servicesToQuery.join(", ")} (max age: ${String(config.intervalMs / 1000)}s)`,
   );
 }

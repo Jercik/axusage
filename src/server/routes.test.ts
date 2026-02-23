@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import express from "express";
 import type { AddressInfo } from "node:net";
-import { createHealthRouter, createMetricsRouter } from "./routes.js";
+import {
+  createHealthRouter,
+  createMetricsRouter,
+  createUsageRouter,
+  type ServerState,
+} from "./routes.js";
+import type { ServiceUsageData } from "../types/domain.js";
 
 /**
  * Starts an Express app on a random OS-assigned port (port 0) and returns a
@@ -33,18 +39,30 @@ async function startTestApp(app: express.Express): Promise<{
   });
 }
 
+const noState: ServerState | undefined = undefined;
+
+const testService: ServiceUsageData = {
+  service: "claude",
+  windows: [
+    {
+      name: "monthly",
+      utilization: 42,
+      resetsAt: undefined,
+      periodDurationMs: 0,
+    },
+  ],
+};
+
 describe("createHealthRouter", () => {
   it("returns 200 with ok status and service info", async () => {
     const now = new Date();
+    const state: ServerState = {
+      usage: [testService],
+      refreshedAt: now,
+      errors: [],
+    };
     const app = express();
-    app.use(
-      createHealthRouter(() => ({
-        lastRefreshTime: now,
-        services: ["claude", "gemini"],
-        errors: [],
-        hasMetrics: true,
-      })),
-    );
+    app.use(createHealthRouter(["claude", "gemini"], () => state));
 
     const { url, close } = await startTestApp(app);
     try {
@@ -60,16 +78,14 @@ describe("createHealthRouter", () => {
     }
   });
 
-  it("returns 503 with degraded status when no metrics are available", async () => {
+  it("returns 503 with degraded status when all services failed", async () => {
+    const state: ServerState = {
+      usage: [],
+      refreshedAt: new Date(),
+      errors: ["claude: fetch failed (HTTP 401)"],
+    };
     const app = express();
-    app.use(
-      createHealthRouter(() => ({
-        lastRefreshTime: new Date(),
-        services: ["claude"],
-        errors: ["claude: fetch failed (HTTP 401)"],
-        hasMetrics: false,
-      })),
-    );
+    app.use(createHealthRouter(["claude"], () => state));
 
     const { url, close } = await startTestApp(app);
     try {
@@ -83,23 +99,17 @@ describe("createHealthRouter", () => {
     }
   });
 
-  it("omits lastRefresh when lastRefreshTime is undefined", async () => {
+  it("returns 503 with no lastRefresh when state is undefined", async () => {
     const app = express();
-    app.use(
-      createHealthRouter(() => ({
-        lastRefreshTime: undefined,
-        services: ["claude"],
-        errors: ["claude: fetch failed"],
-        hasMetrics: false,
-      })),
-    );
+    app.use(createHealthRouter(["claude"], () => noState));
 
     const { url, close } = await startTestApp(app);
     try {
       const response = await fetch(`${url}/health`);
+      expect(response.status).toBe(503);
       const body = (await response.json()) as Record<string, unknown>;
       expect(body.lastRefresh).toBeUndefined();
-      expect(body.errors).toEqual(["claude: fetch failed"]);
+      expect(body.errors).toEqual([]);
     } finally {
       await close();
     }
@@ -107,9 +117,9 @@ describe("createHealthRouter", () => {
 });
 
 describe("createMetricsRouter", () => {
-  it("returns 503 when no metrics are cached yet", async () => {
+  it("returns 503 when no state is available", async () => {
     const app = express();
-    app.use(createMetricsRouter(() => ({ metrics: undefined })));
+    app.use(createMetricsRouter(() => Promise.resolve(noState)));
 
     const { url, close } = await startTestApp(app);
     try {
@@ -120,11 +130,14 @@ describe("createMetricsRouter", () => {
     }
   });
 
-  it("returns 200 with Prometheus content-type when metrics are available", async () => {
-    const metricsText =
-      '# TYPE axusage_utilization_percent gauge\naxusage_utilization_percent{service="claude",window="5h"} 42\n';
+  it("returns 200 with Prometheus content-type when data is available", async () => {
+    const state: ServerState = {
+      usage: [testService],
+      refreshedAt: new Date(),
+      errors: [],
+    };
     const app = express();
-    app.use(createMetricsRouter(() => ({ metrics: metricsText })));
+    app.use(createMetricsRouter(() => Promise.resolve(state)));
 
     const { url, close } = await startTestApp(app);
     try {
@@ -132,7 +145,87 @@ describe("createMetricsRouter", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("text/plain");
       const body = await response.text();
-      expect(body).toBe(metricsText);
+      expect(body).toContain("axusage_utilization_percent");
+    } finally {
+      await close();
+    }
+  });
+});
+
+describe("createUsageRouter", () => {
+  it("returns 503 when no state is available", async () => {
+    const app = express();
+    app.use(createUsageRouter(() => Promise.resolve(noState)));
+
+    const { url, close } = await startTestApp(app);
+    try {
+      const response = await fetch(`${url}/usage`);
+      expect(response.status).toBe(503);
+    } finally {
+      await close();
+    }
+  });
+
+  it("returns 200 with usage JSON when data is available", async () => {
+    const state: ServerState = {
+      usage: [testService],
+      refreshedAt: new Date(),
+      errors: [],
+    };
+    const app = express();
+    app.use(createUsageRouter(() => Promise.resolve(state)));
+
+    const { url, close } = await startTestApp(app);
+    try {
+      const response = await fetch(`${url}/usage`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain(
+        "application/json",
+      );
+      const body = await response.json();
+      // The wire format omits resetsAt when undefined (JSON.stringify drops
+      // undefined values), so the expected object must not include it.
+      expect(body).toEqual([
+        {
+          service: "claude",
+          windows: [{ name: "monthly", utilization: 42, periodDurationMs: 0 }],
+        },
+      ]);
+    } finally {
+      await close();
+    }
+  });
+
+  it("serializes resetsAt Date as ISO 8601 string", async () => {
+    const resetsAt = new Date("2024-06-15T12:00:00.000Z");
+    const state: ServerState = {
+      usage: [
+        {
+          service: "claude",
+          windows: [
+            {
+              name: "monthly",
+              utilization: 42,
+              resetsAt,
+              periodDurationMs: 0,
+            },
+          ],
+        },
+      ],
+      refreshedAt: new Date(),
+      errors: [],
+    };
+    const app = express();
+    app.use(createUsageRouter(() => Promise.resolve(state)));
+
+    const { url, close } = await startTestApp(app);
+    try {
+      const response = await fetch(`${url}/usage`);
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as Array<{
+        windows: Array<{ resetsAt: string }>;
+      }>;
+      expect(body.at(0)?.windows.at(0)?.resetsAt).toBe(resetsAt.toISOString());
     } finally {
       await close();
     }

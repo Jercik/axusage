@@ -51,12 +51,14 @@ const program = new Command()
 
 program
   .command("serve")
-  .description("Start HTTP server exposing Prometheus metrics at /metrics")
+  .description(
+    "Start HTTP server exposing Prometheus metrics at /metrics and usage JSON at /usage",
+  )
   .option("-p, --port <port>", "Port to listen on (env: AXUSAGE_PORT)")
   .option("-H, --host <host>", "Host to bind to (env: AXUSAGE_HOST)")
   .option(
     "--interval <seconds>",
-    "Polling interval in seconds (env: AXUSAGE_INTERVAL)",
+    "Max cache age in seconds (env: AXUSAGE_INTERVAL)",
   )
   .option(
     "-s, --service <service>",
