@@ -27,7 +27,7 @@ describe("format-service-usage toJsonObject", () => {
   };
 
   it("serializes whole object with ISO dates", () => {
-    const object = toJsonObject(base) as Record<string, unknown>;
+    const object = toJsonObject(base, 0) as Record<string, unknown>;
     expect(object["service"]).toBe("X");
     expect(object["planType"]).toBe("plan");
     const windows = object["windows"] as Array<Record<string, unknown>>;
@@ -35,20 +35,41 @@ describe("format-service-usage toJsonObject", () => {
     expect(windows[0]?.["resetsAt"]).toBe("2025-01-01T00:00:00.000Z");
   });
 
-  it("omits reset timestamps when unavailable", () => {
-    const object = toJsonObject({
-      ...base,
-      windows: [
-        {
-          name: "Primary",
-          utilization: 10,
-          resetsAt: undefined,
-          periodDurationMs: 1000,
-        },
-      ],
-    }) as Record<string, unknown>;
+  it("includes rate when calculable", () => {
+    // Period: 10 hours, resets 5 hours from now → 50% elapsed
+    // Utilization: 50% → rate = 50 / 50 = 1.0
+    const periodDurationMs = 10 * 60 * 60 * 1000;
+    const now = Date.parse("2025-06-15T12:00:00Z");
+    const resetsAt = new Date(now + 5 * 60 * 60 * 1000);
+    const object = toJsonObject(
+      {
+        ...base,
+        windows: [{ name: "w", utilization: 50, resetsAt, periodDurationMs }],
+      },
+      now,
+    ) as Record<string, unknown>;
+    const windows = object["windows"] as Array<Record<string, unknown>>;
+    expect(windows[0]?.["rate"]).toBe(1);
+  });
+
+  it("omits reset timestamps and rate when unavailable", () => {
+    const object = toJsonObject(
+      {
+        ...base,
+        windows: [
+          {
+            name: "Primary",
+            utilization: 10,
+            resetsAt: undefined,
+            periodDurationMs: 1000,
+          },
+        ],
+      },
+      0,
+    ) as Record<string, unknown>;
     const windows = object["windows"] as Array<Record<string, unknown>>;
     expect(windows[0]?.["resetsAt"]).toBeUndefined();
+    expect(windows[0]?.["rate"]).toBeUndefined();
   });
 });
 

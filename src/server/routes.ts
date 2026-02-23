@@ -47,6 +47,8 @@ export function createMetricsRouter(
   // Memoize the rendered Prometheus text by the state snapshot's refreshedAt
   // timestamp. Scrapes within the same cache window reuse the same Promise,
   // avoiding recreating prom-client Registry/Gauge objects on each request.
+  // Rate is computed at refreshedAt so output is deterministic per snapshot,
+  // keeping the gauge coherent with the usage data it describes.
   // Assignments happen synchronously (before any await) so require-atomic-updates
   // is satisfied and concurrent scrapes naturally coalesce onto one render.
   let memoFor: Date | undefined;
@@ -61,7 +63,7 @@ export function createMetricsRouter(
     }
     if (memoFor !== state.refreshedAt) {
       memoFor = state.refreshedAt;
-      memoPromise = formatPrometheusMetrics(usage);
+      memoPromise = formatPrometheusMetrics(usage, state.refreshedAt.getTime());
     }
     const text = await memoPromise;
     response
@@ -86,7 +88,11 @@ export function createUsageRouter(
       response.status(503).json({ error: "No data yet" });
       return;
     }
-    response.status(200).json(usage.map((entry) => toJsonObject(entry)));
+    response
+      .status(200)
+      .json(
+        usage.map((entry) => toJsonObject(entry, state.refreshedAt.getTime())),
+      );
   });
 
   return router;
