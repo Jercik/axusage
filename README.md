@@ -153,7 +153,7 @@ Prometheus output emits text metrics suitable for scraping.
 
 ## Serve Mode
 
-`axusage serve` starts an HTTP server exposing usage data at `/metrics` (Prometheus) and `/usage` (JSON). Data is fetched on demand: the first request triggers a fetch, subsequent requests within the cache window are served instantly, and the first request after the cache expires waits for a fresh fetch. No background polling runs when the server is idle.
+`axusage serve` starts an HTTP server exposing usage data at `/metrics` (Prometheus) and `/usage` (JSON). An initial fetch runs at startup to pre-populate the cache (enabling `/health` to return a meaningful status from the first connection). After that, no background polling runs: subsequent requests within the cache window are served instantly, and the first request after the cache expires triggers a fresh fetch.
 
 ### Usage
 
