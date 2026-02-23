@@ -42,6 +42,7 @@ function formatUsageWindow(window: UsageWindow): string {
     window.utilization,
     window.resetsAt,
     window.periodDurationMs,
+    Date.now(),
   );
   const coloredUtilization = getUtilizationColor(rate)(utilizationString);
   const resetTime = formatResetTime(window.resetsAt);
@@ -82,7 +83,7 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 /**
  * Converts service usage data to a plain JSON-serializable object
  */
-export function toJsonObject(data: ServiceUsageData): unknown {
+export function toJsonObject(data: ServiceUsageData, now: number): unknown {
   return {
     service: data.service,
     planType: data.planType,
@@ -91,6 +92,7 @@ export function toJsonObject(data: ServiceUsageData): unknown {
         w.utilization,
         w.resetsAt,
         w.periodDurationMs,
+        now,
       );
       return {
         name: w.name,
@@ -109,7 +111,7 @@ export function toJsonObject(data: ServiceUsageData): unknown {
  */
 export function formatServiceUsageDataAsJson(data: ServiceUsageData): string {
   // eslint-disable-next-line unicorn/no-null -- JSON.stringify requires null for no replacer
-  return JSON.stringify(toJsonObject(data), null, 2);
+  return JSON.stringify(toJsonObject(data, Date.now()), null, 2);
 }
 
 const TSV_HEADER = "SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT";
@@ -131,6 +133,7 @@ function formatServiceUsageRowsAsTsv(data: ServiceUsageData): string[] {
       w.utilization,
       w.resetsAt,
       w.periodDurationMs,
+      Date.now(),
     );
     return [
       sanitizeForTsv(data.service),

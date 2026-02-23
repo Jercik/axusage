@@ -8,6 +8,7 @@ import { calculateUsageRate } from "./calculate-usage-rate.js";
  */
 export async function formatPrometheusMetrics(
   data: readonly ServiceUsageData[],
+  now: number,
 ): Promise<string> {
   const registry = new Registry();
 
@@ -34,6 +35,7 @@ export async function formatPrometheusMetrics(
         w.utilization,
         w.resetsAt,
         w.periodDurationMs,
+        now,
       );
       if (rate !== undefined) {
         rateGauge.set(labels, rate);

@@ -109,10 +109,11 @@ export async function usageCommand(
       if (successes.length === 1 && !hasPartialFailures && singleSuccess) {
         console.log(formatServiceUsageDataAsJson(singleSuccess));
       } else {
+        const now = Date.now();
         const payload =
           successes.length === 1 && singleSuccess
-            ? toJsonObject(singleSuccess)
-            : successes.map((data) => toJsonObject(data));
+            ? toJsonObject(singleSuccess, now)
+            : successes.map((data) => toJsonObject(data, now));
         const output = hasPartialFailures
           ? {
               results: payload,
@@ -130,7 +131,7 @@ export async function usageCommand(
     }
     case "prometheus": {
       // Emit Prometheus text metrics using prom-client
-      const output = await formatPrometheusMetrics(successes);
+      const output = await formatPrometheusMetrics(successes, Date.now());
       process.stdout.write(output);
       break;
     }
