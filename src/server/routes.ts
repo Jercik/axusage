@@ -40,7 +40,7 @@ export function createHealthRouter(
 
 /** Create router for GET /metrics (Prometheus text exposition) */
 export function createMetricsRouter(
-  getFreshState: () => Promise<ServerState | undefined>,
+  getState: () => Promise<ServerState | undefined>,
 ): Router {
   const router = Router();
 
@@ -53,7 +53,7 @@ export function createMetricsRouter(
   let memoPromise: Promise<string> = Promise.resolve("");
 
   router.get("/metrics", async (_request, response) => {
-    const state = await getFreshState();
+    const state = await getState();
     const usage = state?.usage;
     if (!usage || usage.length === 0) {
       response.status(503).type("text/plain").send("No data yet\n");
