@@ -119,6 +119,48 @@ describe("createUsageCache", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  describe("getStateStaleWhileRevalidate", () => {
+    it("blocks on first call when state is undefined", async () => {
+      const fetch = vi.fn().mockResolvedValue([makeSuccess("claude")]);
+      const cache = createUsageCache(fetch, 300_000);
+
+      const state = await cache.getStateStaleWhileRevalidate();
+      expect(fetch).toHaveBeenCalledOnce();
+      expect(state?.usage.at(0)?.service).toBe("claude");
+    });
+
+    it("returns stale state immediately without blocking when state exists", async () => {
+      const fetch = vi
+        .fn()
+        .mockResolvedValueOnce([makeSuccess("claude")])
+        .mockResolvedValue([makeSuccess("gemini")]);
+      const cache = createUsageCache(fetch, 300_000);
+
+      await cache.getFreshState(); // populate state
+      vi.advanceTimersByTime(300_001); // expire cache
+
+      // Should return immediately with stale data (not wait for refresh)
+      const state = await cache.getStateStaleWhileRevalidate();
+      expect(state?.usage.at(0)?.service).toBe("claude"); // stale data served
+
+      // Background refresh completes (mock resolves immediately)
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(fetch).toHaveBeenCalledTimes(2); // background fetch triggered
+    });
+
+    it("does not trigger background refresh when state is fresh", async () => {
+      const fetch = vi.fn().mockResolvedValue([makeSuccess("claude")]);
+      const cache = createUsageCache(fetch, 300_000);
+
+      await cache.getFreshState();
+      await cache.getStateStaleWhileRevalidate(); // within cache window
+
+      await Promise.resolve();
+      expect(fetch).toHaveBeenCalledOnce(); // no extra fetch
+    });
+  });
+
   it("records partial failures in state errors while keeping successful usage", async () => {
     const fetch = vi
       .fn()

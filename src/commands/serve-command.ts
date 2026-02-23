@@ -24,7 +24,12 @@ type ServeCommandOptions = {
 
 type UsageCache = {
   readonly getState: () => ServerState | undefined;
+  /** Waits for a fresh snapshot before returning. Use for data endpoints where staleness is unacceptable. */
   readonly getFreshState: () => Promise<ServerState | undefined>;
+  /** Serves the current snapshot immediately; triggers a background refresh when stale.
+   *  Blocks only if no snapshot exists yet (first ever request). Use for Prometheus /metrics
+   *  where scrape latency matters more than strict freshness. */
+  readonly getStateStaleWhileRevalidate: () => Promise<ServerState | undefined>;
 };
 
 /**
@@ -86,6 +91,19 @@ export function createUsageCache(
       await ensureFresh();
       return state;
     },
+    getStateStaleWhileRevalidate: async () => {
+      if (state === undefined) {
+        // No snapshot yet — block until we have something to serve.
+        await ensureFresh();
+      } else {
+        // Serve the current snapshot immediately; kick off a background
+        // refresh if stale. Errors are logged; callers are not affected.
+        void ensureFresh().catch((error: unknown) => {
+          console.error("Background metrics refresh failed:", error);
+        });
+      }
+      return state;
+    },
   };
 }
 
@@ -116,7 +134,7 @@ export async function serveCommand(
 
   const server = createServer(config, [
     createHealthRouter(servicesToQuery, cache.getState),
-    createMetricsRouter(cache.getFreshState),
+    createMetricsRouter(cache.getStateStaleWhileRevalidate),
     createUsageRouter(cache.getFreshState),
   ]);
 
