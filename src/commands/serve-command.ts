@@ -168,6 +168,7 @@ export async function serveCommand(
 
   // Pre-populate the cache before accepting connections so /health returns a
   // meaningful status immediately (important for container readiness checks).
+  console.error(`Fetching initial data for: ${servicesToQuery.join(", ")}`);
   await cache.getFreshState();
 
   await server.start();
