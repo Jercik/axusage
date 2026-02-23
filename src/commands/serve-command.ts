@@ -13,7 +13,7 @@ import {
   type ServerState,
 } from "../server/routes.js";
 import { getAvailableServices } from "../services/service-adapter-registry.js";
-import type { ServiceUsageData } from "../types/domain.js";
+import type { ServiceResult, ServiceUsageData } from "../types/domain.js";
 
 type ServeCommandOptions = {
   readonly port?: string;
@@ -22,31 +22,27 @@ type ServeCommandOptions = {
   readonly service?: string;
 };
 
-export async function serveCommand(
-  options: ServeCommandOptions,
-): Promise<void> {
-  const config = getServeConfig(options);
+type UsageCache = {
+  readonly getState: () => ServerState | undefined;
+  readonly getFreshState: () => Promise<ServerState | undefined>;
+};
 
-  const availableServices = getAvailableServices();
-  if (
-    config.service !== undefined &&
-    config.service.toLowerCase() !== "all" &&
-    !availableServices.includes(config.service.toLowerCase())
-  ) {
-    console.error(
-      `Unknown service "${config.service}". Supported: ${availableServices.join(", ")}.`,
-    );
-    if (process.exitCode === undefined) process.exitCode = 1;
-    return;
-  }
-
-  const servicesToQuery = selectServicesToQuery(config.service);
-
+/**
+ * Creates an on-demand usage cache. Data is fetched via `doFetch` when a
+ * caller requests fresh state and the cached snapshot is older than `intervalMs`.
+ * Concurrent callers during a refresh all receive the same in-flight promise.
+ * When all services fail, the cache retries after a short backoff (≤5s) rather
+ * than waiting the full interval.
+ */
+export function createUsageCache(
+  doFetch: () => Promise<ServiceResult[]>,
+  intervalMs: number,
+): UsageCache {
   let state: ServerState | undefined;
   let refreshPromise: Promise<void> | undefined;
 
   async function doRefresh(): Promise<void> {
-    const results = await fetchServicesInParallel(servicesToQuery);
+    const results = await doFetch();
 
     const usage: ServiceUsageData[] = [];
     const errors: string[] = [];
@@ -76,9 +72,7 @@ export async function serveCommand(
     // short backoff so the server recovers promptly after transient failures
     // rather than waiting the full cache interval.
     const hasData = state !== undefined && state.usage.length > 0;
-    const maxAge = hasData
-      ? config.intervalMs
-      : Math.min(config.intervalMs, 5000);
+    const maxAge = hasData ? intervalMs : Math.min(intervalMs, 5000);
     if (age < maxAge) return Promise.resolve();
     refreshPromise ??= doRefresh().finally(() => {
       refreshPromise = undefined;
@@ -86,16 +80,44 @@ export async function serveCommand(
     return refreshPromise;
   }
 
-  const getState = () => state;
-  const getFreshState = async () => {
-    await ensureFresh();
-    return state;
+  return {
+    getState: () => state,
+    getFreshState: async () => {
+      await ensureFresh();
+      return state;
+    },
   };
+}
+
+export async function serveCommand(
+  options: ServeCommandOptions,
+): Promise<void> {
+  const config = getServeConfig(options);
+
+  const availableServices = getAvailableServices();
+  if (
+    config.service !== undefined &&
+    config.service.toLowerCase() !== "all" &&
+    !availableServices.includes(config.service.toLowerCase())
+  ) {
+    console.error(
+      `Unknown service "${config.service}". Supported: ${availableServices.join(", ")}.`,
+    );
+    if (process.exitCode === undefined) process.exitCode = 1;
+    return;
+  }
+
+  const servicesToQuery = selectServicesToQuery(config.service);
+
+  const cache = createUsageCache(
+    () => fetchServicesInParallel(servicesToQuery),
+    config.intervalMs,
+  );
 
   const server = createServer(config, [
-    createHealthRouter(servicesToQuery, getState),
-    createMetricsRouter(getFreshState),
-    createUsageRouter(getFreshState),
+    createHealthRouter(servicesToQuery, cache.getState),
+    createMetricsRouter(cache.getFreshState),
+    createUsageRouter(cache.getFreshState),
   ]);
 
   const shutdown = (): void => {
