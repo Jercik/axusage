@@ -39,7 +39,7 @@ async function startTestApp(app: express.Express): Promise<{
   });
 }
 
-const noState: ServerState | undefined = void 0 as ServerState | undefined;
+const noState: ServerState | undefined = undefined;
 
 const testService: ServiceUsageData = {
   service: "claude",

@@ -153,12 +153,12 @@ Prometheus output emits text metrics suitable for scraping.
 
 ## Serve Mode
 
-`axusage serve` starts an HTTP server that exposes Prometheus metrics at `/metrics` for scraping, with automatic polling.
+`axusage serve` starts an HTTP server exposing usage data at `/metrics` (Prometheus) and `/usage` (JSON). Data is fetched on demand: the first request triggers a fetch, subsequent requests within the cache window are served instantly, and the first request after the cache expires waits for a fresh fetch. No background polling runs when the server is idle.
 
 ### Usage
 
 ```bash
-# Start with defaults (port 3848, poll every 5 minutes)
+# Start with defaults (port 3848, max cache age 5 minutes)
 axusage serve
 
 # Custom configuration
@@ -170,17 +170,18 @@ AXUSAGE_PORT=9090 AXUSAGE_INTERVAL=60 axusage serve
 
 ### Options
 
-| Flag                   | Env Var            | Default     | Description                 |
-| ---------------------- | ------------------ | ----------- | --------------------------- |
-| `--port <port>`        | `AXUSAGE_PORT`     | `3848`      | Port to listen on           |
-| `--host <host>`        | `AXUSAGE_HOST`     | `127.0.0.1` | Host to bind to             |
-| `--interval <seconds>` | `AXUSAGE_INTERVAL` | `300`       | Polling interval in seconds |
-| `--service <service>`  | `AXUSAGE_SERVICE`  | all         | Service to monitor          |
+| Flag                   | Env Var            | Default     | Description              |
+| ---------------------- | ------------------ | ----------- | ------------------------ |
+| `--port <port>`        | `AXUSAGE_PORT`     | `3848`      | Port to listen on        |
+| `--host <host>`        | `AXUSAGE_HOST`     | `127.0.0.1` | Host to bind to          |
+| `--interval <seconds>` | `AXUSAGE_INTERVAL` | `300`       | Max cache age in seconds |
+| `--service <service>`  | `AXUSAGE_SERVICE`  | all         | Service to monitor       |
 
 ### Endpoints
 
-- `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Returns 503 if no data has been fetched yet.
-- `GET /health` — JSON health status with version, last refresh time, tracked services, and errors.
+- `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Triggers a refresh if cached data is stale. Returns 503 if no data is available.
+- `GET /usage` — JSON array of `ServiceUsageData` objects (one per service). Triggers a refresh if cached data is stale. Returns 503 if no data is available.
+- `GET /health` — JSON health status with version, last refresh time, tracked services, and errors. Always responds immediately from cached state without triggering a refresh.
 
 ### Container Deployment
 

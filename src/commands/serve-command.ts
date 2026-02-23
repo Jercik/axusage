@@ -13,6 +13,7 @@ import {
   type ServerState,
 } from "../server/routes.js";
 import { getAvailableServices } from "../services/service-adapter-registry.js";
+import type { ServiceUsageData } from "../types/domain.js";
 
 type ServeCommandOptions = {
   readonly port?: string;
@@ -47,7 +48,7 @@ export async function serveCommand(
   async function doRefresh(): Promise<void> {
     const results = await fetchServicesInParallel(servicesToQuery);
 
-    const usage = [];
+    const usage: ServiceUsageData[] = [];
     const errors: string[] = [];
 
     for (const { service, result } of results) {
@@ -71,7 +72,14 @@ export async function serveCommand(
   function ensureFresh(): Promise<void> {
     const age =
       state === undefined ? Infinity : Date.now() - state.refreshedAt.getTime();
-    if (age < config.intervalMs) return Promise.resolve();
+    // If the last refresh produced no data (all services failed), retry on a
+    // short backoff so the server recovers promptly after transient failures
+    // rather than waiting the full cache interval.
+    const hasData = state !== undefined && state.usage.length > 0;
+    const maxAge = hasData
+      ? config.intervalMs
+      : Math.min(config.intervalMs, 5000);
+    if (age < maxAge) return Promise.resolve();
     refreshPromise ??= doRefresh().finally(() => {
       refreshPromise = undefined;
     });
