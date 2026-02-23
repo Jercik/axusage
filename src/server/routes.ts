@@ -5,51 +5,75 @@
 import { Router } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
+import type { ServiceUsageData } from "../types/domain.js";
+import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
 
-type HealthStatus = {
-  readonly lastRefreshTime: Date | undefined;
-  readonly services: readonly string[];
+/** Snapshot produced by each refresh cycle. */
+export type ServerState = {
+  readonly usage: readonly ServiceUsageData[];
+  readonly refreshedAt: Date;
   readonly errors: readonly string[];
-  readonly hasMetrics: boolean;
-};
-
-type MetricsStatus = {
-  readonly metrics: string | undefined;
 };
 
 /** Create router for GET /health */
-export function createHealthRouter(getStatus: () => HealthStatus): Router {
+export function createHealthRouter(
+  services: readonly string[],
+  getState: () => ServerState | undefined,
+): Router {
   const router = Router();
 
   router.get("/health", (_request, response) => {
-    const status = getStatus();
-    const healthy = status.hasMetrics;
+    const state = getState();
+    const healthy = state !== undefined && state.usage.length > 0;
     response.status(healthy ? 200 : 503).json({
       status: healthy ? "ok" : "degraded",
       version: packageJson.version,
-      lastRefresh: status.lastRefreshTime?.toISOString(),
-      services: status.services,
-      errors: status.errors,
+      lastRefresh: state?.refreshedAt.toISOString(),
+      services,
+      errors: state?.errors ?? [],
     });
   });
 
   return router;
 }
 
-/** Create router for GET /metrics */
-export function createMetricsRouter(getMetrics: () => MetricsStatus): Router {
+/** Create router for GET /metrics (Prometheus text exposition) */
+export function createMetricsRouter(
+  getFreshState: () => Promise<ServerState | undefined>,
+): Router {
   const router = Router();
 
-  router.get("/metrics", (_request, response) => {
-    const { metrics } = getMetrics();
-    if (!metrics) {
+  router.get("/metrics", async (_request, response) => {
+    const state = await getFreshState();
+    const usage = state?.usage;
+    if (!usage || usage.length === 0) {
       response.status(503).type("text/plain").send("No data yet\n");
       return;
     }
+    const text = await formatPrometheusMetrics(usage);
     response
       .status(200)
       .type("text/plain; version=0.0.4; charset=utf-8")
-      .send(metrics);
+      .send(text);
+  });
+
+  return router;
+}
+
+/** Create router for GET /usage (JSON) */
+export function createUsageRouter(
+  getFreshState: () => Promise<ServerState | undefined>,
+): Router {
+  const router = Router();
+
+  router.get("/usage", async (_request, response) => {
+    const state = await getFreshState();
+    const usage = state?.usage;
+    if (!usage || usage.length === 0) {
+      response.status(503).json({ error: "No data yet" });
+      return;
+    }
+    response.status(200).json(usage);
   });
 
   return router;
