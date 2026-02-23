@@ -183,7 +183,14 @@ describe("createUsageRouter", () => {
         "application/json",
       );
       const body = await response.json();
-      expect(body).toEqual([testService]);
+      // The wire format omits resetsAt when undefined (JSON.stringify drops
+      // undefined values), so the expected object must not include it.
+      expect(body).toEqual([
+        {
+          service: "claude",
+          windows: [{ name: "monthly", utilization: 42, periodDurationMs: 0 }],
+        },
+      ]);
     } finally {
       await close();
     }

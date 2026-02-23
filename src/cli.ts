@@ -51,7 +51,9 @@ const program = new Command()
 
 program
   .command("serve")
-  .description("Start HTTP server exposing usage data at /metrics and /usage")
+  .description(
+    "Start HTTP server exposing Prometheus metrics at /metrics and usage JSON at /usage",
+  )
   .option("-p, --port <port>", "Port to listen on (env: AXUSAGE_PORT)")
   .option("-H, --host <host>", "Host to bind to (env: AXUSAGE_HOST)")
   .option(

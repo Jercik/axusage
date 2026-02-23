@@ -179,7 +179,7 @@ AXUSAGE_PORT=9090 AXUSAGE_INTERVAL=60 axusage serve
 
 ### Endpoints
 
-- `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Serves cached data immediately; triggers a background refresh when stale. Returns 503 before the first scrape or when all services are currently failing.
+- `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Serves cached data immediately; triggers a background refresh when stale. Returns 503 when all services are currently failing.
 - `GET /usage` — JSON array of usage objects (one per service). Waits for a fresh snapshot when stale. Returns 503 if no data is available. Date fields (e.g. `resetsAt`) are serialized as ISO 8601 strings.
 - `GET /health` — JSON health status with version, last refresh time, tracked services, and errors. Always responds immediately from cached state without triggering a refresh.
 
