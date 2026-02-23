@@ -188,4 +188,39 @@ describe("createUsageRouter", () => {
       await close();
     }
   });
+
+  it("serializes resetsAt Date as ISO 8601 string", async () => {
+    const resetsAt = new Date("2024-06-15T12:00:00.000Z");
+    const state: ServerState = {
+      usage: [
+        {
+          service: "claude",
+          windows: [
+            {
+              name: "monthly",
+              utilization: 42,
+              resetsAt,
+              periodDurationMs: 0,
+            },
+          ],
+        },
+      ],
+      refreshedAt: new Date(),
+      errors: [],
+    };
+    const app = express();
+    app.use(createUsageRouter(() => Promise.resolve(state)));
+
+    const { url, close } = await startTestApp(app);
+    try {
+      const response = await fetch(`${url}/usage`);
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as Array<{
+        windows: Array<{ resetsAt: string }>;
+      }>;
+      expect(body.at(0)?.windows.at(0)?.resetsAt).toBe(resetsAt.toISOString());
+    } finally {
+      await close();
+    }
+  });
 });

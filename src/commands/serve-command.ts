@@ -166,6 +166,10 @@ export async function serveCommand(
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
 
+  // Pre-populate the cache before accepting connections so /health returns a
+  // meaningful status immediately (important for container readiness checks).
+  await cache.getFreshState();
+
   await server.start();
 
   console.error(

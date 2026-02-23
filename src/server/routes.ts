@@ -7,6 +7,7 @@ import { Router } from "express";
 import packageJson from "../../package.json" with { type: "json" };
 import type { ServiceUsageData } from "../types/domain.js";
 import { formatPrometheusMetrics } from "../utils/format-prometheus-metrics.js";
+import { toJsonObject } from "../utils/format-service-usage.js";
 
 /** Snapshot produced by each refresh cycle. */
 export type ServerState = {
@@ -85,7 +86,7 @@ export function createUsageRouter(
       response.status(503).json({ error: "No data yet" });
       return;
     }
-    response.status(200).json(usage);
+    response.status(200).json(usage.map((entry) => toJsonObject(entry)));
   });
 
   return router;
