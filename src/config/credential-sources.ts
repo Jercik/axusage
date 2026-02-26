@@ -4,7 +4,9 @@
  * Supports three modes:
  * - "local": Use local credentials from axauth (default behavior)
  * - "vault": Fetch credentials from axvault server
- * - "auto": Try vault first if configured and credential name provided, fallback to local
+ * - "auto": Try vault first if configured. With a named credential, vault failure
+ *   is final (no local fallback) to prevent returning wrong data for multi-instance
+ *   configs. Without a name, falls back to local credentials.
  */
 
 import Conf from "conf";
