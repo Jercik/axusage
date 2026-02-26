@@ -23,8 +23,8 @@ type CredentialSourceType = z.infer<typeof CredentialSourceType>;
 /** Instance source config - object form with optional name and displayName */
 const InstanceSourceConfig = z.object({
   source: CredentialSourceType,
-  name: z.string().optional(),
-  displayName: z.string().optional(),
+  name: z.string().min(1).optional(),
+  displayName: z.string().min(1).optional(),
 });
 type InstanceSourceConfig = z.infer<typeof InstanceSourceConfig>;
 
