@@ -32,6 +32,7 @@ export function toServiceUsageData(
 ): ServiceUsageData {
   return {
     service: "ChatGPT",
+    serviceType: "codex",
     planType: response.plan_type,
     windows: [
       toUsageWindow(

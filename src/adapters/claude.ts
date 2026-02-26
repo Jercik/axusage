@@ -2,11 +2,10 @@ import { z } from "zod";
 
 import type {
   Result,
-  ServiceAdapter,
+  ServiceUsageFetcher,
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
-import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
 import { toServiceUsageData } from "./parse-claude-usage.js";
@@ -43,84 +42,70 @@ async function fetchPlanType(accessToken: string): Promise<string | undefined> {
   }
 }
 
-/**
- * Claude service adapter using direct API access.
- *
- * This adapter uses the OAuth token from Claude Code's credential store
- * (Keychain on macOS, credentials file elsewhere) to make direct API calls
- * to the Anthropic usage endpoint.
- */
-export const claudeAdapter: ServiceAdapter = {
-  name: "Claude",
+/** Fetch Claude usage data using a pre-resolved access token */
+async function fetchClaudeUsageWithToken(
+  accessToken: string,
+): Promise<Result<ServiceUsageData, ApiError>> {
+  try {
+    const [response, planType] = await Promise.all([
+      fetch(USAGE_API_URL, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "anthropic-beta": ANTHROPIC_BETA_HEADER,
+        },
+      }),
+      fetchPlanType(accessToken),
+    ]);
 
-  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getServiceAccessToken("claude");
-
-    if (!accessToken) {
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
       return {
         ok: false,
         error: new ApiError(
-          "No Claude credentials found. Run 'claude' to authenticate.",
+          `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
+          response.status,
         ),
       };
     }
 
-    try {
-      const [response, planType] = await Promise.all([
-        fetch(USAGE_API_URL, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "anthropic-beta": ANTHROPIC_BETA_HEADER,
-          },
-        }),
-        fetchPlanType(accessToken),
-      ]);
+    const data: unknown = await response.json();
+    const parseResult = UsageResponseSchema.safeParse(
+      coalesceClaudeUsageResponse(data) ?? data,
+    );
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        return {
-          ok: false,
-          error: new ApiError(
-            `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
-            response.status,
-          ),
-        };
-      }
-
-      const data: unknown = await response.json();
-      const parseResult = UsageResponseSchema.safeParse(
-        coalesceClaudeUsageResponse(data) ?? data,
+    if (!parseResult.success) {
+      /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
+      console.error("Raw API response:", JSON.stringify(data, null, 2));
+      console.error(
+        "Validation errors:",
+        JSON.stringify(z.treeifyError(parseResult.error), null, 2),
       );
-
-      if (!parseResult.success) {
-        /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
-        console.error("Raw API response:", JSON.stringify(data, null, 2));
-        console.error(
-          "Validation errors:",
-          JSON.stringify(z.treeifyError(parseResult.error), null, 2),
-        );
-        /* eslint-enable unicorn/no-null */
-        return {
-          ok: false,
-          error: new ApiError(
-            `Invalid response format: ${parseResult.error.message}`,
-            undefined,
-            data,
-          ),
-        };
-      }
-
-      const usageData = toServiceUsageData(parseResult.data);
-      return {
-        ok: true,
-        value: planType ? { ...usageData, planType } : usageData,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      /* eslint-enable unicorn/no-null */
       return {
         ok: false,
-        error: new ApiError(`Failed to fetch Claude usage: ${message}`),
+        error: new ApiError(
+          `Invalid response format: ${parseResult.error.message}`,
+          undefined,
+          data,
+        ),
       };
     }
-  },
+
+    const usageData = toServiceUsageData(parseResult.data);
+    return {
+      ok: true,
+      value: planType ? { ...usageData, planType } : usageData,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: new ApiError(`Failed to fetch Claude usage: ${message}`),
+    };
+  }
+}
+
+export const claudeUsageFetcher: ServiceUsageFetcher = {
+  name: "Claude",
+  fetchUsageWithToken: fetchClaudeUsageWithToken,
 };

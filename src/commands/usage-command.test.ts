@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ApiError } from "../types/domain.js";
-import type { ServiceUsageData } from "../types/domain.js";
+import type { ServiceResult, ServiceUsageData } from "../types/domain.js";
 
 vi.mock("./fetch-service-usage.js", () => ({
-  fetchServiceUsage: vi.fn(),
+  fetchServiceInstanceUsage: vi.fn(),
   selectServicesToQuery: vi.fn((service?: string) =>
     service === "all" || !service ? ["claude", "codex", "copilot"] : [service],
   ),
@@ -13,12 +13,13 @@ const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 import { fetchServicesInParallel, usageCommand } from "./usage-command.js";
-import { fetchServiceUsage } from "./fetch-service-usage.js";
+import { fetchServiceInstanceUsage } from "./fetch-service-usage.js";
 
-const mockFetchServiceUsage = vi.mocked(fetchServiceUsage);
+const mockFetchServiceInstanceUsage = vi.mocked(fetchServiceInstanceUsage);
 
 const createMockUsageData = (service: string): ServiceUsageData => ({
   service,
+  serviceType: service,
   planType: "free",
   windows: [
     {
@@ -38,15 +39,19 @@ describe("fetchServicesInParallel", () => {
   });
 
   it("returns successful results in requested order", async () => {
-    mockFetchServiceUsage
-      .mockResolvedValueOnce({
-        ok: true,
-        value: createMockUsageData("claude"),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        value: createMockUsageData("codex"),
-      });
+    mockFetchServiceInstanceUsage
+      .mockResolvedValueOnce([
+        {
+          service: "claude",
+          result: { ok: true, value: createMockUsageData("claude") },
+        },
+      ] satisfies ServiceResult[])
+      .mockResolvedValueOnce([
+        {
+          service: "codex",
+          result: { ok: true, value: createMockUsageData("codex") },
+        },
+      ] satisfies ServiceResult[]);
 
     const results = await fetchServicesInParallel(["claude", "codex"]);
 
@@ -60,15 +65,17 @@ describe("fetchServicesInParallel", () => {
         result: { ok: true, value: createMockUsageData("codex") },
       },
     ]);
-    expect(mockFetchServiceUsage).toHaveBeenCalledTimes(2);
+    expect(mockFetchServiceInstanceUsage).toHaveBeenCalledTimes(2);
   });
 
   it("returns auth failures without retries", async () => {
     const authError = new ApiError("401 Unauthorized", 401);
-    mockFetchServiceUsage.mockResolvedValueOnce({
-      ok: false,
-      error: authError,
-    });
+    mockFetchServiceInstanceUsage.mockResolvedValueOnce([
+      {
+        service: "claude",
+        result: { ok: false, error: authError },
+      },
+    ] satisfies ServiceResult[]);
 
     const results = await fetchServicesInParallel(["claude"]);
 
@@ -78,20 +85,24 @@ describe("fetchServicesInParallel", () => {
         result: { ok: false, error: authError },
       },
     ]);
-    expect(mockFetchServiceUsage).toHaveBeenCalledTimes(1);
+    expect(mockFetchServiceInstanceUsage).toHaveBeenCalledTimes(1);
   });
 
   it("returns mixed successes and non-auth failures", async () => {
     const networkError = new ApiError("Network timeout", 500);
-    mockFetchServiceUsage
-      .mockResolvedValueOnce({
-        ok: true,
-        value: createMockUsageData("claude"),
-      })
-      .mockResolvedValueOnce({
-        ok: false,
-        error: networkError,
-      });
+    mockFetchServiceInstanceUsage
+      .mockResolvedValueOnce([
+        {
+          service: "claude",
+          result: { ok: true, value: createMockUsageData("claude") },
+        },
+      ] satisfies ServiceResult[])
+      .mockResolvedValueOnce([
+        {
+          service: "codex",
+          result: { ok: false, error: networkError },
+        },
+      ] satisfies ServiceResult[]);
 
     const results = await fetchServicesInParallel(["claude", "codex"]);
 
@@ -105,14 +116,14 @@ describe("fetchServicesInParallel", () => {
         result: { ok: false, error: networkError },
       },
     ]);
-    expect(mockFetchServiceUsage).toHaveBeenCalledTimes(2);
+    expect(mockFetchServiceInstanceUsage).toHaveBeenCalledTimes(2);
   });
 
   it("handles an empty service list", async () => {
     const results = await fetchServicesInParallel([]);
 
     expect(results).toEqual([]);
-    expect(mockFetchServiceUsage).not.toHaveBeenCalled();
+    expect(mockFetchServiceInstanceUsage).not.toHaveBeenCalled();
   });
 });
 
@@ -126,14 +137,16 @@ describe("usageCommand", () => {
 
   it("does not retry auth failures and prints CLI auth guidance", async () => {
     const authError = new ApiError("401 Unauthorized", 401);
-    mockFetchServiceUsage.mockResolvedValueOnce({
-      ok: false,
-      error: authError,
-    });
+    mockFetchServiceInstanceUsage.mockResolvedValueOnce([
+      {
+        service: "claude",
+        result: { ok: false, error: authError },
+      },
+    ] satisfies ServiceResult[]);
 
     await usageCommand({ service: "claude", format: "text" });
 
-    expect(mockFetchServiceUsage).toHaveBeenCalledTimes(1);
+    expect(mockFetchServiceInstanceUsage).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Authentication required for: claude."),
     );

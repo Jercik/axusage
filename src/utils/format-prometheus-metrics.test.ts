@@ -7,6 +7,7 @@ describe("formatPrometheusMetrics", () => {
     const data: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         windows: [
           {
             name: "5-hour",
@@ -28,10 +29,10 @@ describe("formatPrometheusMetrics", () => {
     expect(text).toContain("# HELP axusage_utilization_percent");
     expect(text).toContain("# TYPE axusage_utilization_percent gauge");
     expect(text).toContain(
-      'axusage_utilization_percent{service="claude",window="5-hour"} 12.34',
+      'axusage_utilization_percent{service="claude",service_type="claude",instance_id="claude",window="5-hour"} 12.34',
     );
     expect(text).toContain(
-      'axusage_utilization_percent{service="claude",window="monthly"} 56.78',
+      'axusage_utilization_percent{service="claude",service_type="claude",instance_id="claude",window="monthly"} 56.78',
     );
   });
 
@@ -39,6 +40,7 @@ describe("formatPrometheusMetrics", () => {
     const data: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         windows: [
           {
             name: "5-hour",
@@ -50,6 +52,7 @@ describe("formatPrometheusMetrics", () => {
       },
       {
         service: "codex",
+        serviceType: "codex",
         windows: [
           {
             name: "3-hour",
@@ -62,10 +65,10 @@ describe("formatPrometheusMetrics", () => {
     ];
     const text = await formatPrometheusMetrics(data, 0);
     expect(text).toContain(
-      'axusage_utilization_percent{service="claude",window="5-hour"} 12.34',
+      'axusage_utilization_percent{service="claude",service_type="claude",instance_id="claude",window="5-hour"} 12.34',
     );
     expect(text).toContain(
-      'axusage_utilization_percent{service="codex",window="3-hour"} 56.78',
+      'axusage_utilization_percent{service="codex",service_type="codex",instance_id="codex",window="3-hour"} 56.78',
     );
   });
 
@@ -84,6 +87,7 @@ describe("formatPrometheusMetrics", () => {
     const data: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         windows: [
           {
             name: "window",
@@ -96,7 +100,7 @@ describe("formatPrometheusMetrics", () => {
     ];
     const text = await formatPrometheusMetrics(data, 0);
     expect(text).toContain(
-      'axusage_utilization_percent{service="claude",window="window"} 0',
+      'axusage_utilization_percent{service="claude",service_type="claude",instance_id="claude",window="window"} 0',
     );
   });
 
@@ -110,6 +114,7 @@ describe("formatPrometheusMetrics", () => {
     const data: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         windows: [
           {
             name: "5-hour",
@@ -123,7 +128,7 @@ describe("formatPrometheusMetrics", () => {
 
     const text = await formatPrometheusMetrics(data, now);
     expect(text).toContain(
-      'axusage_usage_rate{service="claude",window="5-hour"} 1',
+      'axusage_usage_rate{service="claude",service_type="claude",instance_id="claude",window="5-hour"} 1',
     );
   });
 
@@ -131,6 +136,7 @@ describe("formatPrometheusMetrics", () => {
     const data: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         windows: [
           {
             name: "daily",
@@ -148,5 +154,28 @@ describe("formatPrometheusMetrics", () => {
     expect(text).toContain("# TYPE axusage_usage_rate gauge");
     // But no sample line
     expect(text).not.toMatch(/axusage_usage_rate\{/u);
+  });
+
+  it("uses instanceId for instance_id label when provided", async () => {
+    const data: ServiceUsageData[] = [
+      {
+        service: "Claude (Work)",
+        serviceType: "claude",
+        instanceId: "claude-work",
+        windows: [
+          {
+            name: "5-hour",
+            utilization: 25,
+            resetsAt: new Date("2025-01-01T00:00:00Z"),
+            periodDurationMs: 1000,
+          },
+        ],
+      },
+    ];
+
+    const text = await formatPrometheusMetrics(data, 0);
+    expect(text).toContain(
+      'axusage_utilization_percent{service="Claude (Work)",service_type="claude",instance_id="claude-work",window="5-hour"} 25',
+    );
   });
 });

@@ -9,6 +9,7 @@ const makeSuccess = (service: string): ServiceResult => ({
     ok: true,
     value: {
       service,
+      serviceType: service,
       windows: [
         {
           name: "monthly",

@@ -34,6 +34,7 @@ const parseResetTimestamp = (
 export function toServiceUsageData(response: UsageResponse): ServiceUsageData {
   return {
     service: "Claude",
+    serviceType: "claude",
     windows: [
       {
         name: "5-Hour Usage",

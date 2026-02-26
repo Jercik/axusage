@@ -112,12 +112,31 @@ Credential source config is read from:
 - Config file path shown in `axusage --help`
 - `AXUSAGE_SOURCES` environment variable (JSON), which overrides file config
 
+### Multi-Instance Configuration
+
+To monitor multiple accounts for the same service, use an array of instance configs:
+
+```json
+{
+  "claude": [
+    { "source": "vault", "name": "work", "displayName": "Claude (Work)" },
+    {
+      "source": "vault",
+      "name": "personal",
+      "displayName": "Claude (Personal)"
+    }
+  ]
+}
+```
+
+Each instance resolves credentials independently. Named credentials require vault to be configured (`AXVAULT` env). Single-instance configs can use string shorthand (`"auto"`, `"local"`, `"vault"`) or object form.
+
 ## Examples
 
 ### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $5"%"}'
 ```
 
 ### Count windows by service (TSV + cut/sort/uniq)
@@ -129,7 +148,7 @@ axusage --format tsv | tail -n +2 | cut -f1 | sort | uniq -c
 ### Filter by utilization threshold (TSV + awk)
 
 ```bash
-axusage --format tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '$5 > 50 {print $1, $4, $5"%"}'
 ```
 
 ### Extract utilization as JSON (JSON + jq)
@@ -180,7 +199,7 @@ AXUSAGE_PORT=9090 AXUSAGE_INTERVAL=60 axusage serve
 ### Endpoints
 
 - `GET /metrics` — Prometheus text exposition (`text/plain; version=0.0.4`). Serves cached data immediately; triggers a background refresh when stale. Returns 503 when all services are currently failing.
-- `GET /usage` — JSON array of usage objects (one per service). Waits for a fresh snapshot when stale. Returns 503 if no data is available. Date fields (e.g. `resetsAt`) are serialized as ISO 8601 strings.
+- `GET /usage` — JSON array of usage objects (one per service instance; multi-instance configs produce multiple entries per service type). Waits for a fresh snapshot when stale. Returns 503 if no data is available. Date fields (e.g. `resetsAt`) are serialized as ISO 8601 strings.
 - `GET /health` — JSON health status with version, last refresh time, tracked services, and errors. Always responds immediately from cached state without triggering a refresh.
 
 ### Container Deployment

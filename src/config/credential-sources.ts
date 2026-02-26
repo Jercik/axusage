@@ -4,7 +4,9 @@
  * Supports three modes:
  * - "local": Use local credentials from axauth (default behavior)
  * - "vault": Fetch credentials from axvault server
- * - "auto": Try vault first if configured and credential name provided, fallback to local
+ * - "auto": Without a credential name, uses local credentials. With a named
+ *   credential, requires vault (no local fallback) to prevent returning the same
+ *   local token for multiple instances. Vault must be configured for named credentials.
  */
 
 import Conf from "conf";
@@ -18,13 +20,19 @@ import type { SupportedService } from "../services/supported-service.js";
 const CredentialSourceType = z.enum(["auto", "local", "vault"]);
 type CredentialSourceType = z.infer<typeof CredentialSourceType>;
 
-/** Service source config - either a string shorthand or object with name */
+/** Instance source config - object form with optional name and displayName */
+const InstanceSourceConfig = z.object({
+  source: CredentialSourceType,
+  name: z.string().min(1).optional(),
+  displayName: z.string().min(1).optional(),
+});
+type InstanceSourceConfig = z.infer<typeof InstanceSourceConfig>;
+
+/** Service source config - string shorthand, object, or array of objects */
 const ServiceSourceConfig = z.union([
   CredentialSourceType,
-  z.object({
-    source: CredentialSourceType,
-    name: z.string().optional(),
-  }),
+  InstanceSourceConfig,
+  z.array(InstanceSourceConfig).min(1),
 ]);
 type ServiceSourceConfig = z.infer<typeof ServiceSourceConfig>;
 
@@ -32,10 +40,11 @@ type ServiceSourceConfig = z.infer<typeof ServiceSourceConfig>;
 const SourcesConfig = z.record(z.string(), ServiceSourceConfig);
 type SourcesConfig = z.infer<typeof SourcesConfig>;
 
-/** Resolved source config with normalized fields */
-interface ResolvedSourceConfig {
+/** Resolved instance config with display name */
+interface ResolvedInstanceConfig {
   source: CredentialSourceType;
   name: string | undefined;
+  displayName: string | undefined;
 }
 
 // Lazy-initialized config instance
@@ -128,32 +137,6 @@ function getCredentialSourceConfig(): SourcesConfig {
 }
 
 /**
- * Get the resolved source config for a specific service.
- *
- * @param service - Service ID (e.g., "claude", "codex", "gemini")
- * @returns Resolved config with source type and optional credential name
- */
-function getServiceSourceConfig(
-  service: SupportedService,
-): ResolvedSourceConfig {
-  const config = getCredentialSourceConfig();
-  const serviceConfig = config[service];
-
-  // Default: auto mode with no credential name
-  if (serviceConfig === undefined) {
-    return { source: "auto", name: undefined };
-  }
-
-  // String shorthand: just the source type
-  if (typeof serviceConfig === "string") {
-    return { source: serviceConfig, name: undefined };
-  }
-
-  // Object: source and name
-  return { source: serviceConfig.source, name: serviceConfig.name };
-}
-
-/**
  * Get the credential sources config file path.
  *
  * This computes the path using env-paths directly instead of instantiating
@@ -165,4 +148,47 @@ function getCredentialSourcesPath(): string {
   return path.resolve(configDirectory, "config.json");
 }
 
-export { getServiceSourceConfig, getCredentialSourcesPath };
+/**
+ * Get all instance configs for a service, normalizing all config forms to an array.
+ *
+ * - String shorthand → single instance with that source
+ * - Object → single instance
+ * - Array → multiple instances
+ */
+function getServiceInstanceConfigs(
+  service: SupportedService,
+): ResolvedInstanceConfig[] {
+  const config = getCredentialSourceConfig();
+  const serviceConfig = config[service];
+
+  // Default: single auto instance
+  if (serviceConfig === undefined) {
+    return [{ source: "auto", name: undefined, displayName: undefined }];
+  }
+
+  // String shorthand: single instance with that source
+  if (typeof serviceConfig === "string") {
+    return [{ source: serviceConfig, name: undefined, displayName: undefined }];
+  }
+
+  // Array: multiple instances
+  if (Array.isArray(serviceConfig)) {
+    return serviceConfig.map((instance) => ({
+      source: instance.source,
+      name: instance.name,
+      displayName: instance.displayName,
+    }));
+  }
+
+  // Object: single instance
+  return [
+    {
+      source: serviceConfig.source,
+      name: serviceConfig.name,
+      displayName: serviceConfig.displayName,
+    },
+  ];
+}
+
+export { getServiceInstanceConfigs, getCredentialSourcesPath };
+export type { ResolvedInstanceConfig };

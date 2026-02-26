@@ -1,30 +1,32 @@
-import type { ServiceAdapter } from "../types/domain.js";
-import { codexAdapter } from "../adapters/codex.js";
-import { claudeAdapter } from "../adapters/claude.js";
-import { geminiAdapter } from "../adapters/gemini.js";
-import { copilotAdapter } from "../adapters/copilot.js";
+import type { ServiceUsageFetcher } from "../types/domain.js";
+import { codexUsageFetcher } from "../adapters/codex.js";
+import { claudeUsageFetcher } from "../adapters/claude.js";
+import { geminiUsageFetcher } from "../adapters/gemini.js";
+import { copilotUsageFetcher } from "../adapters/copilot.js";
 
 /**
- * Registry of available service adapters
+ * Registry of token-based usage fetchers
  */
-export const SERVICE_ADAPTERS = {
-  claude: claudeAdapter,
-  codex: codexAdapter,
-  copilot: copilotAdapter,
-  gemini: geminiAdapter,
-} as const satisfies Record<string, ServiceAdapter>;
+const SERVICE_USAGE_FETCHERS = {
+  claude: claudeUsageFetcher,
+  codex: codexUsageFetcher,
+  copilot: copilotUsageFetcher,
+  gemini: geminiUsageFetcher,
+} as const satisfies Record<string, ServiceUsageFetcher>;
 
 /**
- * Get a service adapter by name
+ * Get a token-based usage fetcher by service type
  */
-export function getServiceAdapter(name: string): ServiceAdapter | undefined {
-  const key = name.toLowerCase() as keyof typeof SERVICE_ADAPTERS;
-  return SERVICE_ADAPTERS[key];
+export function getServiceUsageFetcher(
+  name: string,
+): ServiceUsageFetcher | undefined {
+  const key = name.toLowerCase() as keyof typeof SERVICE_USAGE_FETCHERS;
+  return SERVICE_USAGE_FETCHERS[key];
 }
 
 /**
  * Get all available service names
  */
 export function getAvailableServices(): string[] {
-  return Object.keys(SERVICE_ADAPTERS);
+  return Object.keys(SERVICE_USAGE_FETCHERS);
 }

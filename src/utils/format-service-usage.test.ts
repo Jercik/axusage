@@ -8,6 +8,7 @@ import type { ServiceUsageData } from "../types/domain.js";
 describe("format-service-usage toJsonObject", () => {
   const base: ServiceUsageData = {
     service: "X",
+    serviceType: "x",
     planType: "plan",
     windows: [
       {
@@ -82,6 +83,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
 
   const base: ServiceUsageData = {
     service: "claude",
+    serviceType: "claude",
     planType: "Max",
     windows: [
       {
@@ -97,7 +99,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const output = formatServiceUsageAsTsv([base]);
     const lines = output.split("\n");
     expect(lines[0]).toBe(
-      "SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT",
+      "SERVICE\tSERVICE_TYPE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT",
     );
   });
 
@@ -106,18 +108,19 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const lines = output.split("\n");
     expect(lines).toHaveLength(2); // header + 1 data row
     const fields = lines[1]?.split("\t");
-    expect(fields).toHaveLength(6);
+    expect(fields).toHaveLength(7);
     expect(fields?.[0]).toBe("claude");
-    expect(fields?.[1]).toBe("Max");
-    expect(fields?.[2]).toBe("5-Hour Usage");
-    expect(fields?.[3]).toBe("25.00");
+    expect(fields?.[1]).toBe("claude");
+    expect(fields?.[2]).toBe("Max");
+    expect(fields?.[3]).toBe("5-Hour Usage");
+    expect(fields?.[4]).toBe("25.00");
   });
 
   it("outputs ISO timestamps for reset times", () => {
     const output = formatServiceUsageAsTsv([base]);
     const lines = output.split("\n");
     const fields = lines[1]?.split("\t");
-    expect(fields?.[5]).toBe(resetsAt.toISOString());
+    expect(fields?.[6]).toBe(resetsAt.toISOString());
   });
 
   it("uses dash for missing plan type", () => {
@@ -125,7 +128,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const output = formatServiceUsageAsTsv([noPlan]);
     const lines = output.split("\n");
     const fields = lines[1]?.split("\t");
-    expect(fields?.[1]).toBe("-");
+    expect(fields?.[2]).toBe("-");
   });
 
   it("uses dash for missing reset time and rate", () => {
@@ -143,14 +146,15 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const output = formatServiceUsageAsTsv([noReset]);
     const lines = output.split("\n");
     const fields = lines[1]?.split("\t");
-    expect(fields?.[4]).toBe("-"); // Rate is undefined when resetsAt is missing
-    expect(fields?.[5]).toBe("-");
+    expect(fields?.[5]).toBe("-"); // Rate is undefined when resetsAt is missing
+    expect(fields?.[6]).toBe("-");
   });
 
   it("outputs multiple services with multiple windows", () => {
     const multi: ServiceUsageData[] = [
       {
         service: "claude",
+        serviceType: "claude",
         planType: "Max",
         windows: [
           { name: "5-Hour", utilization: 10, resetsAt, periodDurationMs },
@@ -159,6 +163,7 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
       },
       {
         service: "codex",
+        serviceType: "codex",
         planType: "pro",
         windows: [
           { name: "Primary", utilization: 30, resetsAt, periodDurationMs },
@@ -183,12 +188,15 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
 
   it("outputs only header for empty input", () => {
     const output = formatServiceUsageAsTsv([]);
-    expect(output).toBe("SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT");
+    expect(output).toBe(
+      "SERVICE\tSERVICE_TYPE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT",
+    );
   });
 
   it("sanitizes tabs and newlines in string fields", () => {
     const withSpecialChars: ServiceUsageData = {
       service: "service\twith\ttabs",
+      serviceType: "test",
       planType: "plan\nwith\nnewlines",
       windows: [
         {
@@ -203,9 +211,9 @@ describe("format-service-usage formatServiceUsageAsTsv", () => {
     const lines = output.split("\n");
     expect(lines).toHaveLength(2);
     const fields = lines[1]?.split("\t");
-    expect(fields).toHaveLength(6);
+    expect(fields).toHaveLength(7);
     expect(fields?.[0]).toBe("service with tabs");
-    expect(fields?.[1]).toBe("plan with newlines");
-    expect(fields?.[2]).toBe("window  with combined");
+    expect(fields?.[2]).toBe("plan with newlines");
+    expect(fields?.[3]).toBe("window  with combined");
   });
 });

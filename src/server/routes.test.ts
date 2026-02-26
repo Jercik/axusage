@@ -43,6 +43,7 @@ const noState: ServerState | undefined = undefined;
 
 const testService: ServiceUsageData = {
   service: "claude",
+  serviceType: "claude",
   windows: [
     {
       name: "monthly",
@@ -188,6 +189,7 @@ describe("createUsageRouter", () => {
       expect(body).toEqual([
         {
           service: "claude",
+          serviceType: "claude",
           windows: [{ name: "monthly", utilization: 42, periodDurationMs: 0 }],
         },
       ]);
@@ -202,6 +204,7 @@ describe("createUsageRouter", () => {
       usage: [
         {
           service: "claude",
+          serviceType: "claude",
           windows: [
             {
               name: "monthly",

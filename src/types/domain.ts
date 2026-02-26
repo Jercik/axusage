@@ -16,7 +16,12 @@ export type UsageWindow = {
  * Complete usage data for a service
  */
 export type ServiceUsageData = {
+  /** Display name (may be overridden by instance displayName) */
   readonly service: string;
+  /** Stable machine key (e.g., "claude", "codex") for filtering and labeling */
+  readonly serviceType: string;
+  /** Stable per-instance identifier for metrics (derived from credential name or config key) */
+  readonly instanceId?: string;
   readonly planType?: string;
   readonly windows: readonly UsageWindow[];
   readonly metadata?: {
@@ -48,11 +53,14 @@ export class ApiError extends Error {
 }
 
 /**
- * Service adapter interface
+ * Token-based usage fetcher for a service.
+ * Tokens are resolved externally via credential sources.
  */
-export interface ServiceAdapter {
+export interface ServiceUsageFetcher {
   readonly name: string;
-  fetchUsage(): Promise<Result<ServiceUsageData, ApiError>>;
+  fetchUsageWithToken(
+    accessToken: string,
+  ): Promise<Result<ServiceUsageData, ApiError>>;
 }
 
 /**
