@@ -24,7 +24,6 @@ export type ServiceUsageData = {
   readonly instanceId?: string;
   readonly planType?: string;
   readonly windows: readonly UsageWindow[];
-  readonly notes?: string;
   readonly metadata?: {
     readonly allowed?: boolean;
     readonly limitReached?: boolean;

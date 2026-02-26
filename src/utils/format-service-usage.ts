@@ -67,7 +67,6 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 
   const header = [
     chalk.cyan.bold(`=== ${data.service} Usage ===`),
-    data.notes ? chalk.gray(data.notes) : undefined,
     data.planType ? chalk.gray(`Plan: ${data.planType}`) : undefined,
     statusWarning,
   ]
@@ -90,7 +89,6 @@ export function toJsonObject(data: ServiceUsageData, now: number): unknown {
     serviceType: data.serviceType,
     ...(data.instanceId !== undefined && { instanceId: data.instanceId }),
     planType: data.planType,
-    ...(data.notes !== undefined && { notes: data.notes }),
     windows: data.windows.map((w) => {
       const rate = calculateUsageRate(
         w.utilization,

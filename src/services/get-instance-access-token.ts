@@ -2,7 +2,7 @@
  * Instance-aware credential fetcher.
  *
  * Resolves an access token for a specific service instance config,
- * returning vault metadata (displayName, notes) alongside the token.
+ * returning vault metadata (displayName) alongside the token.
  */
 
 import {
@@ -62,7 +62,6 @@ function extractAccessToken(
 interface InstanceTokenResult {
   token: string | undefined;
   vaultDisplayName: string | undefined;
-  vaultNotes: string | undefined;
 }
 
 /** Fetch access token from vault, returning metadata alongside the token */
@@ -82,11 +81,7 @@ async function fetchFromVaultWithMetadata(
           `[axusage] Vault fetch failed for ${agentId}/${credentialName}: ${result.reason}`,
         );
       }
-      return {
-        token: undefined,
-        vaultDisplayName: undefined,
-        vaultNotes: undefined,
-      };
+      return { token: undefined, vaultDisplayName: undefined };
     }
 
     const token = extractAccessToken(result.credentials);
@@ -96,20 +91,12 @@ async function fetchFromVaultWithMetadata(
           `Credential type: ${result.credentials.type}`,
       );
     }
-    return {
-      token,
-      vaultDisplayName: result.displayName,
-      vaultNotes: result.notes,
-    };
+    return { token, vaultDisplayName: result.displayName };
   } catch (error) {
     console.error(
       `[axusage] Vault fetch error for ${agentId}/${credentialName}: ${error instanceof Error ? error.message : String(error)}`,
     );
-    return {
-      token: undefined,
-      vaultDisplayName: undefined,
-      vaultNotes: undefined,
-    };
+    return { token: undefined, vaultDisplayName: undefined };
   }
 }
 
@@ -134,7 +121,7 @@ async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
 /**
  * Get access token for a specific service instance.
  *
- * Returns vault metadata (displayName, notes) alongside the token
+ * Returns vault metadata (displayName) alongside the token
  * for multi-instance identification.
  */
 async function getInstanceAccessToken(
@@ -146,7 +133,7 @@ async function getInstanceAccessToken(
   switch (config.source) {
     case "local": {
       const token = await fetchFromLocal(agentId);
-      return { token, vaultDisplayName: undefined, vaultNotes: undefined };
+      return { token, vaultDisplayName: undefined };
     }
 
     case "vault": {
@@ -155,11 +142,7 @@ async function getInstanceAccessToken(
           `[axusage] Vault source requires credential name for ${service}. ` +
             `Set {"${service}": {"source": "vault", "name": "your-name"}} in config.`,
         );
-        return {
-          token: undefined,
-          vaultDisplayName: undefined,
-          vaultNotes: undefined,
-        };
+        return { token: undefined, vaultDisplayName: undefined };
       }
       const result = await fetchFromVaultWithMetadata(agentId, config.name);
       if (!result.token) {
@@ -172,15 +155,21 @@ async function getInstanceAccessToken(
     }
 
     case "auto": {
-      // Auto mode: try vault first if configured and name provided
-      if (config.name && isVaultConfigured()) {
-        // Named credential: don't fall back to local to avoid
-        // silently returning the same local token for multiple instances
+      if (config.name) {
+        // Named credential: vault-only to avoid silently returning
+        // the same local token for multiple instances
+        if (!isVaultConfigured()) {
+          console.error(
+            `[axusage] Named credential "${config.name}" for ${service} requires vault, ` +
+              `but vault is not configured. Set AXVAULT env or use source "local" instead.`,
+          );
+          return { token: undefined, vaultDisplayName: undefined };
+        }
         return fetchFromVaultWithMetadata(agentId, config.name);
       }
-      // No credential name or vault not configured: use local
+      // No credential name: use local
       const token = await fetchFromLocal(agentId);
-      return { token, vaultDisplayName: undefined, vaultNotes: undefined };
+      return { token, vaultDisplayName: undefined };
     }
   }
 }

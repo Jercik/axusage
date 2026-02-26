@@ -112,6 +112,25 @@ Credential source config is read from:
 - Config file path shown in `axusage --help`
 - `AXUSAGE_SOURCES` environment variable (JSON), which overrides file config
 
+### Multi-Instance Configuration
+
+To monitor multiple accounts for the same service, use an array of instance configs:
+
+```json
+{
+  "claude": [
+    { "source": "vault", "name": "work", "displayName": "Claude (Work)" },
+    {
+      "source": "vault",
+      "name": "personal",
+      "displayName": "Claude (Personal)"
+    }
+  ]
+}
+```
+
+Each instance resolves credentials independently. Named credentials require vault to be configured (`AXVAULT` env). Single-instance configs can use string shorthand (`"auto"`, `"local"`, `"vault"`) or object form.
+
 ## Examples
 
 ### Extract service and utilization (TSV + awk)

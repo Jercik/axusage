@@ -73,13 +73,16 @@ export async function fetchServiceInstanceUsage(
 
       if (!tokenResult.token) {
         const label = config.name ?? normalized;
+        const isVaultPath =
+          config.source === "vault" ||
+          (config.source === "auto" && config.name !== undefined);
         return {
           service: normalized,
           result: {
             ok: false as const,
             error: new ApiErrorClass(
               `No credentials found for ${label}. ` +
-                (config.source === "vault"
+                (isVaultPath
                   ? `Check that vault is configured and credential "${config.name ?? ""}" exists.`
                   : `Run the agent CLI to authenticate.`),
             ),
@@ -113,9 +116,6 @@ export async function fetchServiceInstanceUsage(
               ...usageResult.value,
               service: displayName,
               instanceId,
-              ...(tokenResult.vaultNotes !== undefined && {
-                notes: tokenResult.vaultNotes,
-              }),
             },
           },
         };
