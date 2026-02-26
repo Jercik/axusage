@@ -12,8 +12,8 @@ importers:
         specifier: ^14.0.0
         version: 14.0.0(commander@14.0.3)
       axauth:
-        specifier: ^3.1.6
-        version: 3.1.6(@types/node@25.3.0)
+        specifier: ^3.2.0
+        version: 3.2.0(@types/node@25.3.0)
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
@@ -520,8 +520,8 @@ packages:
     resolution: {integrity: sha512-g44zhR3NIKVs0zUesa4iMzExmZpLUdTLRMCStqX3GE5NT6VkPcxQGJ+uC8tDgBUC/vB1rUhUd55cOf++4NZcmw==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
 
-  '@inquirer/core@11.1.4':
-    resolution: {integrity: sha512-1HvwyASF0tE/7W8geTTn0ydiWb463pq4SBIpaWcVabTrw55+CiRmytV9eZoqt3ohchsPw4Vv60jfNiI6YljVUg==}
+  '@inquirer/core@11.1.5':
+    resolution: {integrity: sha512-QQPAX+lka8GyLcZ7u7Nb1h6q72iZ/oy0blilC3IB2nSt1Qqxp7akt94Jqhi/DzARuN3Eo9QwJRvtl4tmVe4T5A==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
     peerDependencies:
       '@types/node': '>=18'
@@ -533,8 +533,8 @@ packages:
     resolution: {integrity: sha512-y09iGt3JKoOCBQ3w4YrSJdokcD8ciSlMIWsD+auPu+OZpfxLuyz+gICAQ6GCBOmJJt4KEQGHuZSVff2jiNOy7g==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
 
-  '@inquirer/password@5.0.7':
-    resolution: {integrity: sha512-h3Rgzb8nFMxgK6X5246MtwTX/rXs5Z58DbeuUKI6W5dQ+CZusEunNeT7rosdB+Upn79BkfZJO0AaiH8MIi9v1A==}
+  '@inquirer/password@5.0.8':
+    resolution: {integrity: sha512-zt1sF4lYLdvPqvmvHdmjOzuUUjuCQ897pdUCO8RbXMUDKXJTTyOQgtn23le+jwcb+MpHl3VAFvzIdxRAf6aPlA==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^21.7.0 || ^20.12.0'}
     peerDependencies:
       '@types/node': '>=18'
@@ -1174,8 +1174,8 @@ packages:
   atomically@2.1.0:
     resolution: {integrity: sha512-+gDffFXRW6sl/HCwbta7zK4uNqbPjv4YJEAdz7Vu+FLQHe77eZ4bvbJGi4hE0QPeJlMYMA3piXEr1UL3dAwx7Q==}
 
-  axauth@3.1.6:
-    resolution: {integrity: sha512-X3VVApKUau4CSq3Ssv79Q/qdDev4MtWB3KLC85y1WqgmoMpWeoxFj2H4Qk82LAgvWKYpZCCRtdpcnSDR83U06g==}
+  axauth@3.2.0:
+    resolution: {integrity: sha512-nDNiOCDCuCA2P2lBk0jxXc3yw/ObmU1Ujz8BbRMHf1fXDO7EX3E0QJ7QiO1Oa6hBKc1nYP13RjvmGb7XzZFojQ==}
     engines: {node: '>=22.14.0'}
     hasBin: true
 
@@ -1785,8 +1785,8 @@ packages:
     resolution: {integrity: sha512-kVCxPF3vQM/N0B1PmoqVUqgHP+EeVjmZSQn+1oCRPxd2P21P2F19lIgbR3HBosbB1PUhOAoctJnfEn2GbN2eZA==}
     engines: {node: '>=18'}
 
-  get-tsconfig@4.13.0:
-    resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+  get-tsconfig@4.13.6:
+    resolution: {integrity: sha512-shZT/QMiSHc/YBLxxOkMtgSid5HFoauqCE3/exfsEcwg1WkeqjG+V40yBbBrsD+jW2HDXcs28xOfcbm2jI8Ddw==}
 
   git-log-parser@1.2.1:
     resolution: {integrity: sha512-PI+sPDvHXNPl5WNOErAK05s3j0lgwUzMN6o8cyQrDaKfT3qd7TmNJKeXX+SknI5I0QhG5fVPAEwSY4tRGDtYoQ==}
@@ -3374,7 +3374,7 @@ snapshots:
 
   '@inquirer/ansi@2.0.3': {}
 
-  '@inquirer/core@11.1.4(@types/node@25.3.0)':
+  '@inquirer/core@11.1.5(@types/node@25.3.0)':
     dependencies:
       '@inquirer/ansi': 2.0.3
       '@inquirer/figures': 2.0.3
@@ -3388,10 +3388,10 @@ snapshots:
 
   '@inquirer/figures@2.0.3': {}
 
-  '@inquirer/password@5.0.7(@types/node@25.3.0)':
+  '@inquirer/password@5.0.8(@types/node@25.3.0)':
     dependencies:
       '@inquirer/ansi': 2.0.3
-      '@inquirer/core': 11.1.4(@types/node@25.3.0)
+      '@inquirer/core': 11.1.5(@types/node@25.3.0)
       '@inquirer/type': 4.0.3(@types/node@25.3.0)
     optionalDependencies:
       '@types/node': 25.3.0
@@ -4013,10 +4013,10 @@ snapshots:
       stubborn-fs: 2.0.0
       when-exit: 2.1.5
 
-  axauth@3.1.6(@types/node@25.3.0):
+  axauth@3.2.0(@types/node@25.3.0):
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.3)
-      '@inquirer/password': 5.0.7(@types/node@25.3.0)
+      '@inquirer/password': 5.0.8(@types/node@25.3.0)
       axconfig: 3.6.3
       axexec: 2.0.1
       axshared: 5.0.0
@@ -4738,7 +4738,7 @@ snapshots:
       '@sec-ant/readable-stream': 0.4.1
       is-stream: 4.0.1
 
-  get-tsconfig@4.13.0:
+  get-tsconfig@4.13.6:
     dependencies:
       resolve-pkg-maps: 1.0.0
     optional: true
@@ -5726,7 +5726,7 @@ snapshots:
   tsx@4.20.6:
     dependencies:
       esbuild: 0.25.12
-      get-tsconfig: 4.13.0
+      get-tsconfig: 4.13.6
     optionalDependencies:
       fsevents: 2.3.3
     optional: true

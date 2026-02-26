@@ -67,6 +67,7 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 
   const header = [
     chalk.cyan.bold(`=== ${data.service} Usage ===`),
+    data.notes ? chalk.gray(data.notes) : undefined,
     data.planType ? chalk.gray(`Plan: ${data.planType}`) : undefined,
     statusWarning,
   ]
@@ -86,7 +87,9 @@ export function formatServiceUsageData(data: ServiceUsageData): string {
 export function toJsonObject(data: ServiceUsageData, now: number): unknown {
   return {
     service: data.service,
+    serviceType: data.serviceType,
     planType: data.planType,
+    ...(data.notes !== undefined && { notes: data.notes }),
     windows: data.windows.map((w) => {
       const rate = calculateUsageRate(
         w.utilization,
@@ -114,7 +117,8 @@ export function formatServiceUsageDataAsJson(data: ServiceUsageData): string {
   return JSON.stringify(toJsonObject(data, Date.now()), null, 2);
 }
 
-const TSV_HEADER = "SERVICE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT";
+const TSV_HEADER =
+  "SERVICE\tSERVICE_TYPE\tPLAN\tWINDOW\tUTILIZATION\tRATE\tRESETS_AT";
 
 /**
  * Sanitizes a string for TSV output by replacing tabs and newlines with spaces.
@@ -137,6 +141,7 @@ function formatServiceUsageRowsAsTsv(data: ServiceUsageData): string[] {
     );
     return [
       sanitizeForTsv(data.service),
+      sanitizeForTsv(data.serviceType),
       sanitizeForTsv(data.planType ?? "-"),
       sanitizeForTsv(w.name),
       w.utilization.toFixed(2),

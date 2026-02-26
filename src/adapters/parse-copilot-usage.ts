@@ -48,6 +48,7 @@ export function toServiceUsageData(
   if (premium_interactions.unlimited) {
     return {
       service: "GitHub Copilot",
+      serviceType: "copilot",
       planType: response.copilot_plan,
       windows: [
         {
@@ -72,6 +73,7 @@ export function toServiceUsageData(
 
   return {
     service: "GitHub Copilot",
+    serviceType: "copilot",
     planType: response.copilot_plan,
     windows: [
       {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import type {
   Result,
   ServiceAdapter,
+  ServiceUsageFetcher,
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
@@ -43,6 +44,74 @@ async function fetchPlanType(accessToken: string): Promise<string | undefined> {
   }
 }
 
+/** Fetch Claude usage data using a pre-resolved access token */
+async function fetchClaudeUsageWithToken(
+  accessToken: string,
+): Promise<Result<ServiceUsageData, ApiError>> {
+  try {
+    const [response, planType] = await Promise.all([
+      fetch(USAGE_API_URL, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "anthropic-beta": ANTHROPIC_BETA_HEADER,
+        },
+      }),
+      fetchPlanType(accessToken),
+    ]);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      return {
+        ok: false,
+        error: new ApiError(
+          `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
+          response.status,
+        ),
+      };
+    }
+
+    const data: unknown = await response.json();
+    const parseResult = UsageResponseSchema.safeParse(
+      coalesceClaudeUsageResponse(data) ?? data,
+    );
+
+    if (!parseResult.success) {
+      /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
+      console.error("Raw API response:", JSON.stringify(data, null, 2));
+      console.error(
+        "Validation errors:",
+        JSON.stringify(z.treeifyError(parseResult.error), null, 2),
+      );
+      /* eslint-enable unicorn/no-null */
+      return {
+        ok: false,
+        error: new ApiError(
+          `Invalid response format: ${parseResult.error.message}`,
+          undefined,
+          data,
+        ),
+      };
+    }
+
+    const usageData = toServiceUsageData(parseResult.data);
+    return {
+      ok: true,
+      value: planType ? { ...usageData, planType } : usageData,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: new ApiError(`Failed to fetch Claude usage: ${message}`),
+    };
+  }
+}
+
+export const claudeUsageFetcher: ServiceUsageFetcher = {
+  name: "Claude",
+  fetchUsageWithToken: fetchClaudeUsageWithToken,
+};
+
 /**
  * Claude service adapter using direct API access.
  *
@@ -65,62 +134,6 @@ export const claudeAdapter: ServiceAdapter = {
       };
     }
 
-    try {
-      const [response, planType] = await Promise.all([
-        fetch(USAGE_API_URL, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "anthropic-beta": ANTHROPIC_BETA_HEADER,
-          },
-        }),
-        fetchPlanType(accessToken),
-      ]);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        return {
-          ok: false,
-          error: new ApiError(
-            `Claude API request failed: ${String(response.status)} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
-            response.status,
-          ),
-        };
-      }
-
-      const data: unknown = await response.json();
-      const parseResult = UsageResponseSchema.safeParse(
-        coalesceClaudeUsageResponse(data) ?? data,
-      );
-
-      if (!parseResult.success) {
-        /* eslint-disable unicorn/no-null -- JSON.stringify requires null for no replacer */
-        console.error("Raw API response:", JSON.stringify(data, null, 2));
-        console.error(
-          "Validation errors:",
-          JSON.stringify(z.treeifyError(parseResult.error), null, 2),
-        );
-        /* eslint-enable unicorn/no-null */
-        return {
-          ok: false,
-          error: new ApiError(
-            `Invalid response format: ${parseResult.error.message}`,
-            undefined,
-            data,
-          ),
-        };
-      }
-
-      const usageData = toServiceUsageData(parseResult.data);
-      return {
-        ok: true,
-        value: planType ? { ...usageData, planType } : usageData,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        ok: false,
-        error: new ApiError(`Failed to fetch Claude usage: ${message}`),
-      };
-    }
+    return fetchClaudeUsageWithToken(accessToken);
   },
 };

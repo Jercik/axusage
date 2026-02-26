@@ -12,7 +12,7 @@ import type {
 } from "../types/domain.js";
 import type { UsageCommandOptions } from "./fetch-service-usage.js";
 import {
-  fetchServiceUsage,
+  fetchServiceInstanceUsage,
   selectServicesToQuery,
 } from "./fetch-service-usage.js";
 import { isAuthFailure } from "./run-auth-setup.js";
@@ -20,16 +20,17 @@ import { chalk } from "../utils/color.js";
 
 /**
  * Fetches usage for all requested services in parallel.
+ * Each service type may produce multiple results (multi-instance support).
  */
 export async function fetchServicesInParallel(
   servicesToQuery: string[],
 ): Promise<ServiceResult[]> {
-  return await Promise.all(
-    servicesToQuery.map(async (serviceName): Promise<ServiceResult> => {
-      const result = await fetchServiceUsage(serviceName);
-      return { service: serviceName, result };
-    }),
+  const nestedResults = await Promise.all(
+    servicesToQuery.map((serviceName) =>
+      fetchServiceInstanceUsage(serviceName),
+    ),
   );
+  return nestedResults.flat();
 }
 
 /**

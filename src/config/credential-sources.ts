@@ -18,13 +18,19 @@ import type { SupportedService } from "../services/supported-service.js";
 const CredentialSourceType = z.enum(["auto", "local", "vault"]);
 type CredentialSourceType = z.infer<typeof CredentialSourceType>;
 
-/** Service source config - either a string shorthand or object with name */
+/** Instance source config - object form with optional name and displayName */
+const InstanceSourceConfig = z.object({
+  source: CredentialSourceType,
+  name: z.string().optional(),
+  displayName: z.string().optional(),
+});
+type InstanceSourceConfig = z.infer<typeof InstanceSourceConfig>;
+
+/** Service source config - string shorthand, object, or array of objects */
 const ServiceSourceConfig = z.union([
   CredentialSourceType,
-  z.object({
-    source: CredentialSourceType,
-    name: z.string().optional(),
-  }),
+  InstanceSourceConfig,
+  z.array(InstanceSourceConfig),
 ]);
 type ServiceSourceConfig = z.infer<typeof ServiceSourceConfig>;
 
@@ -36,6 +42,13 @@ type SourcesConfig = z.infer<typeof SourcesConfig>;
 interface ResolvedSourceConfig {
   source: CredentialSourceType;
   name: string | undefined;
+}
+
+/** Resolved instance config with display name */
+interface ResolvedInstanceConfig {
+  source: CredentialSourceType;
+  name: string | undefined;
+  displayName: string | undefined;
 }
 
 // Lazy-initialized config instance
@@ -149,6 +162,15 @@ function getServiceSourceConfig(
     return { source: serviceConfig, name: undefined };
   }
 
+  // Array: use first instance
+  if (Array.isArray(serviceConfig)) {
+    const first = serviceConfig[0];
+    if (!first) {
+      return { source: "auto", name: undefined };
+    }
+    return { source: first.source, name: first.name };
+  }
+
   // Object: source and name
   return { source: serviceConfig.source, name: serviceConfig.name };
 }
@@ -165,4 +187,51 @@ function getCredentialSourcesPath(): string {
   return path.resolve(configDirectory, "config.json");
 }
 
-export { getServiceSourceConfig, getCredentialSourcesPath };
+/**
+ * Get all instance configs for a service, normalizing all config forms to an array.
+ *
+ * - String shorthand → single instance with that source
+ * - Object → single instance
+ * - Array → multiple instances
+ */
+function getServiceInstanceConfigs(
+  service: SupportedService,
+): ResolvedInstanceConfig[] {
+  const config = getCredentialSourceConfig();
+  const serviceConfig = config[service];
+
+  // Default: single auto instance
+  if (serviceConfig === undefined) {
+    return [{ source: "auto", name: undefined, displayName: undefined }];
+  }
+
+  // String shorthand: single instance with that source
+  if (typeof serviceConfig === "string") {
+    return [{ source: serviceConfig, name: undefined, displayName: undefined }];
+  }
+
+  // Array: multiple instances
+  if (Array.isArray(serviceConfig)) {
+    return serviceConfig.map((instance) => ({
+      source: instance.source,
+      name: instance.name,
+      displayName: instance.displayName,
+    }));
+  }
+
+  // Object: single instance
+  return [
+    {
+      source: serviceConfig.source,
+      name: serviceConfig.name,
+      displayName: serviceConfig.displayName,
+    },
+  ];
+}
+
+export {
+  getServiceSourceConfig,
+  getServiceInstanceConfigs,
+  getCredentialSourcesPath,
+};
+export type { ResolvedInstanceConfig };

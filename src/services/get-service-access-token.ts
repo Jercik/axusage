@@ -186,4 +186,4 @@ async function getServiceAccessToken(
   }
 }
 
-export { getServiceAccessToken };
+export { extractAccessToken, getServiceAccessToken };

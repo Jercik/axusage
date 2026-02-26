@@ -209,6 +209,7 @@ export function toServiceUsageData(
 
   return {
     service: "Gemini",
+    serviceType: "gemini",
     planType,
     windows,
   };
