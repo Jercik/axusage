@@ -117,7 +117,7 @@ Credential source config is read from:
 ### Extract service and utilization (TSV + awk)
 
 ```bash
-axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '{print $1, $5"%"}'
 ```
 
 ### Count windows by service (TSV + cut/sort/uniq)
@@ -129,7 +129,7 @@ axusage --format tsv | tail -n +2 | cut -f1 | sort | uniq -c
 ### Filter by utilization threshold (TSV + awk)
 
 ```bash
-axusage --format tsv | tail -n +2 | awk -F'\t' '$4 > 50 {print $1, $3, $4"%"}'
+axusage --format tsv | tail -n +2 | awk -F'\t' '$5 > 50 {print $1, $4, $5"%"}'
 ```
 
 ### Extract utilization as JSON (JSON + jq)

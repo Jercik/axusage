@@ -20,6 +20,8 @@ export type ServiceUsageData = {
   readonly service: string;
   /** Stable machine key (e.g., "claude", "codex") for filtering and labeling */
   readonly serviceType: string;
+  /** Stable per-instance identifier for metrics (derived from credential name or config key) */
+  readonly instanceId?: string;
   readonly planType?: string;
   readonly windows: readonly UsageWindow[];
   readonly notes?: string;
@@ -52,16 +54,8 @@ export class ApiError extends Error {
 }
 
 /**
- * Service adapter interface
- */
-export interface ServiceAdapter {
-  readonly name: string;
-  fetchUsage(): Promise<Result<ServiceUsageData, ApiError>>;
-}
-
-/**
  * Token-based usage fetcher for a service.
- * Used for multi-instance support where tokens are resolved externally.
+ * Tokens are resolved externally via credential sources.
  */
 export interface ServiceUsageFetcher {
   readonly name: string;

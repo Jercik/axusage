@@ -13,8 +13,50 @@ import {
 import type { AgentCli } from "axauth";
 
 import type { ResolvedInstanceConfig } from "../config/credential-sources.js";
-import { extractAccessToken } from "./get-service-access-token.js";
 import { getCopilotTokenFromCustomGhPath } from "../utils/copilot-gh-token.js";
+
+/**
+ * Extract access token from vault credentials.
+ *
+ * Different credential types store tokens differently:
+ * - oauth-credentials: access_token (Gemini style) or tokens.access_token (Codex/OpenAI style)
+ * - oauth-token: accessToken field (Claude style)
+ * - api-key: apiKey field
+ */
+function extractAccessToken(
+  credentials: { type: string; data: Record<string, unknown> } | undefined,
+): string | undefined {
+  if (!credentials) return undefined;
+
+  const { data } = credentials;
+
+  // Try accessToken first (Claude oauth-token style, camelCase)
+  if (typeof data.accessToken === "string") {
+    return data.accessToken;
+  }
+
+  // Try access_token at top level (Gemini oauth-credentials style, snake_case)
+  if (typeof data.access_token === "string") {
+    return data.access_token;
+  }
+
+  // Try tokens.access_token (Codex/OpenAI oauth-credentials style)
+  if (
+    data.tokens &&
+    typeof data.tokens === "object" &&
+    "access_token" in data.tokens &&
+    typeof data.tokens.access_token === "string"
+  ) {
+    return data.tokens.access_token;
+  }
+
+  // Try apiKey as fallback (api-key type)
+  if (typeof data.apiKey === "string") {
+    return data.apiKey;
+  }
+
+  return undefined;
+}
 
 /** Result of resolving an instance token */
 interface InstanceTokenResult {
@@ -92,7 +134,7 @@ async function fetchFromLocal(agentId: AgentCli): Promise<string | undefined> {
 /**
  * Get access token for a specific service instance.
  *
- * Like getServiceAccessToken but returns vault metadata (displayName, notes)
+ * Returns vault metadata (displayName, notes) alongside the token
  * for multi-instance identification.
  */
 async function getInstanceAccessToken(
@@ -136,8 +178,11 @@ async function getInstanceAccessToken(
         if (result.token) {
           return result;
         }
-        // Fallback to local if vault failed
+        // Named credential failed — don't fall back to local to avoid
+        // silently returning the same local token for multiple instances
+        return result;
       }
+      // No credential name or vault not configured: use local
       const token = await fetchFromLocal(agentId);
       return { token, vaultDisplayName: undefined, vaultNotes: undefined };
     }

@@ -15,14 +15,14 @@ export async function formatPrometheusMetrics(
   const utilizationGauge = new Gauge({
     name: "axusage_utilization_percent",
     help: "Current utilization percentage by service/window",
-    labelNames: ["service", "service_type", "window"],
+    labelNames: ["service", "service_type", "instance_id", "window"],
     registers: [registry],
   });
 
   const rateGauge = new Gauge({
     name: "axusage_usage_rate",
     help: "Usage rate (utilization / elapsed fraction of period); >1 means over budget",
-    labelNames: ["service", "service_type", "window"],
+    labelNames: ["service", "service_type", "instance_id", "window"],
     registers: [registry],
   });
 
@@ -31,6 +31,7 @@ export async function formatPrometheusMetrics(
       const labels = {
         service: entry.service,
         service_type: entry.serviceType,
+        instance_id: entry.instanceId ?? entry.serviceType,
         window: w.name,
       };
       utilizationGauge.set(labels, w.utilization);

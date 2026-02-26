@@ -2,12 +2,10 @@ import { z } from "zod";
 
 import type {
   Result,
-  ServiceAdapter,
   ServiceUsageFetcher,
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
-import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { UsageResponse as UsageResponseSchema } from "../types/usage.js";
 import { coalesceClaudeUsageResponse } from "./coalesce-claude-usage-response.js";
 import { toServiceUsageData } from "./parse-claude-usage.js";
@@ -110,30 +108,4 @@ async function fetchClaudeUsageWithToken(
 export const claudeUsageFetcher: ServiceUsageFetcher = {
   name: "Claude",
   fetchUsageWithToken: fetchClaudeUsageWithToken,
-};
-
-/**
- * Claude service adapter using direct API access.
- *
- * This adapter uses the OAuth token from Claude Code's credential store
- * (Keychain on macOS, credentials file elsewhere) to make direct API calls
- * to the Anthropic usage endpoint.
- */
-export const claudeAdapter: ServiceAdapter = {
-  name: "Claude",
-
-  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getServiceAccessToken("claude");
-
-    if (!accessToken) {
-      return {
-        ok: false,
-        error: new ApiError(
-          "No Claude credentials found. Run 'claude' to authenticate.",
-        ),
-      };
-    }
-
-    return fetchClaudeUsageWithToken(accessToken);
-  },
 };

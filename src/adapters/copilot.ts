@@ -1,5 +1,4 @@
 import type {
-  ServiceAdapter,
   ServiceUsageFetcher,
   ServiceUsageData,
   Result,
@@ -7,7 +6,6 @@ import type {
 import { ApiError } from "../types/domain.js";
 import { CopilotUsageResponse as CopilotUsageResponseSchema } from "../types/copilot.js";
 import { toServiceUsageData } from "./parse-copilot-usage.js";
-import { getServiceAccessToken } from "../services/get-service-access-token.js";
 
 // Internal/undocumented GitHub API used by VS Code, JetBrains, and other
 // first-party Copilot integrations. May change without notice.
@@ -66,28 +64,4 @@ async function fetchCopilotUsageWithToken(
 export const copilotUsageFetcher: ServiceUsageFetcher = {
   name: "GitHub Copilot",
   fetchUsageWithToken: fetchCopilotUsageWithToken,
-};
-
-/**
- * GitHub Copilot service adapter using token-based API access.
- *
- * Credentials resolved via getServiceAccessToken (vault, local axauth, gh CLI).
- */
-export const copilotAdapter: ServiceAdapter = {
-  name: "GitHub Copilot",
-
-  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getServiceAccessToken("copilot");
-
-    if (!accessToken) {
-      return {
-        ok: false,
-        error: new ApiError(
-          "No GitHub Copilot credentials found. Run 'gh auth login' to authenticate.",
-        ),
-      };
-    }
-
-    return fetchCopilotUsageWithToken(accessToken);
-  },
 };

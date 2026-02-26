@@ -65,12 +65,12 @@ describe("credential sources migration", () => {
       sources: { claude: "vault" },
     });
 
-    const { getServiceSourceConfig } = await import("./credential-sources.js");
+    const { getServiceInstanceConfigs } =
+      await import("./credential-sources.js");
 
-    expect(getServiceSourceConfig("claude")).toEqual({
-      source: "vault",
-      name: undefined,
-    });
+    expect(getServiceInstanceConfigs("claude")).toEqual([
+      { source: "vault", name: undefined, displayName: undefined },
+    ]);
   });
 
   it("does not overwrite existing new config values", async () => {
@@ -81,12 +81,12 @@ describe("credential sources migration", () => {
       sources: { claude: "vault" },
     });
 
-    const { getServiceSourceConfig } = await import("./credential-sources.js");
+    const { getServiceInstanceConfigs } =
+      await import("./credential-sources.js");
 
-    expect(getServiceSourceConfig("claude")).toEqual({
-      source: "local",
-      name: undefined,
-    });
+    expect(getServiceInstanceConfigs("claude")).toEqual([
+      { source: "local", name: undefined, displayName: undefined },
+    ]);
   });
 
   it("returns the config file path using env-paths", async () => {

@@ -1,11 +1,9 @@
 import type {
   Result,
-  ServiceAdapter,
   ServiceUsageFetcher,
   ServiceUsageData,
 } from "../types/domain.js";
 import { ApiError } from "../types/domain.js";
-import { getServiceAccessToken } from "../services/get-service-access-token.js";
 import { CodexUsageResponse as CodexUsageResponseSchema } from "../types/codex.js";
 import { toServiceUsageData } from "./parse-codex-usage.js";
 
@@ -64,29 +62,4 @@ async function fetchCodexUsageWithToken(
 export const codexUsageFetcher: ServiceUsageFetcher = {
   name: "ChatGPT",
   fetchUsageWithToken: fetchCodexUsageWithToken,
-};
-
-/**
- * ChatGPT service adapter using direct API access.
- *
- * Uses the OAuth token from Codex CLI's credential store (~/.codex/auth.json)
- * to make direct API calls to ChatGPT's usage endpoint.
- */
-export const codexAdapter: ServiceAdapter = {
-  name: "ChatGPT",
-
-  async fetchUsage(): Promise<Result<ServiceUsageData, ApiError>> {
-    const accessToken = await getServiceAccessToken("codex");
-
-    if (!accessToken) {
-      return {
-        ok: false,
-        error: new ApiError(
-          "No Codex credentials found. Run 'codex' to authenticate.",
-        ),
-      };
-    }
-
-    return fetchCodexUsageWithToken(accessToken);
-  },
 };

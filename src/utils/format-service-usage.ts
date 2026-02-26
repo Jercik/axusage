@@ -88,6 +88,7 @@ export function toJsonObject(data: ServiceUsageData, now: number): unknown {
   return {
     service: data.service,
     serviceType: data.serviceType,
+    ...(data.instanceId !== undefined && { instanceId: data.instanceId }),
     planType: data.planType,
     ...(data.notes !== undefined && { notes: data.notes }),
     windows: data.windows.map((w) => {

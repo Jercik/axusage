@@ -30,19 +30,13 @@ type InstanceSourceConfig = z.infer<typeof InstanceSourceConfig>;
 const ServiceSourceConfig = z.union([
   CredentialSourceType,
   InstanceSourceConfig,
-  z.array(InstanceSourceConfig),
+  z.array(InstanceSourceConfig).min(1),
 ]);
 type ServiceSourceConfig = z.infer<typeof ServiceSourceConfig>;
 
 /** Full sources config - map of service ID to source config */
 const SourcesConfig = z.record(z.string(), ServiceSourceConfig);
 type SourcesConfig = z.infer<typeof SourcesConfig>;
-
-/** Resolved source config with normalized fields */
-interface ResolvedSourceConfig {
-  source: CredentialSourceType;
-  name: string | undefined;
-}
 
 /** Resolved instance config with display name */
 interface ResolvedInstanceConfig {
@@ -141,41 +135,6 @@ function getCredentialSourceConfig(): SourcesConfig {
 }
 
 /**
- * Get the resolved source config for a specific service.
- *
- * @param service - Service ID (e.g., "claude", "codex", "gemini")
- * @returns Resolved config with source type and optional credential name
- */
-function getServiceSourceConfig(
-  service: SupportedService,
-): ResolvedSourceConfig {
-  const config = getCredentialSourceConfig();
-  const serviceConfig = config[service];
-
-  // Default: auto mode with no credential name
-  if (serviceConfig === undefined) {
-    return { source: "auto", name: undefined };
-  }
-
-  // String shorthand: just the source type
-  if (typeof serviceConfig === "string") {
-    return { source: serviceConfig, name: undefined };
-  }
-
-  // Array: use first instance
-  if (Array.isArray(serviceConfig)) {
-    const first = serviceConfig[0];
-    if (!first) {
-      return { source: "auto", name: undefined };
-    }
-    return { source: first.source, name: first.name };
-  }
-
-  // Object: source and name
-  return { source: serviceConfig.source, name: serviceConfig.name };
-}
-
-/**
  * Get the credential sources config file path.
  *
  * This computes the path using env-paths directly instead of instantiating
@@ -229,9 +188,5 @@ function getServiceInstanceConfigs(
   ];
 }
 
-export {
-  getServiceSourceConfig,
-  getServiceInstanceConfigs,
-  getCredentialSourcesPath,
-};
+export { getServiceInstanceConfigs, getCredentialSourcesPath };
 export type { ResolvedInstanceConfig };
