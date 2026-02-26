@@ -83,7 +83,9 @@ export async function fetchServiceInstanceUsage(
             error: new ApiErrorClass(
               `No credentials found for ${label}. ` +
                 (isVaultPath
-                  ? `Check that vault is configured and credential "${config.name ?? ""}" exists.`
+                  ? config.name
+                    ? `Check that vault is configured and credential "${config.name}" exists.`
+                    : `Check that vault is configured. Set a credential name in config.`
                   : `Run the agent CLI to authenticate.`),
             ),
           },
