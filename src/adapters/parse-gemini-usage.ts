@@ -158,7 +158,7 @@ export function groupByQuotaPool(modelQuotas: ModelQuota[]): QuotaPool[] {
 
   // Sort model IDs within each pool for consistent ordering
   for (const pool of poolMap.values()) {
-    pool.modelIds.sort();
+    pool.modelIds = pool.modelIds.toSorted();
   }
 
   return [...poolMap.values()];
