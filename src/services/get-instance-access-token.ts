@@ -174,13 +174,9 @@ async function getInstanceAccessToken(
     case "auto": {
       // Auto mode: try vault first if configured and name provided
       if (config.name && isVaultConfigured()) {
-        const result = await fetchFromVaultWithMetadata(agentId, config.name);
-        if (result.token) {
-          return result;
-        }
-        // Named credential failed — don't fall back to local to avoid
+        // Named credential: don't fall back to local to avoid
         // silently returning the same local token for multiple instances
-        return result;
+        return fetchFromVaultWithMetadata(agentId, config.name);
       }
       // No credential name or vault not configured: use local
       const token = await fetchFromLocal(agentId);
