@@ -19,7 +19,7 @@ export function calculateUsageRate(
   now: number,
 ): number | undefined {
   if (!resetsAt) return undefined;
-  if (periodDurationMs <= 0) return 0;
+  if (periodDurationMs <= 0) return undefined;
   const resetTime = resetsAt.getTime();
   const periodStart = resetTime - periodDurationMs;
 

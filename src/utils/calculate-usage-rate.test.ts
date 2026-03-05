@@ -29,6 +29,12 @@ describe("calculate-usage-rate", () => {
     expect(rate).toBeUndefined();
   });
 
+  it("returns undefined when period duration is zero or negative", () => {
+    const resetsAt = new Date("2025-01-08T00:00:00Z");
+    expect(calculateUsageRate(25, resetsAt, 0, Date.now())).toBeUndefined();
+    expect(calculateUsageRate(25, resetsAt, -1000, Date.now())).toBeUndefined();
+  });
+
   describe("minimum elapsed time threshold", () => {
     it("returns undefined when less than 5% AND less than 2h elapsed", () => {
       // Period: 24 hours, elapsed: 1 hour (4.17% < 5%, and 1h < 2h)
