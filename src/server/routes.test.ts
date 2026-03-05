@@ -229,7 +229,7 @@ describe("createUsageRouter", () => {
         windows: Array<{ resetsAt: string; rate: number }>;
       }>;
       expect(body.at(0)?.windows.at(0)?.resetsAt).toBe(resetsAt.toISOString());
-      expect(body.at(0)?.windows.at(0)?.rate).toBe(0);
+      expect(body.at(0)?.windows.at(0)?.rate).toBeUndefined();
     } finally {
       await close();
     }
