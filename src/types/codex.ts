@@ -20,10 +20,30 @@ const CodexRateLimit = z.object({
   secondary_window: CodexRateLimitWindow,
 });
 
+const CodexAdditionalRateLimit = z.object({
+  limit_name: z.string(),
+  metered_feature: z.string(),
+  rate_limit: z
+    .object({
+      allowed: z.boolean(),
+      limit_reached: z.boolean(),
+      primary_window: CodexRateLimitWindow.optional(),
+      secondary_window: CodexRateLimitWindow.optional(),
+    })
+    .nullable()
+    .optional(),
+});
+
+export type CodexAdditionalRateLimit = z.infer<typeof CodexAdditionalRateLimit>;
+
 export const CodexUsageResponse = z.object({
   plan_type: z.string(),
   rate_limit: CodexRateLimit,
   credits: z.unknown().nullable(),
+  additional_rate_limits: z
+    .array(CodexAdditionalRateLimit)
+    .nullable()
+    .optional(),
 });
 
 export type CodexUsageResponse = z.infer<typeof CodexUsageResponse>;
